@@ -8,3 +8,4 @@ simpy
 dash
 pyod
 statsmodels
+selenium
