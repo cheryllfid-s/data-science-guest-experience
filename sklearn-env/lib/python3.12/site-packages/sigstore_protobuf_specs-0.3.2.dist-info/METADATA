@@ -1,0 +1,34 @@
+Metadata-Version: 2.1
+Name: sigstore-protobuf-specs
+Version: 0.3.2
+Summary: A library for serializing and deserializing Sigstore messages
+Author-email: Sigstore Authors <sigstore-dev@googlegroups.com>
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Programming Language :: Python :: 3 :: Only
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: Topic :: Security
+Classifier: Topic :: Security :: Cryptography
+Requires-Dist: betterproto==2.0.0b6
+Requires-Dist: build ; extra == "dev"
+Project-URL: Homepage, https://pypi.org/project/sigstore-protobuf-specs/
+Project-URL: Issues, https://github.com/sigstore/protobuf-specs/issues
+Project-URL: Source, https://github.com/sigstore/protobuf-specs
+Provides-Extra: dev
+
+sigstore-protobuf-specs
+=======================
+
+These are the Python language bindings for Sigstore's protobuf specs.
+
+See the [repository's README](https://github.com/sigstore/protobuf-specs)
+for more information.
+
