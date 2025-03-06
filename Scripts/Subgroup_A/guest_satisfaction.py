@@ -9,5 +9,7 @@ from matplotlib.ticker import PercentFormatter
 sns.set(style="whitegrid")
 plt.rcParams['figure.figsize'] = (12, 6)
 
-
+# Load the CSV file
+csv_path = "../data/survey.csv"  # Relative path from Scripts/Subgroup_A/ to data/
+data = pd.read_csv(csv_path)
 
