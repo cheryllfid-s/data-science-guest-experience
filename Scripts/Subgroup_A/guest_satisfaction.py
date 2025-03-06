@@ -16,7 +16,7 @@ df = pd.read_csv(csv_path)
 
 # Calculate NPS
 def calculate_nps(recommend_series):
-    promoters = (recommend_series == 'Yes').sum()
+    promoters = (recommend_series == 'Yes').sum()  
     detractors = (recommend_series == 'No').sum()
     total = recommend_series.count()
     return ((promoters - detractors) / total) * 100
