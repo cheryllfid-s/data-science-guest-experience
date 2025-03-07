@@ -4,15 +4,32 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.preprocessing import MinMaxScaler
 from matplotlib.ticker import PercentFormatter
+import matplotlib
+matplotlib.use('Qt5Agg')  
+import matplotlib.pyplot as plt
+plt.switch_backend('TkAgg')
+from pathlib import Path
+
+# Get the directory of the current script (guest_satisfaction.py)
+script_dir = Path(__file__).parent
+
+# Navigate project root (Git/) and then into data/
+project_root = script_dir.parent.parent  # Adjust based on your structure
+csv_path = project_root / "data" / "survey.csv"
+
+# Verify  path
+print(f"Absolute CSV path: {csv_path}")
+print(f"File exists? {csv_path.exists()}")
+
+# Load the CSV
+df = pd.read_csv(csv_path)
 
 
 # Setting up visualization style
 sns.set(style="whitegrid")
 plt.rcParams['figure.figsize'] = (12, 6)
 
-# Load the CSV file
-csv_path = "../data/survey.csv"  # Relative path from Scripts/Subgroup_A/ to data/
-df = pd.read_csv(csv_path)
+
 
 # Calculate NPS
 def calculate_nps(recommend_series):
@@ -23,6 +40,7 @@ def calculate_nps(recommend_series):
 
 nps = calculate_nps(df['Would you recommend USS to others?'])
 print(f"Net Promoter Score: {nps:.1f}")
+#NPS is 48.6 
 
 # Analyse Rides & Attractions 
 # %%
@@ -51,4 +69,3 @@ def analyze_rides(df):# Ride wait times vs satisfaction
 
 # %%
 analyze_rides(df)
-
