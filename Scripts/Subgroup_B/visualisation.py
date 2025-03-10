@@ -5,4 +5,4 @@
 
 import pandas as pd
 uss_df = pd.read_csv('USS_Responses.csv')
-print(uss_df.head())
+print(uss_df.head()) # 55 columns
