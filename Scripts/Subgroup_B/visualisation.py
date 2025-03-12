@@ -4,5 +4,4 @@
 # But the average consensus on the wait times being worth it was a meh 3/5'
 
 import pandas as pd
-uss_df = pd.read_csv('USS_Responses.csv')
-print(uss_df.head()) # 55 columns
+import pybsts
