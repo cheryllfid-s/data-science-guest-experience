@@ -96,7 +96,7 @@ def analyze_food(df):
 
 analyze_food(df)
 
-# 3. Services Analysis
+# 3. Staff friendliness Analysis
 
 def analyze_staff(df):
     # Staff friendliness 
@@ -118,3 +118,5 @@ def analyze_staff(df):
     print(f"Correlation between staff rating and overall experience: {staff_corr:.2f}")
 
 analyze_staff(df)
+
+
