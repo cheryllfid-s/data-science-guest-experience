@@ -95,3 +95,11 @@ def analyze_food(df):
     plt.close()
 
 analyze_food(df)
+
+# 3. Services Analysis
+
+def analyze_staff(df):
+    # Staff friendliness 
+    plt.figure()
+    df['Were the park staff at USS friendly and helpful? Rate on a scale from 1-5.'].value_counts(
+        normalize=True).sort_index().plot(kind='bar')
