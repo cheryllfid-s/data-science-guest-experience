@@ -67,5 +67,31 @@ def analyze_rides(df):# Ride wait times vs satisfaction
     plt.savefig('top_rides.png')
     plt.show()
 
-# %%
 analyze_rides(df)
+
+
+# 2. Food and Beverages Analysis 
+
+def analyze_food(df):
+    # Food quality 
+    plt.figure()
+    df['How would you rate the food quality and service? '].value_counts(
+        normalize=True).sort_index().plot(kind='bar')
+    plt.title('Food Quality Ratings Distribution')
+    plt.ylabel('Percentage of Responses')
+    plt.gca().yaxis.set_major_formatter(PercentFormatter(1))
+    plt.tight_layout()
+    plt.savefig('food_quality_distribution.png')
+    plt.close()
+
+    # Food variety 
+    food_variety = df['Did you find a good variety of food options?  '].value_counts(normalize=True)
+    plt.figure()
+    food_variety.plot(kind='pie', autopct='%1.1f%%')
+    plt.title('Perception of Food Variety')
+    plt.ylabel('')
+    plt.tight_layout()
+    plt.savefig('food_variety.png')
+    plt.close()
+
+analyze_food(df)
