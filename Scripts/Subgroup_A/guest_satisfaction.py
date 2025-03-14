@@ -103,3 +103,18 @@ def analyze_staff(df):
     plt.figure()
     df['Were the park staff at USS friendly and helpful? Rate on a scale from 1-5.'].value_counts(
         normalize=True).sort_index().plot(kind='bar')
+    
+    plt.title('Staff Friendliness Ratings')
+    plt.xlabel('Rating (1-5)')
+    plt.ylabel('Percentage of Responses')
+    plt.gca().yaxis.set_major_formatter(PercentFormatter(1))
+    plt.tight_layout()
+    plt.savefig('staff_friendliness.png')
+    plt.close()
+
+    # Corr staff rating and overall experience
+    staff_corr = df[['Were the park staff at USS friendly and helpful? Rate on a scale from 1-5.',
+                    'On a scale of 1-5, how would you rate your overall experience at USS?']].corr().iloc[0,1]
+    print(f"Correlation between staff rating and overall experience: {staff_corr:.2f}")
+
+analyze_staff(df)
