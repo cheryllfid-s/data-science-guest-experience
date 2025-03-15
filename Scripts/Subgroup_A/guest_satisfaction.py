@@ -80,12 +80,12 @@ def analyze_food(df):
     plt.show(block=True)
 
     
-    if df['Did you find a good variety of food options?  '].dropna().empty:
+    if df[' Did you find a good variety of food options?  '].dropna().empty:
         print("No data for food variety!")
         return  # Exit if data is missing
 
     # Food variety 
-    food_variety = df['Did you find a good variety of food options?  '].value_counts(normalize=True)
+    food_variety = df[' Did you find a good variety of food options?  '].value_counts(normalize=True)
     plt.figure()
     food_variety.plot(kind='pie', autopct='%1.1f%%')
     plt.title('Perception of Food Variety')
@@ -101,8 +101,8 @@ analyze_food(df)
 # 3. Staff friendliness Analysis
 
 required_columns = [
-    'How would you rate the food quality and service? ',
-    'Did you find a good variety of food options?  ',
+    ' How would you rate the food quality and service?  ',
+    ' Did you find a good variety of food options?  ',
     'Were the park staff at USS friendly and helpful? Rate on a scale from 1-5.'
 ]
 
