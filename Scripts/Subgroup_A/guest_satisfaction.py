@@ -7,7 +7,6 @@ from matplotlib.ticker import PercentFormatter
 import matplotlib
 matplotlib.use('Qt5Agg')  
 import matplotlib.pyplot as plt
-plt.switch_backend('TkAgg')
 from pathlib import Path
 
 # Get the directory of the current script (guest_satisfaction.py)
@@ -24,11 +23,9 @@ print(f"File exists? {csv_path.exists()}")
 # Load the CSV
 df = pd.read_csv(csv_path)
 
-
 # Setting up visualization style
 sns.set(style="whitegrid")
 plt.rcParams['figure.figsize'] = (12, 6)
-
 
 
 # Calculate NPS
@@ -43,7 +40,7 @@ print(f"Net Promoter Score: {nps:.1f}")
 #NPS is 48.6 
 
 # Analyse Rides & Attractions 
-# %%
+
 def analyze_rides(df):# Ride wait times vs satisfaction
     plt.figure()
     sns.boxplot(x='How long did you wait in line for rides on average during your visit?',
@@ -69,20 +66,23 @@ def analyze_rides(df):# Ride wait times vs satisfaction
 
 analyze_rides(df)
 
-
 # 2. Food and Beverages Analysis 
-
 def analyze_food(df):
     # Food quality 
     plt.figure()
-    df['How would you rate the food quality and service? '].value_counts(
+    df[' How would you rate the food quality and service?  '].value_counts(  # No trailing space
         normalize=True).sort_index().plot(kind='bar')
     plt.title('Food Quality Ratings Distribution')
     plt.ylabel('Percentage of Responses')
     plt.gca().yaxis.set_major_formatter(PercentFormatter(1))
     plt.tight_layout()
     plt.savefig('food_quality_distribution.png')
-    plt.close()
+    plt.show(block=True)
+
+    
+    if df['Did you find a good variety of food options?  '].dropna().empty:
+        print("No data for food variety!")
+        return  # Exit if data is missing
 
     # Food variety 
     food_variety = df['Did you find a good variety of food options?  '].value_counts(normalize=True)
@@ -92,11 +92,23 @@ def analyze_food(df):
     plt.ylabel('')
     plt.tight_layout()
     plt.savefig('food_variety.png')
-    plt.close()
+    plt.show(block=True)
+    plt.pause(0.1)
+
 
 analyze_food(df)
 
 # 3. Staff friendliness Analysis
+
+required_columns = [
+    'How would you rate the food quality and service? ',
+    'Did you find a good variety of food options?  ',
+    'Were the park staff at USS friendly and helpful? Rate on a scale from 1-5.'
+]
+
+for col in required_columns:
+    if col not in df.columns:
+        print(f"Column '{col}' is missing or misspelled!")
 
 def analyze_staff(df):
     # Staff friendliness 
@@ -110,7 +122,8 @@ def analyze_staff(df):
     plt.gca().yaxis.set_major_formatter(PercentFormatter(1))
     plt.tight_layout()
     plt.savefig('staff_friendliness.png')
-    plt.close()
+    plt.show(block=True)
+    plt.pause(0.1)
 
     # Corr staff rating and overall experience
     staff_corr = df[['Were the park staff at USS friendly and helpful? Rate on a scale from 1-5.',
