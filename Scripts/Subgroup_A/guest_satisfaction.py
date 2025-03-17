@@ -143,3 +143,18 @@ def analyze_park_experience(df):
 #average satisfaction from visitors concerned about crowds: 3.7/5 => high
 
 analyze_park_experience(df)
+
+def analyze_pricing(df):
+    # Ticket price concerns
+    price_concern = df['What concerns did you have before deciding to visit USS?'].str.contains(
+        'Ticket pricing and affordability', na=False)
+    price_satisfaction = df[price_concern]['On a scale of 1-5, how would you rate your overall experience at USS?'].mean()
+    print(f"Average satisfaction from price-conscious visitors: {price_satisfaction:.2f}/5")
+
+    # Express pass analysis
+    express_pass_corr = df[['Did you purchase the Express Pass?',
+                           'On a scale of 1-5, how would you rate your overall experience at USS?']].apply(
+                               lambda x: x.astype('category').cat.codes).corr().iloc[0,1]
+    print(f"Correlation between Express Pass purchase and satisfaction: {express_pass_corr:.2f}")
+
+analyze_pricing(df)
