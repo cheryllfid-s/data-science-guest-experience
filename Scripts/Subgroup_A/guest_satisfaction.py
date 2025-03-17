@@ -171,8 +171,26 @@ def analyze_post_visit(df):
     plt.gca().yaxis.set_major_formatter(PercentFormatter(1))
     plt.tight_layout()
     plt.savefig('revisit_intention.png')
-    plt.close()
+    plt.show()
 
 analyze_post_visit(df)
 
 
+7. Correlation Heatmap
+rename_dict = {
+    'On a scale of 1-5, how would you rate your overall experience at USS?': 'USS Experience',
+    ' How would you rate the food quality and service?  ': 'Food',
+    'Were the park staff at USS friendly and helpful? Rate on a scale from 1-5.': 'Staff'
+}
+
+# Select the relevant columns and compute the correlation matrix
+corr_matrix = df[list(rename_dict.keys())].corr()
+
+# Rename columns
+corr_matrix.rename(index=rename_dict, columns=rename_dict, inplace=True)
+plt.figure(figsize=(6, 5))
+sns.heatmap(corr_matrix, annot=True, cmap='coolwarm')
+plt.title('Feature Correlation Matrix')
+plt.tight_layout()
+plt.savefig('correlation_heatmap.png')
+plt.show()
