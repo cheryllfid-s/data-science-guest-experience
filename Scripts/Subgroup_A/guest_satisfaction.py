@@ -176,7 +176,7 @@ def analyze_post_visit(df):
 analyze_post_visit(df)
 
 
-7. Correlation Heatmap
+#   7. Correlation Heatmap
 rename_dict = {
     'On a scale of 1-5, how would you rate your overall experience at USS?': 'USS Experience',
     ' How would you rate the food quality and service?  ': 'Food',
