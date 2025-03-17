@@ -158,3 +158,21 @@ def analyze_pricing(df):
     print(f"Correlation between Express Pass purchase and satisfaction: {express_pass_corr:.2f}")
 
 analyze_pricing(df)
+
+# 6. Post-Visit Sentiment Analysis
+def analyze_post_visit(df):
+    # Revisit intention
+    revisit_dist = df['Would you choose to revisit USS?'].value_counts(normalize=True)
+    plt.figure()
+    revisit_dist.plot(kind='bar')
+    plt.title('Revisit Intention')
+    plt.ylabel('Percentage of Respondents')
+    plt.xticks(rotation=45)
+    plt.gca().yaxis.set_major_formatter(PercentFormatter(1))
+    plt.tight_layout()
+    plt.savefig('revisit_intention.png')
+    plt.close()
+
+analyze_post_visit(df)
+
+
