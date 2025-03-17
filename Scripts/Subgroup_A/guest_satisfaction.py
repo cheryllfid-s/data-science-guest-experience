@@ -132,4 +132,14 @@ def analyze_staff(df):
 
 analyze_staff(df)
 
+# 4. Park Experience Analysis
+def analyze_park_experience(df):
+    # Crowd level concerns
+    crowd_concerns = df['What concerns did you have before deciding to visit USS?'].str.contains(
+        'Ride wait times and crowd levels', na=False)
+    crowd_satisfaction = df.loc[crowd_concerns, 'On a scale of 1-5, how would you rate your overall experience at USS?'].mean()
+    print(f"Average satisfaction from visitors concerned about crowds: {crowd_satisfaction:.2f}/5")
 
+#average satisfaction from visitors concerned about crowds: 3.7/5 => high
+
+analyze_park_experience(df)
