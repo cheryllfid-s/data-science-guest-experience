@@ -238,7 +238,5 @@ def correlation_analysis(df):
     plt.savefig('correlation_heatmap.png')
     plt.show()
 
-
-# Add this to your analysis flow
 print("\n=== Correlation Analysis ===")
 correlation_analysis(df)
