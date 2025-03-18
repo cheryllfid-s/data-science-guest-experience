@@ -176,21 +176,69 @@ def analyze_post_visit(df):
 analyze_post_visit(df)
 
 
-#   7. Correlation Heatmap
-rename_dict = {
-    'On a scale of 1-5, how would you rate your overall experience at USS?': 'USS Experience',
-    ' How would you rate the food quality and service?  ': 'Food',
-    'Were the park staff at USS friendly and helpful? Rate on a scale from 1-5.': 'Staff'
-}
+def correlation_analysis(df):
+    # Prepare data 
+    corr_df = df.copy()
+    
+    # Convert categorical features to numerical
+    wait_time_order = ['Less than 15 minutes', '15 to 30 minutes', 
+                      '31 to 45 minutes', '46 to 60 minutes',
+                      '61 to 90 minutes', 'More than 90 minutes']
+    corr_df['Wait Time Score'] = corr_df['How long did you wait in line for rides on average during your visit?']\
+        .map({k:v for v,k in enumerate(wait_time_order)})
+    
+    corr_df['Express Pass'] = corr_df['Did you purchase the Express Pass?'].map({'Yes': 1, 'No': 0})
+    
+    # Convert other categorical features
+    binary_map = {'Yes': 1, 'No': 0}
+    corr_df['Food Variety'] = corr_df[' Did you find a good variety of food options?  '].map(binary_map)
+    corr_df['Website Used'] = corr_df['Did you visit the USS website while planning your trip?'].map(binary_map)
+    
+    # Select relevant numerical columns
+    corr_columns = {
+        'On a scale of 1-5, how would you rate your overall experience at USS?': 'Overall Experience',
+        'Were the park staff at USS friendly and helpful? Rate on a scale from 1-5.': 'Staff Friendliness',
+        ' How would you rate the food quality and service?  ': 'Food Quality',
+        'How easy was it to find relevant information about USS online (ticket pricing, attractions, events, etc.)?': 'Info Accessibility',
+        ' Were the shows and performances engaging and enjoyable?  ': 'Show Quality',
+        'Wait Time Score': 'Wait Time',
+        'Express Pass': 'Express Pass',
+        'Food Variety': 'Food Variety',
+        'Website Used': 'Website Used'
+    }
 
-# Select the relevant columns and compute the correlation matrix
-corr_matrix = df[list(rename_dict.keys())].corr()
+    # Rename the columns in the DataFrame
+    corr_df.rename(columns=corr_columns, inplace=True)
+    
+    # Convert brand image with one-hot encoding
+    brand_dummies = pd.get_dummies(corr_df['How would you describe USS\' brand image before visiting?'], 
+                                  prefix='Brand')
+    corr_df = pd.concat([corr_df, brand_dummies], axis=1)
+    
+    # Select and rename numerical columns
+    corr_df = corr_df[list(corr_columns.values()) + list(brand_dummies.columns)]
+    
+    # Calculate correlations
+    corr_matrix = corr_df.corr()
+    
+    selected_columns = list(corr_columns.values())  
+    corr_subset = corr_matrix.loc[selected_columns, selected_columns]  # Extract relevant correlation sub-matrix
 
-# Rename columns
-corr_matrix.rename(index=rename_dict, columns=rename_dict, inplace=True)
-plt.figure(figsize=(6, 5))
-sns.heatmap(corr_matrix, annot=True, cmap='coolwarm')
-plt.title('Feature Correlation Matrix')
-plt.tight_layout()
-plt.savefig('correlation_heatmap.png')
-plt.show()
+    #9x9 correlation matrix
+    mask = np.triu(np.ones(corr_subset.shape, dtype=bool)) 
+
+    # Plot the heatmap
+    plt.figure(figsize=(14, 10))
+    sns.heatmap(corr_subset, annot=True, cmap='coolwarm', center=0,
+                annot_kws={'size': 9}, fmt=".2f", mask=mask)
+    plt.title('Correlation Matrix of Guest Experience Factors')
+    plt.xticks(rotation=45, ha='right')
+    plt.yticks(rotation=0)
+    plt.tight_layout()
+    plt.savefig('correlation_heatmap.png')
+    plt.show()
+
+
+# Add this to your analysis flow
+print("\n=== Correlation Analysis ===")
+correlation_analysis(df)
