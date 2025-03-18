@@ -70,7 +70,7 @@ def fetch_weather_data(start_date="2025-01-01", end_date="2025-03-31"):
     return df_weather
 
 # --- Dataset 2: Load USS Survey Data ---
-def load_uss_data(file_path="/Users/derr/Documents/DSA3101/Project/DSA3101 data-science-guest-experience/data-science-guest-experience/data/survey.csv"):
+def load_uss_data(file_path="survey.csv"):
     """Load USS survey data from specified CSV path."""
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"Survey file not found at {file_path}")
@@ -151,7 +151,7 @@ def simulate_guest_flow(env, num_guests, service_rate, wait_time_data, layout="s
     resource = simpy.Resource(env, capacity=1 if layout == "single_queue" else 2)
     for i in range(int(num_guests)):
         env.process(guest(env, f"Guest_{i}", resource))
-        yield env.timeout(np.random.exponential(0.1))
+        env.timeout(np.random.exponential(0.1)) # remove yield, not a generator func
 
     env.run(until=duration)
     avg_survey_wait = wait_time_data.mean() if not wait_time_data.isna().all() else 0
@@ -167,9 +167,9 @@ def optimize_layout(df, model):
     env = simpy.Environment()
     avg_demand = len(df) / df["date"].nunique()  # Proxy: avg visitors per day
 
-    wait_times_single = simulate_guest_flow(env, avg_demand, service_rate=5, wait_time_data=df["wait_time"], layout="single_queue", duration=1440)
+    wait_times_single = list(simulate_guest_flow(env, avg_demand, service_rate=5, wait_time_data=df["wait_time"], layout="single_queue", duration=1440))
     env = simpy.Environment()
-    wait_times_multi = simulate_guest_flow(env, avg_demand, service_rate=5, wait_time_data=df["wait_time"], layout="multi_queue", duration=1440)
+    wait_times_multi = list(simulate_guest_flow(env, avg_demand, service_rate=5, wait_time_data=df["wait_time"], layout="multi_queue", duration=1440))
 
     print(f"Single Queue - Avg Wait Time: {np.mean(wait_times_single):.2f} minutes")
     print(f"Multi Queue - Avg Wait Time: {np.mean(wait_times_multi):.2f} minutes")
@@ -185,7 +185,7 @@ def optimize_layout(df, model):
 
 # --- Main Execution ---
 if __name__ == "__main__":
-    survey_path = "/Users/derr/Documents/DSA3101/Project/DSA3101 data-science-guest-experience/data-science-guest-experience/data/survey.csv"
+    survey_path = "survey.csv"
     df_weather = fetch_weather_data()
     df_uss = load_uss_data(survey_path)
     df_merged = merge_datasets(df_weather, df_uss)
