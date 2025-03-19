@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import requests
+import random
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, r2_score
@@ -10,7 +11,7 @@ from datetime import datetime, timedelta
 import os
 
 # --- Load Survey Dataset ---
-def load_survey_data(file_path="/Users/derr/Documents/DSA3101/Project/DSA3101 data-science-guest-experience/data-science-guest-experience/Scripts/Subgroup_B/survey.csv"):
+def load_survey_data(file_path="survey.csv"):
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"{file_path} not found. Please provide the survey dataset.")
 
@@ -48,7 +49,7 @@ def load_survey_data(file_path="/Users/derr/Documents/DSA3101/Project/DSA3101 da
     return df
 
 # --- Fetch Weather Data ---
-def fetch_weather_data(df_survey, cache_file="/Users/derr/Documents/DSA3101/Project/DSA3101 data-science-guest-experience/data-science-guest-experience/Scripts/Subgroup_B/weather_data.csv"):
+def fetch_weather_data(df_survey, cache_file="weather_data.csv"):
     if os.path.exists(cache_file):
         df_weather = pd.read_csv(cache_file)
         rename_dict = {'DATE': 'date', 'TEMP': 'temperature', 'PRCP': 'rainfall', 'HUMID': 'humidity'}
@@ -143,50 +144,128 @@ def predict_demand(df):
     return model
 
 # --- Optimize Layouts ---
-def simulate_guest_flow(env, num_guests, service_rate, wait_time_data, layout="single_queue", duration=1440):
-    wait_times = []
+class ThemePark:
+    def __init__(self, env, attractions, layout="single_queue"):
+        self.env = env
+        self.layout = layout  
+        self.attractions = {name: simpy.Resource(env, capacity=(2 if layout == "single_queue" else 4)) for name in attractions.keys()}
+        self.wait_times = {name: [] for name in attractions.keys()}
+        self.guest_movements = []  # Track guest paths
 
-    def guest(env, name, resource):
+    def guest(self, env, name, attraction_name, service_rate):
+        """
+        Simulate guest visiting an attraction.
+        """
         arrival_time = env.now
-        with resource.request() as req:
-            yield req
+        with self.attractions[attraction_name].request() as req:
+            yield req  # Wait for availability
             wait_time = env.now - arrival_time
-            wait_times.append(wait_time)
-            yield env.timeout(np.random.exponential(1 / service_rate))
+            self.wait_times[attraction_name].append(wait_time)
+            
+            # Simulate ride duration based on service rate
+            K = 7
+            ride_duration = np.random.exponential(K / service_rate)
+            yield env.timeout(ride_duration)
 
-    resource = simpy.Resource(env, capacity=1 if layout == "single_queue" else 2)
-    for i in range(int(num_guests)):
-        env.process(guest(env, f"Guest_{i}", resource))
-        env.timeout(np.random.exponential(0.1))
+    def generate_guests(self, num_guests, arrival_rates):
+        """
+        Simulate guests arriving at different time periods (Morning, Afternoon, Evening).
+        
+        :param num_guests: Total guests for the day
+        :param arrival_rates: Dictionary mapping time periods to arrival rates
+        """
+        for period, (start, end, rate) in arrival_rates.items():
+            while self.env.now < end:
+                attraction_name = random.choice(list(self.attractions.keys()))
+                service_rate = 16 if self.layout == "multi_queue" else 4  # Multi-queue processes guests faster, especially for 3-4min rides
+                self.env.process(self.guest(self.env, f"Guest_{int(self.env.now)}", attraction_name, service_rate))
+                yield self.env.timeout(np.random.exponential(rate))
 
-    env.run(until=duration)
-    avg_survey_wait = wait_time_data.mean() if not wait_time_data.isna().all() else 0
-    print(f"Simulation Adjusted with Survey Avg Wait Time: {avg_survey_wait:.2f} minutes")
-    return wait_times
-
-def optimize_layout(df, model):
-    if df.empty or model is None:
-        print("Cannot optimize layout: Dataset is empty or model is not trained.")
-        return
-
+# --- Run Simulation for Different Attraction Layouts and Peak Hours ---
+def run_simulation(num_guests, attractions, layout):
+    """
+    Execute the Theme Park Simulation with different layouts and peak hours.
+    
+    :param num_guests: Total guests for the day
+    :param attractions: Dictionary with attraction capacities
+    :param layout: "single_queue" or "multi_queue"
+    :return: Average wait times per attraction
+    """
     env = simpy.Environment()
-    avg_demand = len(df) / df["Timestamp"].nunique()
+    park = ThemePark(env, attractions, layout)
 
-    wait_times_single = list(simulate_guest_flow(env, avg_demand, service_rate=5, wait_time_data=df["Wait_Time"], layout="single_queue", duration=1440))
-    env = simpy.Environment()
-    wait_times_multi = list(simulate_guest_flow(env, avg_demand, service_rate=5, wait_time_data=df["Wait_Time"], layout="multi_queue", duration=1440))
+    # Peak hour arrival rates
+    arrival_rates = {
+        "Morning": (0, 120, 1),   # Guests arrive every 3 mins (low traffic) 10am-12pm
+        "Afternoon": (120,420, 0.5),  # Guests arrive every 1 min (high traffic) 12pm-5pm
+        "Evening": (420, 540, 3)  # Guests arrive every 2 mins (moderate traffic) 5pm - 7pm
+    }
 
-    print(f"Single Queue - Avg Wait Time: {np.mean(wait_times_single):.2f} minutes")
-    print(f"Multi Queue - Avg Wait Time: {np.mean(wait_times_multi):.2f} minutes")
+    env.process(park.generate_guests(num_guests, arrival_rates))
+    env.run(until=540)  # Simulate 9 hours
 
-    plt.figure(figsize=(10, 6))
-    plt.hist(wait_times_single, bins=20, alpha=0.5, label="Single Queue")
-    plt.hist(wait_times_multi, bins=20, alpha=0.5, label="Multi Queue")
-    plt.xlabel("Wait Time (minutes)")
-    plt.ylabel("Frequency")
-    plt.title("Wait Time Distribution by Layout")
-    plt.legend()
-    plt.show()
+    avg_wait_times = {name: (np.mean(times) if times else 0) for name, times in park.wait_times.items()}
+    return avg_wait_times
+
+# --- Define Attraction Layouts ---
+attractions_layout_1 = {"Revenge of the Mummy": 2, "CYLON": 3, "Transformers": 1}  # Single Queue Layout
+attractions_layout_2 = {"Revenge of the Mummy": 4, "CYLON": 5, "Transformers": 2}  # Multi Queue Layout
+
+# Define attractions with their (x, y) coordinates
+attractions_map = {
+    "Revenge of the Mummy": (3, 5),  # Ancient Egypt zone
+    "Battlestar Galactica: CYLON": (5, 3),  # Sci-Fi City zone
+    "Transformers: The Ride": (6, 4),  # Sci-Fi City, near Battlestar Galactica
+    "Puss In Boots' Giant Journey": (2, 6),  # Far Far Away zone
+    "Sesame Street Spaghetti Space Chase": (4, 2)  # New York zone
+}
+
+def walking_time(attraction_1, attraction_2):
+    """
+    Calculate walking time between two attractions based on distance.
+    """
+    x1, y1 = attractions_map[attraction_1]
+    x2, y2 = attractions_map[attraction_2]
+    distance = np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+    return distance * 0.5  # Assume 0.5 minutes per unit distance
+
+def compare_layouts():
+    """
+    Run simulations for two different attraction layouts and compare results.
+    """
+    env1 = simpy.Environment()
+    env2 = simpy.Environment()
+
+    # Layout 1 (Current setup)
+    park1 = ThemePark(env1, attractions_map, layout="multi_queue")
+    for i in range(13000):  # Simulating 15000 guests
+        attraction_name = random.choice(list(park1.attractions.keys()))  
+        service_rate = 4 if park1.layout == "single_queue" else 16
+        env1.process(park1.guest(env1, f"Guest_{i}", attraction_name, service_rate))
+    env1.run(until=540)
+
+    # Layout 2 (Modified)
+    attractions_map["Revenge of the Mummy"] = (4,2)  # Exchange RoTM and Sesame Street
+    attractions_map["Sesame Street Spaghetti Space Chase"] = (3,5) # Exchange RoTM and Sesame Street
+    park2 = ThemePark(env2, attractions_map, layout="multi_queue") # Also implement multi-queue
+    for i in range(13000):
+        attraction_name = random.choice(list(park2.attractions.keys()))  # Pick a random attraction
+        service_rate = 4 if park2.layout == "single_queue" else 16  # Assign service rate
+        env2.process(park2.guest(env2, f"Guest_{i}", attraction_name, service_rate))
+    env2.run(until=540)
+
+    # Compare Wait Times
+    avg_wait_times_1 = {name: np.mean(times) if times else 0 for name, times in park1.wait_times.items()}
+    avg_wait_times_2 = {name: np.mean(times) if times else 0 for name, times in park2.wait_times.items()}
+
+    print("\n Current USS Layout - Average Wait Times:")
+    for attraction, time in avg_wait_times_1.items():
+        print(f"{attraction}: {time:.2f} min")
+
+    print("\n Modified USS Layout - Average Wait Times:")
+    for attraction, time in avg_wait_times_2.items():
+        print(f"{attraction}: {time:.2f} min")
+
 
 # --- Main Execution ---
 if __name__ == "__main__":
@@ -201,4 +280,25 @@ if __name__ == "__main__":
 
     # Run prediction and optimization
     demand_model = predict_demand(df_merged)
-    optimize_layout(df_merged, demand_model)
+    # --- Run Simulations ---
+    single_queue_wait_times = run_simulation(13000, attractions_layout_2, "single_queue")
+    multi_queue_wait_times = run_simulation(13000, attractions_layout_2, "multi_queue") 
+    # --- Display Results ---
+    print("\n🟢 Single Queue Layout (1 guest per ride cycle) - Average Wait Times (minutes):")
+    for attraction, wait_time in single_queue_wait_times.items():
+        print(f" - {attraction}: {wait_time:.2f} min")
+
+    print("\n🔵 Multi Queue Layout (Several guests per ride cycle) - Average Wait Times (minutes):")
+    for attraction, wait_time in multi_queue_wait_times.items():
+        print(f" - {attraction}: {wait_time:.2f} min")
+
+    compare_layouts()
+    # --- Visualization ---
+    plt.figure(figsize=(10, 6))
+    plt.bar(single_queue_wait_times.keys(), single_queue_wait_times.values(), alpha=0.6, label="Single Queue")
+    plt.bar(multi_queue_wait_times.keys(), multi_queue_wait_times.values(), alpha=0.6, label="Multi Queue")
+    plt.xlabel("Attractions")
+    plt.ylabel("Average Wait Time (minutes)")
+    plt.title("Comparison of Wait Times by Attraction Layout")
+    plt.legend()
+    plt.show()
