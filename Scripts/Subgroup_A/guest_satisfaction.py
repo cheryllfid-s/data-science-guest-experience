@@ -220,6 +220,18 @@ def correlation_analysis(df):
     
     # Calculate correlations
     corr_matrix = corr_df.corr()
+
+    # Extract relevant correlation sub-matrix
+    selected_columns = list(corr_columns.values())  
+    corr_subset = corr_matrix.loc[selected_columns, selected_columns]  
+
+    # List top correlation values (excluding self-correlations)
+    corr_pairs = corr_subset.unstack()
+    corr_pairs = corr_pairs[corr_pairs.index.get_level_values(0) != corr_pairs.index.get_level_values(1)]
+    sorted_corr = corr_pairs.abs().sort_values(ascending=False)
+
+    print("\n=== Top 10 Correlation Pairs ===")
+    print(sorted_corr.head(10))  
     
     selected_columns = list(corr_columns.values())  
     corr_subset = corr_matrix.loc[selected_columns, selected_columns]  # Extract relevant correlation sub-matrix
