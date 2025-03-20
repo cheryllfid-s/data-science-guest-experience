@@ -151,10 +151,11 @@ def predict_demand(df):
 
 # --- Optimize Layouts ---
 class ThemePark:
-    def __init__(self, env, attractions, use_right_entrance=True):
+    def __init__(self, env, attractions, layout="single_queue", use_right_entrance=True):
         self.env = env
+        self.layout = layout
         self.use_right_entrance = use_right_entrance  # Control entry points
-        self.attractions = {name: simpy.Resource(env, capacity=4) for name in attractions.keys()}  # Multi-queue only
+        self.attractions = {name: simpy.Resource(env, capacity=(2 if layout == "single_queue" else 4)) for name in attractions.keys()}
         self.wait_times = {name: [] for name in attractions.keys()}
         self.total_times = []  # Track total experience time per guest
         self.visit_counts = {name: 0 for name in attractions.keys()}  # Track visits to each attraction
@@ -183,7 +184,7 @@ class ThemePark:
                 wait_time = env.now - arrival_time
                 self.wait_times[attraction_name].append(wait_time)
                 self.visit_counts[attraction_name] += 1  # Increment visit count
-                service_rate = 6  # Adjusted for realistic wait times (multi-queue only)
+                service_rate = 4 if self.layout == "single_queue" else 6  # Adjusted for realistic wait times
                 ride_duration = np.random.exponential(7 / service_rate)
                 yield env.timeout(ride_duration)
             current_pos = attractions_map[attraction_name]
@@ -198,10 +199,10 @@ class ThemePark:
                 yield self.env.timeout(np.random.exponential(rate))
 
 # --- Run Simulation ---
-def run_simulation(num_guests, attractions, use_right_entrance=True):
+def run_simulation(num_guests, attractions, layout, use_right_entrance=True):
     """Execute the simulation for a given layout."""
     env = simpy.Environment()
-    park = ThemePark(env, attractions, use_right_entrance)
+    park = ThemePark(env, attractions, layout, use_right_entrance)
     arrival_rates = {
         "Morning": (0, 120, 0.5),    # μ = 0.5 min
         "Afternoon": (120, 420, 0.1667),  # μ = 0.1667 min (high traffic)
@@ -211,6 +212,18 @@ def run_simulation(num_guests, attractions, use_right_entrance=True):
     env.run(until=540)  # 9 hours
     avg_wait_times = {name: np.mean(times) if times else 0 for name, times in park.wait_times.items()}
     return avg_wait_times, park.visit_counts, park.total_times
+
+# --- Define Attraction Layouts ---
+attractions_layout_1 = {
+    "Revenge of the Mummy": 2,
+    "Battlestar Galactica: CYLON": 3,
+    "Transformers: The Ride": 1
+}  # Single Queue
+attractions_layout_2 = {
+    "Revenge of the Mummy": 4,
+    "Battlestar Galactica: CYLON": 5,
+    "Transformers: The Ride": 2
+}  # Multi Queue
 
 # Define attractions with coordinates
 attractions_map = {
@@ -232,7 +245,7 @@ def walking_time(attraction_1, attraction_2):
     return distance * 0.5  # 0.5 min/unit
 
 def compare_layouts():
-    """Compare current vs. modified park layouts."""
+    """Compare current vs. modified park layouts for both single and multi-queue."""
     # Reset attractions_map to original coordinates
     attractions_map.update({
         "Revenge of the Mummy": (3, 5),
@@ -250,40 +263,76 @@ def compare_layouts():
     }
 
     # Current Layout: Two entrances (left and right)
-    env1 = simpy.Environment()
-    park1 = ThemePark(env1, attractions_map, use_right_entrance=True)
-    env1.process(park1.generate_guests(13000, arrival_rates))
-    env1.run(until=540)
+    # Single Queue
+    env1_single = simpy.Environment()
+    park1_single = ThemePark(env1_single, attractions_map, layout="single_queue", use_right_entrance=True)
+    env1_single.process(park1_single.generate_guests(13000, arrival_rates))
+    env1_single.run(until=540)
+
+    # Multi Queue
+    env1_multi = simpy.Environment()
+    park1_multi = ThemePark(env1_multi, attractions_map, layout="multi_queue", use_right_entrance=True)
+    env1_multi.process(park1_multi.generate_guests(13000, arrival_rates))
+    env1_multi.run(until=540)
 
     # Modified Layout: Single left entrance, swap Transformers and CYLON
     attractions_map["Transformers: The Ride"] = (5, 3)  # Swap with CYLON
     attractions_map["Battlestar Galactica: CYLON"] = (6, 4)  # Move to the right
-    env2 = simpy.Environment()
-    park2 = ThemePark(env2, attractions_map, use_right_entrance=False)  # Only left entrance
-    env2.process(park2.generate_guests(13000, arrival_rates))
-    env2.run(until=540)
+    # Single Queue
+    env2_single = simpy.Environment()
+    park2_single = ThemePark(env2_single, attractions_map, layout="single_queue", use_right_entrance=False)
+    env2_single.process(park2_single.generate_guests(13000, arrival_rates))
+    env2_single.run(until=540)
+
+    # Multi Queue
+    env2_multi = simpy.Environment()
+    park2_multi = ThemePark(env2_multi, attractions_map, layout="multi_queue", use_right_entrance=False)
+    env2_multi.process(park2_multi.generate_guests(13000, arrival_rates))
+    env2_multi.run(until=540)
 
     # Compute metrics
-    avg_wait_times_1 = {name: np.mean(times) if times else 0 for name, times in park1.wait_times.items()}
-    avg_total_time_1 = np.mean(park1.total_times) if park1.total_times else 0
-    visit_counts_1 = park1.visit_counts
+    # Current Layout
+    avg_wait_times_1_single = {name: np.mean(times) if times else 0 for name, times in park1_single.wait_times.items()}
+    avg_total_time_1_single = np.mean(park1_single.total_times) if park1_single.total_times else 0
+    visit_counts_1_single = park1_single.visit_counts
 
-    avg_wait_times_2 = {name: np.mean(times) if times else 0 for name, times in park2.wait_times.items()}
-    avg_total_time_2 = np.mean(park2.total_times) if park2.total_times else 0
-    visit_counts_2 = park2.visit_counts
+    avg_wait_times_1_multi = {name: np.mean(times) if times else 0 for name, times in park1_multi.wait_times.items()}
+    avg_total_time_1_multi = np.mean(park1_multi.total_times) if park1_multi.total_times else 0
+    visit_counts_1_multi = park1_multi.visit_counts
+
+    # Modified Layout
+    avg_wait_times_2_single = {name: np.mean(times) if times else 0 for name, times in park2_single.wait_times.items()}
+    avg_total_time_2_single = np.mean(park2_single.total_times) if park2_single.total_times else 0
+    visit_counts_2_single = park2_single.visit_counts
+
+    avg_wait_times_2_multi = {name: np.mean(times) if times else 0 for name, times in park2_multi.wait_times.items()}
+    avg_total_time_2_multi = np.mean(park2_multi.total_times) if park2_multi.total_times else 0
+    visit_counts_2_multi = park2_multi.visit_counts
 
     # Print results
-    print("\nCurrent USS Layout (Two Entrances) - Average Wait Times:")
-    for attraction, time in avg_wait_times_1.items():
+    print("\nCurrent USS Layout (Two Entrances) - Single Queue:")
+    for attraction, time in avg_wait_times_1_single.items():
         print(f"{attraction}: {time:.2f} min")
-    print(f"Average Total Time (Wait + Walk): {avg_total_time_1:.2f} min")
-    print("Visit Counts:", visit_counts_1)
+    print(f"Average Total Time (Wait + Walk): {avg_total_time_1_single:.2f} min")
+    print("Visit Counts:", visit_counts_1_single)
 
-    print("\nModified USS Layout (Left Entrance Only, Swapped Transformers and CYLON) - Average Wait Times:")
-    for attraction, time in avg_wait_times_2.items():
+    print("\nCurrent USS Layout (Two Entrances) - Multi Queue:")
+    for attraction, time in avg_wait_times_1_multi.items():
         print(f"{attraction}: {time:.2f} min")
-    print(f"Average Total Time (Wait + Walk): {avg_total_time_2:.2f} min")
-    print("Visit Counts:", visit_counts_2)
+    print(f"Average Total Time (Wait + Walk): {avg_total_time_1_multi:.2f} min")
+    print("Visit Counts:", visit_counts_1_multi)
+
+    print("\nModified USS Layout (Left Entrance Only, Swapped Transformers and CYLON) - Single Queue:")
+    for attraction, time in avg_wait_times_2_single.items():
+        print(f"{attraction}: {time:.2f} min")
+    print(f"Average Total Time (Wait + Walk): {avg_total_time_2_single:.2f} min")
+    print("Visit Counts:", visit_counts_2_single)
+
+    print("\nModified USS Layout (Left Entrance Only, Swapped Transformers and CYLON) - Multi Queue:")
+    for attraction, time in avg_wait_times_2_multi.items():
+        print(f"{attraction}: {time:.2f} min")
+    print(f"Average Total Time (Wait + Walk): {avg_total_time_2_multi:.2f} min")
+    print("Visit Counts:", visit_counts_2_multi)
 
     # Justification
     print("\nJustification for Modified Layout:")
@@ -305,24 +354,32 @@ if __name__ == "__main__":
     # Run prediction
     demand_model = predict_demand(df_merged)
 
-    # Run simulation for multi-queue only
-    wait_times, visit_counts, total_times = run_simulation(13000, attractions_map, use_right_entrance=True)
+    # Run simulations for single and multi-queue
+    single_queue_wait_times, single_queue_visits, single_queue_total_times = run_simulation(13000, attractions_map, "single_queue", use_right_entrance=True)
+    multi_queue_wait_times, multi_queue_visits, multi_queue_total_times = run_simulation(13000, attractions_map, "multi_queue", use_right_entrance=True)
 
     # Display baseline results
-    print("\nBaseline Multi-Queue Layout - Average Wait Times (minutes):")
-    for attraction, wait_time in wait_times.items():
+    print("\nBaseline Single-Queue Layout - Average Wait Times (minutes):")
+    for attraction, wait_time in single_queue_wait_times.items():
         print(f" - {attraction}: {wait_time:.2f} min")
-    print("Visit Counts:", visit_counts)
-    print(f"Average Total Time (Wait + Walk): {np.mean(total_times):.2f} min")
+    print("Visit Counts:", single_queue_visits)
+    print(f"Average Total Time (Wait + Walk): {np.mean(single_queue_total_times):.2f} min")
+
+    print("\nBaseline Multi-Queue Layout - Average Wait Times (minutes):")
+    for attraction, wait_time in multi_queue_wait_times.items():
+        print(f" - {attraction}: {wait_time:.2f} min")
+    print("Visit Counts:", multi_queue_visits)
+    print(f"Average Total Time (Wait + Walk): {np.mean(multi_queue_total_times):.2f} min")
 
     # Compare layouts
     compare_layouts()
 
     # Visualization
     plt.figure(figsize=(10, 6))
-    plt.bar(wait_times.keys(), wait_times.values(), alpha=0.6, label="Baseline Multi-Queue")
+    plt.bar(single_queue_wait_times.keys(), single_queue_wait_times.values(), alpha=0.6, label="Single Queue")
+    plt.bar(multi_queue_wait_times.keys(), multi_queue_wait_times.values(), alpha=0.6, label="Multi Queue")
     plt.xlabel("Attractions")
     plt.ylabel("Average Wait Time (minutes)")
-    plt.title("Baseline Wait Times (Multi-Queue)")
+    plt.title("Comparison of Wait Times: Single vs. Multi-Queue (Baseline Layout)")
     plt.legend()
     plt.show()
