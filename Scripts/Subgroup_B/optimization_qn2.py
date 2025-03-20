@@ -284,11 +284,11 @@ if __name__ == "__main__":
     single_queue_wait_times = run_simulation(13000, attractions_layout_2, "single_queue")
     multi_queue_wait_times = run_simulation(13000, attractions_layout_2, "multi_queue") 
     # --- Display Results ---
-    print("\n🟢 Single Queue Layout (1 guest per ride cycle) - Average Wait Times (minutes):")
+    #print("\n🟢 Single Queue Layout (1 guest per ride cycle) - Average Wait Times (minutes):")
     for attraction, wait_time in single_queue_wait_times.items():
         print(f" - {attraction}: {wait_time:.2f} min")
 
-    print("\n🔵 Multi Queue Layout (Several guests per ride cycle) - Average Wait Times (minutes):")
+    # print("\n🔵 Multi Queue Layout (Several guests per ride cycle) - Average Wait Times (minutes):")
     for attraction, wait_time in multi_queue_wait_times.items():
         print(f" - {attraction}: {wait_time:.2f} min")
 
