@@ -8,6 +8,8 @@ import matplotlib
 matplotlib.use('Qt5Agg')  
 import matplotlib.pyplot as plt
 from pathlib import Path
+from textblob import TextBlob
+
 
 # Get the directory of the current script (guest_satisfaction.py)
 script_dir = Path(__file__).parent
@@ -175,6 +177,50 @@ def analyze_post_visit(df):
 
 analyze_post_visit(df)
 
+# 7. Sentiment Analysis Visualization
+
+# new column name 
+WEBSITE_FEEDBACK_COL = 'What feedback/suggestions would you like to provide for USS website/app?'
+IMPROVEMENTS_COL = 'What changes or improvements would make your next visit better?  ' 
+
+def get_sentiment(text):
+    if pd.isna(text) or str(text).strip() in ['', 'NIL', 'Nil', 'NA']:
+        return 0  # Neutral for empty/missing values
+    analysis = TextBlob(str(text))
+    return analysis.sentiment.polarity
+
+# Apply sentiment analysis 
+df['Website_App_Sentiment'] = df[WEBSITE_FEEDBACK_COL].apply(get_sentiment)
+df['Improvements_Sentiment'] = df[IMPROVEMENTS_COL].apply(get_sentiment)
+
+def analyze_sentiment(df):
+    # Plot sentiment distribution for website/app feedback
+    plt.figure()
+    sns.histplot(df['Website_App_Sentiment'], bins=np.arange(-1, 1.1, 0.1), kde=True)
+    plt.title('Sentiment Distribution for Website/App Feedback')
+    plt.xlabel('Sentiment Polarity (-1 to 1)')
+    plt.xlim(-1, 1)
+    plt.tight_layout()
+    plt.savefig('website_app_feedback_sentiment.png')
+    plt.show()
+
+    # Plot for improvement suggestions
+    plt.figure()
+    sns.histplot(df['Improvements_Sentiment'], bins=np.arange(-1, 1.1, 0.1), kde=True)
+    plt.title('Sentiment Distribution for Improvement Suggestions')
+    plt.xlabel('Sentiment Polarity (-1 to 1)')
+    plt.xlim(-1, 1)
+    plt.tight_layout()
+    plt.savefig('improvement_suggestions_sentiment.png')
+    plt.show()
+
+    # Calculate correlation with overall experience
+    sentiment_corr = df[['Website_App_Sentiment', 'Improvements_Sentiment',
+                        'On a scale of 1-5, how would you rate your overall experience at USS?']].corr()
+    print("\n=== Sentiment Correlation ===")
+    print(sentiment_corr)
+
+analyze_sentiment(df)
 
 def correlation_analysis(df):
     # Prepare data 
@@ -204,7 +250,9 @@ def correlation_analysis(df):
         'Wait Time Score': 'Wait Time',
         'Express Pass': 'Express Pass',
         'Food Variety': 'Food Variety',
-        'Website Used': 'Website Used'
+        'Website Used': 'Website Used',
+        'Website_App_Sentiment': 'Website/App Sentiment',
+        'Improvements_Sentiment': 'Improvement Sentiment'
     }
 
     # Rename the columns in the DataFrame
