@@ -184,7 +184,7 @@ class ThemePark:
                 wait_time = env.now - arrival_time
                 self.wait_times[attraction_name].append(wait_time)
                 self.visit_counts[attraction_name] += 1  # Increment visit count
-                service_rate = 4 if self.layout == "single_queue" else 6  # Adjusted for realistic wait times
+                service_rate = 16 if self.layout == "single_queue" else 4  # Adjusted for realistic wait times
                 ride_duration = np.random.exponential(7 / service_rate)
                 yield env.timeout(ride_duration)
             current_pos = attractions_map[attraction_name]
@@ -257,9 +257,9 @@ def compare_layouts():
 
     # Realistic arrival rates
     arrival_rates = {
-        "Morning": (0, 120, 0.5),
-        "Afternoon": (120, 420, 0.1667),
-        "Evening": (420, 540, 0.25)
+        "Morning": (0, 120, 0.5),    # μ = 0.5 min
+        "Afternoon": (120, 420, 0.1667),  # μ = 0.1667 min (high traffic)
+        "Evening": (420, 540, 0.25)  # μ = 0.25 min
     }
 
     # Current Layout: Two entrances (left and right)
@@ -310,11 +310,11 @@ def compare_layouts():
     visit_counts_2_multi = park2_multi.visit_counts
 
     # Print results
-    print("\nCurrent USS Layout (Two Entrances) - Single Queue:")
-    for attraction, time in avg_wait_times_1_single.items():
-        print(f"{attraction}: {time:.2f} min")
-    print(f"Average Total Time (Wait + Walk): {avg_total_time_1_single:.2f} min")
-    print("Visit Counts:", visit_counts_1_single)
+    # print("\nCurrent USS Layout (Two Entrances) - Single Queue:")
+    # for attraction, time in avg_wait_times_1_single.items():
+    #     print(f"{attraction}: {time:.2f} min")
+    # print(f"Average Total Time (Wait + Walk): {avg_total_time_1_single:.2f} min")
+    # print("Visit Counts:", visit_counts_1_single)
 
     print("\nCurrent USS Layout (Two Entrances) - Multi Queue:")
     for attraction, time in avg_wait_times_1_multi.items():
@@ -322,11 +322,11 @@ def compare_layouts():
     print(f"Average Total Time (Wait + Walk): {avg_total_time_1_multi:.2f} min")
     print("Visit Counts:", visit_counts_1_multi)
 
-    print("\nModified USS Layout (Left Entrance Only, Swapped Transformers and CYLON) - Single Queue:")
-    for attraction, time in avg_wait_times_2_single.items():
-        print(f"{attraction}: {time:.2f} min")
-    print(f"Average Total Time (Wait + Walk): {avg_total_time_2_single:.2f} min")
-    print("Visit Counts:", visit_counts_2_single)
+    # print("\nModified USS Layout (Left Entrance Only, Swapped Transformers and CYLON) - Single Queue:")
+    # for attraction, time in avg_wait_times_2_single.items():
+    #     print(f"{attraction}: {time:.2f} min")
+    # print(f"Average Total Time (Wait + Walk): {avg_total_time_2_single:.2f} min")
+    # print("Visit Counts:", visit_counts_2_single)
 
     print("\nModified USS Layout (Left Entrance Only, Swapped Transformers and CYLON) - Multi Queue:")
     for attraction, time in avg_wait_times_2_multi.items():

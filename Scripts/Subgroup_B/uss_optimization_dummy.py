@@ -28,7 +28,7 @@ def fetch_weather_data(start_date="2025-01-01", end_date="2025-03-31"):
     return df_weather
 
 # --- Dataset 2: Load USS Survey Data ---
-def load_uss_data(file_path="/Users/derr/Documents/DSA3101/Project/DSA3101 data-science-guest-experience/data-science-guest-experience/data/survey.csv"):
+def load_uss_data(file_path="survey.csv"):
     """Load USS survey data from specified CSV path."""
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"Survey file not found at {file_path}")
@@ -148,7 +148,7 @@ def optimize_layout(df, model):
 
 # --- Main Execution ---
 if __name__ == "__main__":
-    survey_path = "/Users/derr/Documents/DSA3101/Project/DSA3101 data-science-guest-experience/data-science-guest-experience/data/survey.csv"
+    survey_path = "survey.csv"
     df_weather = fetch_weather_data()
     df_uss = load_uss_data(survey_path)
     df_merged = merge_datasets(df_weather, df_uss)
