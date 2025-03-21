@@ -1,92 +1,71 @@
 import pandas as pd
 import numpy as np
-import requests
 from ctgan import CTGAN
-import os
+from datetime import datetime, timedelta
 
-# --- Synthetic Data Generation ---
-def generate_synthetic_data(n_samples=1000, output_file="synthetic_theme_park_data.csv"):
-    if os.path.exists(output_file):
-        return pd.read_csv(output_file)
+np.random.seed(42)
+n_samples = 5000  # Increased to ensure better coverage
 
-    np.random.seed(42)
-    data = pd.DataFrame({
-        'Visitor_ID': np.arange(1, n_samples + 1),
-        'Step_Count': np.random.normal(loc=12000, scale=3000, size=n_samples).astype(int),
-        'Transaction_Amount': np.abs(np.random.normal(loc=125, scale=30, size=n_samples)).round(2),
-        'Check_In_Time': np.random.uniform(9, 13, size=n_samples).round(2),
-        'Check_Out_Time': np.random.uniform(17, 22, size=n_samples).round(2),
-        'Loyalty_Member': np.random.choice(['Yes', 'No'], size=n_samples, p=[0.3, 0.7]),
-        'Weather_Condition': np.random.choice(['Sunny', 'Cloudy', 'Rainy'], size=n_samples, p=[0.6, 0.3, 0.1]),
-        'Age': np.random.normal(loc=35, scale=10, size=n_samples).astype(int),
-        'Gender': np.random.choice(['Male', 'Female'], size=n_samples, p=[0.5, 0.5]),
-        'Guest_Satisfaction_Score': np.random.uniform(1, 5, size=n_samples).round(1),
-        'Wait_Time': np.random.normal(loc=30, scale=10, size=n_samples).astype(int)
-    })
-    discrete_columns = ['Loyalty_Member', 'Weather_Condition', 'Gender']
-    model = CTGAN(epochs=500)
-    model.fit(data, discrete_columns=discrete_columns)
-    synthetic_data = model.sample(n_samples)
-    synthetic_data['Timestamp'] = pd.date_range(start="2025-01-01", periods=n_samples, freq="h").date
-    synthetic_data.to_csv(output_file, index=False)
-    print("Synthetic Data - First 5 records:\n", synthetic_data.head())
-    return synthetic_data
+# Define valid attractions (same as in uss_optimization.py)
+valid_attractions = [
+    "Revenge of the Mummy",
+    "Battlestar Galactica: CYLON",
+    "Transformers: The Ride",
+    "Puss In Boots' Giant Journey",
+    "Sesame Street Spaghetti Space Chase"
+]
 
-# --- Load Weather Data ---
-def fetch_weather_data(df_synthetic, cache_file="weather_data.csv"):
-    if os.path.exists(cache_file):
-        df_weather = pd.read_csv(cache_file)
-        # Check if 'date' exists, otherwise try 'DATE' or raise an error
-        if 'date' not in df_weather.columns and 'DATE' in df_weather.columns:
-            df_weather = df_weather.rename(columns={'DATE': 'date'})
-        elif 'date' not in df_weather.columns:
-            raise KeyError("Cached weather_data.csv does not contain a 'date' or 'DATE' column.")
-        df_weather["date"] = pd.to_datetime(df_weather["date"]).dt.date
-        return df_weather
+# Generate timestamps that align with survey data (2025-02-15 to 2025-03-03)
+start_date = datetime(2025, 2, 15)
+end_date = datetime(2025, 3, 3)
+date_range = (end_date - start_date).days
+timestamps = [start_date + timedelta(days=np.random.randint(0, date_range)) for _ in range(n_samples)]
 
-    survey_dates = pd.to_datetime(df_synthetic["Timestamp"]).dt.date.unique()
-    endpoints = {
-        "temperature": "https://api.data.gov.sg/v1/environment/air-temperature",
-        "rainfall": "https://api.data.gov.sg/v1/environment/rainfall",
-        "humidity": "https://api.data.gov.sg/v1/environment/relative-humidity"
-    }
-    weather_data = {"date": [], "temperature": [], "rainfall": [], "humidity": []}
+# Convert timestamps to Unix timestamps (numerical) for CTGAN
+timestamps_unix = [(t - datetime(1970, 1, 1)).total_seconds() for t in timestamps]
 
-    for date in survey_dates:
-        proxy_date = date.replace(year=2024)
-        date_str = proxy_date.strftime("%Y-%m-%d")
-        daily_data = {"temperature": [], "rainfall": [], "humidity": []}
+# Generate synthetic IoT data
+data = pd.DataFrame({
+    'Timestamp': timestamps_unix,  # Numerical representation for CTGAN
+    'Attraction': np.random.choice(valid_attractions, size=n_samples),
+    'Queue_Length': np.random.normal(loc=50, scale=15, size=n_samples).astype(int).clip(min=0),  # Average queue length ~50 people
+    'Ride_Throughput': np.random.normal(loc=30, scale=5, size=n_samples).astype(int).clip(min=10),  # Throughput ~30 guests/hour
+    'Visitor_Count': np.random.poisson(lam=10, size=n_samples),  # Reduced to 10 visitors per row
+    'Visitor_ID': np.arange(1, n_samples + 1),
+    'Step_Count': np.random.normal(loc=12000, scale=3000, size=n_samples).astype(int),
+    'Transaction_Amount': np.random.normal(loc=125, scale=30, size=n_samples).round(2),
+    'Check_In_Time': np.random.uniform(9, 13, n_samples).round(2),  # Check-in between 9 AM - 1 PM
+    'Check_Out_Time': np.random.uniform(17, 22, n_samples).round(2),  # Check-out between 5 PM - 10 PM
+    'Loyalty_Member': np.random.choice(['Yes', 'No'], size=n_samples, p=[0.3, 0.7]),  # 30% are members
+    'Weather_Condition': np.random.choice(['Sunny', 'Cloudy', 'Rainy'], size=n_samples, p=[0.6, 0.3, 0.1]),
+    'Age': np.random.normal(loc=35, scale=10, size=n_samples).astype(int),  # Avg visitor age ~35
+    'Gender': np.random.choice(['Male', 'Female'], size=n_samples, p=[0.5, 0.5]),
+    'Guest_Satisfaction_Score': np.random.uniform(1, 5, n_samples).round(1)  # 1-5 rating
+})
 
-        for key, url in endpoints.items():
-            try:
-                response = requests.get(url, params={"date": date_str})
-                data = response.json()
-                items = data.get("items", [])
-                for item in items:
-                    timestamp = pd.to_datetime(item["timestamp"])
-                    if timestamp.date() != proxy_date:
-                        continue
-                    readings = item.get("readings", [])
-                    for reading in readings:
-                        value = reading.get("value")
-                        if value is not None:
-                            daily_data[key].append(value)
-            except Exception as e:
-                print(f"Error fetching {key} for {date_str}: {e}")
+# Define categorical (discrete) columns
+discrete_columns = ['Attraction', 'Loyalty_Member', 'Weather_Condition', 'Gender']
 
-        weather_data["date"].append(date)
-        weather_data["temperature"].append(np.mean(daily_data["temperature"]) if daily_data["temperature"] else 28)
-        weather_data["rainfall"].append(np.mean(daily_data["rainfall"]) if daily_data["rainfall"] else 0)
-        weather_data["humidity"].append(np.mean(daily_data["humidity"]) if daily_data["humidity"] else 75)
+# Train a CTGAN model
+model = CTGAN(epochs=500)  # Increase epochs for better learning
+model.fit(data, discrete_columns=discrete_columns)
 
-    df_weather = pd.DataFrame(weather_data)
-    df_weather.to_csv(cache_file, index=False)
-    print("Weather Data - First 5 records:\n", df_weather.head())
-    return df_weather
+# Generate synthetic data
+synthetic_data = model.sample(n_samples)
 
-# --- Merge and Display ---
-df_synthetic = generate_synthetic_data()
-df_weather = fetch_weather_data(df_synthetic)
-df_synthetic["date"] = pd.to_datetime(df_synthetic["Timestamp"]).dt.date
-df_merged = pd.merge(df_synthetic, df_weather, on="date", how="inner")
-print("Merged Synthetic and Weather Data - First 5 records:\n", df_merged.head())
+# Convert Unix timestamps back to datetime
+synthetic_data['Timestamp'] = pd.to_datetime(synthetic_data['Timestamp'], unit='s')
+
+# Clip timestamps to the desired range (2025-02-15 to 2025-03-03)
+start_timestamp = pd.Timestamp(start_date)
+end_timestamp = pd.Timestamp(end_date)
+synthetic_data['Timestamp'] = synthetic_data['Timestamp'].clip(lower=start_timestamp, upper=end_timestamp)
+
+# Ensure Visitor_ID is unique
+synthetic_data['Visitor_ID'] = np.arange(1, n_samples + 1)
+
+# Show sample synthetic data
+print(synthetic_data.head())
+
+# Save synthetic data to CSV
+synthetic_data.to_csv("synthetic_theme_park_data.csv", index=False)
