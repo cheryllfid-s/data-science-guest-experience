@@ -3,7 +3,8 @@ import numpy as np
 import requests
 from sklearn.model_selection import train_test_split, cross_val_score
 from xgboost import XGBRegressor
-from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.linear_model import Ridge
+from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
 import matplotlib.pyplot as plt
 import simpy
 from datetime import datetime, timedelta
@@ -16,10 +17,8 @@ def load_survey_data(file_path="survey.csv"):
 
     df = pd.read_csv(file_path)
 
-    # Print column names for debugging
     print("Columns in survey.csv:", df.columns.tolist())
 
-    # Rename columns for consistency
     df = df.rename(columns={
         "On a scale of 1-5, how would you rate your overall experience at USS?": "Guest_Satisfaction_Score",
         "How long did you wait in line for rides on average during your visit?": "Wait_Time",
@@ -27,7 +26,6 @@ def load_survey_data(file_path="survey.csv"):
         "Which ride or attraction was your favourite?": "Attraction"
     })
 
-    # Convert Wait_Time to numeric values
     wait_time_mapping = {
         "Less than 15 mins": 10,
         "15-30 mins": 22.5,
@@ -37,15 +35,14 @@ def load_survey_data(file_path="survey.csv"):
     }
     df["Wait_Time"] = df["Wait_Time"].map(wait_time_mapping).fillna(37.5)
 
-    # Add a simulated Event column
     np.random.seed(42)
     df["Event"] = np.random.choice(['None', 'Special Event'], size=len(df), p=[0.8, 0.2])
 
-    # Enhance Wait_Time using long wait time responses with more granularity
     required_columns_for_long_wait = [
         'Attraction', 'Timestamp', 'Event', 'Wait_Time', 'Guest_Satisfaction_Score',
         'Which part of the year did you visit USS?', 'Did you purchase the Express Pass?',
-        'What was the main purpose of your visit?'
+        'What was the main purpose of your visit?', 'Who did you visit USS with?',
+        'Which age group do you belong to?'
     ]
 
     if 'Did you experience any rides with longer-than-expected wait times? If yes, which ride(s)?' not in df.columns:
@@ -56,18 +53,22 @@ def load_survey_data(file_path="survey.csv"):
         long_wait_rides.columns = ['original_index', 'split_index', 'Attraction']
         long_wait_rides = long_wait_rides[long_wait_rides['Attraction'].notna()]
 
-        queue_worth_col = 'Did you feel that overall, the queueing time was worth the experience of the attraction?'
-        if queue_worth_col in df.columns:
-            wait_time_adjusted = []
-            for idx in long_wait_rides['original_index']:
+        queue_worth_col = 'Did you feel that overall, the queuing time was worth the experience of the attraction? '
+        unpleasant_col = 'What made your experience with this ride or attraction unpleasant? '
+
+        wait_time_adjusted = []
+        for idx in long_wait_rides['original_index']:
+            if queue_worth_col in df.columns:
                 queue_worth = df[queue_worth_col].iloc[idx]
-                if queue_worth == 'No':
-                    wait_time_adjusted.append(90)
-                else:
-                    wait_time_adjusted.append(75)
-        else:
-            print(f"Warning: Column '{queue_worth_col}' not found. Using default wait time of 75 minutes for long waits.")
-            wait_time_adjusted = [75] * len(long_wait_rides)
+                base_wait = 90 if queue_worth == 'No' else 75
+            else:
+                base_wait = 75
+
+            if unpleasant_col in df.columns and pd.notna(df[unpleasant_col].iloc[idx]):
+                unpleasant_reason = df[unpleasant_col].iloc[idx]
+                if 'long wait' in str(unpleasant_reason).lower():
+                    base_wait += 15
+            wait_time_adjusted.append(base_wait)
 
         long_wait_df = pd.DataFrame({
             'Attraction': long_wait_rides['Attraction'],
@@ -77,24 +78,24 @@ def load_survey_data(file_path="survey.csv"):
             'Guest_Satisfaction_Score': df['Guest_Satisfaction_Score'].iloc[long_wait_rides['original_index']].values,
             'Which part of the year did you visit USS?': df['Which part of the year did you visit USS?'].iloc[long_wait_rides['original_index']].values,
             'Did you purchase the Express Pass?': df['Did you purchase the Express Pass?'].iloc[long_wait_rides['original_index']].values if 'Did you purchase the Express Pass?' in df.columns else [None] * len(long_wait_rides),
-            'What was the main purpose of your visit?': df['What was the main purpose of your visit?'].iloc[long_wait_rides['original_index']].values if 'What was the main purpose of your visit?' in df.columns else [None] * len(long_wait_rides)
+            'What was the main purpose of your visit?': df['What was the main purpose of your visit?'].iloc[long_wait_rides['original_index']].values if 'What was the main purpose of your visit?' in df.columns else [None] * len(long_wait_rides),
+            'Who did you visit USS with?': df['Who did you visit USS with?'].iloc[long_wait_rides['original_index']].values if 'Who did you visit USS with?' in df.columns else [None] * len(long_wait_rides),
+            'Which age group do you belong to?': df['Which age group do you belong to?'].iloc[long_wait_rides['original_index']].values if 'Which age group do you belong to?' in df.columns else [None] * len(long_wait_rides)
         })
 
-    df = pd.concat([df[['Attraction', 'Wait_Time', 'Timestamp', 'Event', 'Guest_Satisfaction_Score', 'Which part of the year did you visit USS?', 'Did you purchase the Express Pass?', 'What was the main purpose of your visit?']], long_wait_df], ignore_index=True)
+    df = pd.concat([df[['Attraction', 'Wait_Time', 'Timestamp', 'Event', 'Guest_Satisfaction_Score', 'Which part of the year did you visit USS?', 'Did you purchase the Express Pass?', 'What was the main purpose of your visit?', 'Who did you visit USS with?', 'Which age group do you belong to?']], long_wait_df], ignore_index=True)
 
-    # Print Wait_Time distribution
     print("Wait Time Distribution:\n", df["Wait_Time"].value_counts())
 
-    # Ensure Guest_Satisfaction_Score is numeric
+    print("Guest Satisfaction Score Distribution (before normalization):\n", df["Guest_Satisfaction_Score"].value_counts())
     df["Guest_Satisfaction_Score"] = pd.to_numeric(df["Guest_Satisfaction_Score"], errors="coerce")
+    df["Guest_Satisfaction_Score"] = (df["Guest_Satisfaction_Score"] - df["Guest_Satisfaction_Score"].min()) / (df["Guest_Satisfaction_Score"].max() - df["Guest_Satisfaction_Score"].min())
 
-    # Convert Timestamp to date
     df["Timestamp"] = pd.to_datetime(df["Timestamp"]).dt.date
 
-    # Add Day_of_Week
     df['Day_of_Week'] = pd.to_datetime(df['Timestamp']).dt.day_name()
+    df['Is_Weekend'] = df['Day_of_Week'].isin(['Saturday', 'Sunday']).astype(int)
 
-    # Define valid attractions
     valid_attractions = [
         "Revenge of the Mummy",
         "Battlestar Galactica: CYLON",
@@ -103,16 +104,19 @@ def load_survey_data(file_path="survey.csv"):
         "Sesame Street Spaghetti Space Chase"
     ]
 
-    # Filter out invalid attraction names
     df = df[df['Attraction'].isin(valid_attractions)]
     if df.empty:
         raise ValueError("No valid attractions found in the survey data after filtering.")
 
-    required_columns = ["Attraction", "Wait_Time", "Timestamp", "Event", "Guest_Satisfaction_Score", "Day_of_Week", "Which part of the year did you visit USS?"]
+    required_columns = ["Attraction", "Wait_Time", "Timestamp", "Event", "Guest_Satisfaction_Score", "Day_of_Week", "Is_Weekend", "Which part of the year did you visit USS?"]
     if 'Did you purchase the Express Pass?' in df.columns:
         required_columns.append('Did you purchase the Express Pass?')
     if 'What was the main purpose of your visit?' in df.columns:
         required_columns.append('What was the main purpose of your visit?')
+    if 'Who did you visit USS with?' in df.columns:
+        required_columns.append('Who did you visit USS with?')
+    if 'Which age group do you belong to?' in df.columns:
+        required_columns.append('Which age group do you belong to?')
 
     missing_cols = [col for col in required_columns if col not in df.columns]
     if missing_cols:
@@ -120,6 +124,24 @@ def load_survey_data(file_path="survey.csv"):
 
     print("Survey Data - First 5 records:\n", df[required_columns].head())
     return df
+
+# --- Load IoT Data ---
+def load_iot_data(file_path="iot_data.csv"):
+    if not os.path.exists(file_path):
+        print(f"Warning: IoT data file {file_path} not found. Skipping IoT data integration.")
+        return None
+
+    df_iot = pd.read_csv(file_path)
+    print("Columns in iot_data.csv:", df_iot.columns.tolist())
+
+    required_iot_columns = ['Timestamp', 'Attraction', 'Queue_Length', 'Ride_Throughput', 'Visitor_Count']
+    missing_iot_cols = [col for col in required_iot_columns if col not in df_iot.columns]
+    if missing_iot_cols:
+        print(f"Warning: IoT data missing required columns: {missing_iot_cols}. Skipping IoT data integration.")
+        return None
+
+    df_iot['Timestamp'] = pd.to_datetime(df_iot['Timestamp']).dt.date
+    return df_iot
 
 # --- Load Weather Data ---
 def fetch_weather_data(df_survey, cache_file="weather_data.csv"):
@@ -177,10 +199,29 @@ def fetch_weather_data(df_survey, cache_file="weather_data.csv"):
     return df_weather
 
 # --- Merge Datasets ---
-def merge_datasets(df_weather, df_survey):
+def merge_datasets(df_weather, df_survey, df_iot=None):
     df_weather["date"] = pd.to_datetime(df_weather["date"]).dt.date
     df_survey["date"] = pd.to_datetime(df_survey["Timestamp"]).dt.date
+
     df_merged = pd.merge(df_survey, df_weather, on="date", how="inner")
+
+    if df_iot is not None:
+        df_iot["date"] = pd.to_datetime(df_iot["Timestamp"]).dt.date
+        df_iot = df_iot.groupby(['date', 'Attraction']).agg({
+            'Queue_Length': 'mean',
+            'Ride_Throughput': 'mean',
+            'Visitor_Count': 'sum'
+        }).reset_index()
+
+        # Estimate Wait_Time from Queue_Length and Ride_Throughput
+        df_iot['Wait_Time_IoT'] = (df_iot['Queue_Length'] / df_iot['Ride_Throughput']) * 60  # Convert to minutes
+
+        df_merged = pd.merge(df_merged, df_iot, on=['date', 'Attraction'], how="left")
+
+        # Update Wait_Time with IoT data where available
+        df_merged['Wait_Time'] = df_merged['Wait_Time_IoT'].combine_first(df_merged['Wait_Time'])
+        df_merged = df_merged.drop(columns=['Wait_Time_IoT'])
+
     print("Merged DataFrame columns:", df_merged.columns.tolist())
     return df_merged
 
@@ -190,7 +231,7 @@ def predict_demand(df):
         print("Cannot predict demand: Merged dataset is empty.")
         return None, None, None
 
-    # Aggregate data by date and attraction to calculate demand
+    df['Week'] = pd.to_datetime(df['Timestamp']).dt.isocalendar().week
     agg_dict = {
         'temperature': 'mean',
         'rainfall': 'mean',
@@ -199,6 +240,7 @@ def predict_demand(df):
         'Wait_Time': 'mean',
         'Guest_Satisfaction_Score': 'mean',
         'Day_of_Week': 'first',
+        'Is_Weekend': 'max',
         'Which part of the year did you visit USS?': 'first',
         'Attraction': 'size'
     }
@@ -206,41 +248,69 @@ def predict_demand(df):
         agg_dict['Did you purchase the Express Pass?'] = 'first'
     if 'What was the main purpose of your visit?' in df.columns:
         agg_dict['What was the main purpose of your visit?'] = 'first'
+    if 'Who did you visit USS with?' in df.columns:
+        agg_dict['Who did you visit USS with?'] = 'first'
+    if 'Which age group do you belong to?' in df.columns:
+        agg_dict['Which age group do you belong to?'] = 'first'
+    if 'Visitor_Count' in df.columns:
+        agg_dict['Visitor_Count'] = 'sum'
+    if 'Queue_Length' in df.columns:
+        agg_dict['Queue_Length'] = 'mean'
+    if 'Ride_Throughput' in df.columns:
+        agg_dict['Ride_Throughput'] = 'mean'
 
-    df_agg = df.groupby(['date', 'Attraction']).agg(agg_dict).rename(columns={'Attraction': 'Attraction_Visits'}).reset_index()
+    df_agg = df.groupby(['Week', 'Attraction']).agg(agg_dict).rename(columns={'Attraction': 'Attraction_Visits'}).reset_index()
 
-    # Encode categorical variables
+    df_agg['Wait_Time_Satisfaction'] = df_agg['Wait_Time'] * df_agg['Guest_Satisfaction_Score']
+
     dummy_cols = ['Event', 'Day_of_Week', 'Which part of the year did you visit USS?']
     if 'Did you purchase the Express Pass?' in df_agg.columns:
         dummy_cols.append('Did you purchase the Express Pass?')
     if 'What was the main purpose of your visit?' in df_agg.columns:
         dummy_cols.append('What was the main purpose of your visit?')
+    if 'Who did you visit USS with?' in df_agg.columns:
+        dummy_cols.append('Who did you visit USS with?')
+    if 'Which age group do you belong to?' in df_agg.columns:
+        dummy_cols.append('Which age group do you belong to?')
 
     df_agg = pd.get_dummies(df_agg, columns=dummy_cols, drop_first=True)
 
-    # Define features
-    feature_cols = ['temperature', 'rainfall', 'humidity', 'Wait_Time', 'Guest_Satisfaction_Score'] + \
-                   [col for col in df_agg.columns if col.startswith('Event_') or col.startswith('Day_of_Week_') or col.startswith('Which part of the year did you visit USS?_') or col.startswith('Did you purchase the Express Pass?_') or col.startswith('What was the main purpose of your visit?_')]
+    feature_cols = ['temperature', 'rainfall', 'humidity', 'Wait_Time', 'Guest_Satisfaction_Score', 'Wait_Time_Satisfaction', 'Is_Weekend']
+    if 'Queue_Length' in df_agg.columns:
+        feature_cols.append('Queue_Length')
+    if 'Ride_Throughput' in df_agg.columns:
+        feature_cols.append('Ride_Throughput')
+    feature_cols += [col for col in df_agg.columns if col.startswith('Event_') or col.startswith('Day_of_Week_') or col.startswith('Which part of the year did you visit USS?_') or col.startswith('Did you purchase the Express Pass?_') or col.startswith('What was the main purpose of your visit?_') or col.startswith('Who did you visit USS with?_') or col.startswith('Which age group do you belong to?_')]
+
+    low_importance_features = ['Day_of_Week_Tuesday', 'Day_of_Week_Saturday']
+    feature_cols = [col for col in feature_cols if col not in low_importance_features]
+
     X = df_agg[feature_cols]
-    y = df_agg['Attraction_Visits']
+    y = df_agg['Visitor_Count'] if 'Visitor_Count' in df_agg.columns else df_agg['Attraction_Visits']
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    model = XGBRegressor(n_estimators=100, random_state=42)
-    model.fit(X_train, y_train)
-    y_pred = model.predict(X_test)
-    rmse = np.sqrt(mean_squared_error(y_test, y_pred))
-    r2 = r2_score(y_test, y_pred)
-    print(f"Demand Prediction - RMSE: {rmse:.2f}, R²: {r2:.2f}")
 
-    # Cross-validation
-    scores = cross_val_score(model, X, y, cv=5, scoring='r2')
-    print(f"Cross-Validated R²: {scores.mean():.2f} ± {scores.std():.2f}")
+    xgb_model = XGBRegressor(n_estimators=50, min_child_weight=3, reg_lambda=1.0, random_state=42)
+    xgb_model.fit(X_train, y_train)
+    xgb_pred = xgb_model.predict(X_test)
 
-    # Feature importance
-    feature_importance = pd.Series(model.feature_importances_, index=feature_cols).sort_values(ascending=False)
+    ridge_model = Ridge(alpha=1.0)
+    ridge_model.fit(X_train, y_train)
+    ridge_pred = ridge_model.predict(X_test)
+
+    final_pred = 0.7 * xgb_pred + 0.3 * ridge_pred
+
+    rmse = np.sqrt(mean_squared_error(y_test, final_pred))
+    r2 = r2_score(y_test, final_pred)
+    mae = mean_absolute_error(y_test, final_pred)
+    print(f"Demand Prediction - RMSE: {rmse:.2f}, R²: {r2:.2f}, MAE: {mae:.2f}")
+
+    scores = cross_val_score(xgb_model, X, y, cv=5, scoring='r2')
+    print(f"Cross-Validated R² (XGBoost): {scores.mean():.2f} ± {scores.std():.2f}")
+
+    feature_importance = pd.Series(xgb_model.feature_importances_, index=feature_cols).sort_values(ascending=False)
     print("Feature Importance:\n", feature_importance.head(10))
 
-    # Forecast demand for the next 7 days
     forecast_url = "https://api.data.gov.sg/v1/environment/4-day-weather-forecast"
     response = requests.get(forecast_url)
     forecast_data = response.json().get("items", [{}])[0].get("forecasts", [])
@@ -254,32 +324,41 @@ def predict_demand(df):
     avg_satisfaction = df['Guest_Satisfaction_Score'].mean()
 
     df_future = pd.DataFrame({
-        "date": future_dates,
         "temperature": temperature,
         "rainfall": rainfall,
         "humidity": [75] * n_days,
         "Wait_Time": [avg_wait_time] * n_days,
         "Guest_Satisfaction_Score": [avg_satisfaction] * n_days,
+        "Wait_Time_Satisfaction": [avg_wait_time * avg_satisfaction] * n_days,
+        "Is_Weekend": [1 if d.day_name() in ['Saturday', 'Sunday'] else 0 for d in future_dates],
         "Event_Special Event": [0] * n_days,
         "Day_of_Week_" + future_dates[0].day_name(): [1] + [0] * (n_days - 1),
         "Which part of the year did you visit USS?_Q1": [1] * n_days
     })
 
-    # Add dummy columns for optional features if they exist
+    if 'Queue_Length' in df.columns:
+        df_future['Queue_Length'] = [df['Queue_Length'].mean()] * n_days
+    if 'Ride_Throughput' in df.columns:
+        df_future['Ride_Throughput'] = [df['Ride_Throughput'].mean()] * n_days
     if 'Did you purchase the Express Pass?' in df.columns:
         df_future['Did you purchase the Express Pass?_Yes'] = [0] * n_days
     if 'What was the main purpose of your visit?' in df.columns:
         df_future['What was the main purpose of your visit?_Vacation'] = [1] * n_days
+    if 'Who did you visit USS with?' in df.columns:
+        df_future['Who did you visit USS with?_Family'] = [1] * n_days
+    if 'Which age group do you belong to?' in df.columns:
+        df_future['Which age group do you belong to?_26-35'] = [1] * n_days
 
-    # Ensure df_future has all feature columns
     for col in feature_cols:
         if col not in df_future.columns:
             df_future[col] = 0
 
-    future_pred = model.predict(df_future[feature_cols])
+    xgb_future_pred = xgb_model.predict(df_future[feature_cols])
+    ridge_future_pred = ridge_model.predict(df_future[feature_cols])
+    future_pred = 0.7 * xgb_future_pred + 0.3 * ridge_future_pred
+
     print("7-Day Demand Forecast (Visitors per Attraction):\n", pd.DataFrame({"Date": future_dates, "Predicted Visitors": future_pred}))
 
-    # Visualize the forecast
     plt.figure(figsize=(10, 6))
     plt.plot(future_dates, future_pred, marker='o')
     plt.xlabel("Date")
@@ -289,13 +368,16 @@ def predict_demand(df):
     plt.tight_layout()
     plt.show()
 
-    return model, future_pred, future_dates
+    return xgb_model, future_pred, future_dates
 
 # --- Simulate Guest Flow with Predicted Demand ---
-def simulate_guest_flow(attraction, predicted_demand, service_rate=0.5, layout="single_queue", duration=1440):
+def simulate_guest_flow(attraction, predicted_demand, service_rate=0.5, layout="single_queue", duration=1440, ride_throughput=None):
     env = simpy.Environment()
     wait_times = []
     resource = simpy.Resource(env, capacity=1 if layout == "single_queue" else 2)
+
+    # Use IoT ride throughput if available, otherwise use default service rate
+    effective_service_rate = (ride_throughput / 60) if ride_throughput is not None else service_rate  # Convert throughput (guests/hour) to guests/minute
 
     def guest(env, name, resource):
         arrival_time = env.now
@@ -303,7 +385,7 @@ def simulate_guest_flow(attraction, predicted_demand, service_rate=0.5, layout="
             yield req
             wait_time = env.now - arrival_time
             wait_times.append(wait_time)
-            yield env.timeout(np.random.exponential(1 / service_rate))
+            yield env.timeout(np.random.exponential(1 / effective_service_rate))
 
     for i in range(int(predicted_demand)):
         env.process(guest(env, f"Guest_{i}", resource))
@@ -317,6 +399,7 @@ def optimize_layout(df, model):
         print("Cannot optimize layout: Merged dataset is empty or model is not trained.")
         return
 
+    df['Week'] = pd.to_datetime(df['Timestamp']).dt.isocalendar().week
     agg_dict = {
         'temperature': 'mean',
         'rainfall': 'mean',
@@ -325,6 +408,7 @@ def optimize_layout(df, model):
         'Wait_Time': 'mean',
         'Guest_Satisfaction_Score': 'mean',
         'Day_of_Week': 'first',
+        'Is_Weekend': 'max',
         'Which part of the year did you visit USS?': 'first',
         'Attraction': 'size'
     }
@@ -332,19 +416,39 @@ def optimize_layout(df, model):
         agg_dict['Did you purchase the Express Pass?'] = 'first'
     if 'What was the main purpose of your visit?' in df.columns:
         agg_dict['What was the main purpose of your visit?'] = 'first'
+    if 'Who did you visit USS with?' in df.columns:
+        agg_dict['Who did you visit USS with?'] = 'first'
+    if 'Which age group do you belong to?' in df.columns:
+        agg_dict['Which age group do you belong to?'] = 'first'
+    if 'Ride_Throughput' in df.columns:
+        agg_dict['Ride_Throughput'] = 'mean'
 
-    df_agg = df.groupby(['date', 'Attraction']).agg(agg_dict).rename(columns={'Attraction': 'Attraction_Visits'}).reset_index()
+    df_agg = df.groupby(['Week', 'Attraction']).agg(agg_dict).rename(columns={'Attraction': 'Attraction_Visits'}).reset_index()
+
+    df_agg['Wait_Time_Satisfaction'] = df_agg['Wait_Time'] * df_agg['Guest_Satisfaction_Score']
 
     dummy_cols = ['Event', 'Day_of_Week', 'Which part of the year did you visit USS?']
     if 'Did you purchase the Express Pass?' in df_agg.columns:
         dummy_cols.append('Did you purchase the Express Pass?')
     if 'What was the main purpose of your visit?' in df_agg.columns:
         dummy_cols.append('What was the main purpose of your visit?')
+    if 'Who did you visit USS with?' in df_agg.columns:
+        dummy_cols.append('Who did you visit USS with?')
+    if 'Which age group do you belong to?' in df_agg.columns:
+        dummy_cols.append('Which age group do you belong to?')
 
     df_agg = pd.get_dummies(df_agg, columns=dummy_cols, drop_first=True)
 
-    feature_cols = ['temperature', 'rainfall', 'humidity', 'Wait_Time', 'Guest_Satisfaction_Score'] + \
-                   [col for col in df_agg.columns if col.startswith('Event_') or col.startswith('Day_of_Week_') or col.startswith('Which part of the year did you visit USS?_') or col.startswith('Did you purchase the Express Pass?_') or col.startswith('What was the main purpose of your visit?_')]
+    feature_cols = ['temperature', 'rainfall', 'humidity', 'Wait_Time', 'Guest_Satisfaction_Score', 'Wait_Time_Satisfaction', 'Is_Weekend']
+    if 'Queue_Length' in df_agg.columns:
+        feature_cols.append('Queue_Length')
+    if 'Ride_Throughput' in df_agg.columns:
+        feature_cols.append('Ride_Throughput')
+    feature_cols += [col for col in df_agg.columns if col.startswith('Event_') or col.startswith('Day_of_Week_') or col.startswith('Which part of the year did you visit USS?_') or col.startswith('Did you purchase the Express Pass?_') or col.startswith('What was the main purpose of your visit?_') or col.startswith('Who did you visit USS with?_') or col.startswith('Which age group do you belong to?_')]
+
+    low_importance_features = ['Day_of_Week_Tuesday', 'Day_of_Week_Saturday']
+    feature_cols = [col for col in feature_cols if col not in low_importance_features]
+
     sample_day = df_agg.iloc[-1:]
     attractions = df['Attraction'].unique()
     predicted_demands = {}
@@ -359,8 +463,9 @@ def optimize_layout(df, model):
     wait_times_multi = {}
 
     for attraction, demand in predicted_demands.items():
-        wait_times_single[attraction] = simulate_guest_flow(attraction, demand, service_rate=0.5, layout="single_queue", duration=1440)
-        wait_times_multi[attraction] = simulate_guest_flow(attraction, demand, service_rate=0.5, layout="multi_queue", duration=1440)
+        ride_throughput = sample_day['Ride_Throughput'].iloc[0] if 'Ride_Throughput' in sample_day.columns else None
+        wait_times_single[attraction] = simulate_guest_flow(attraction, demand, service_rate=0.5, layout="single_queue", duration=1440, ride_throughput=ride_throughput)
+        wait_times_multi[attraction] = simulate_guest_flow(attraction, demand, service_rate=0.5, layout="multi_queue", duration=1440, ride_throughput=ride_throughput)
 
     print("\nSingle Queue - Avg Wait Times per Attraction:")
     for attraction, times in wait_times_single.items():
@@ -383,7 +488,8 @@ def optimize_layout(df, model):
 # --- Main Execution ---
 if __name__ == "__main__":
     df_survey = load_survey_data()
+    df_iot = load_iot_data()
     df_weather = fetch_weather_data(df_survey)
-    df_merged = merge_datasets(df_weather, df_survey)
+    df_merged = merge_datasets(df_weather, df_survey, df_iot)
     demand_model, future_pred, future_dates = predict_demand(df_merged)
     optimize_layout(df_merged, demand_model)
