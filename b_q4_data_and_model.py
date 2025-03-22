@@ -13,12 +13,14 @@ import warnings
 warnings.filterwarnings('ignore')
 
 # datasets
-disney_df = pd.read_csv('DisneylandReviews.csv', encoding='utf-8', encoding_errors='replace')
+filepath = 'data/DisneylandReviews.csv'
+disney_df = pd.read_csv(filepath, encoding='utf-8', encoding_errors='replace')
 
 # try to read uss_df
+uss_filepath = 'data/universal_studio_branches.csv'
 try:
     # use the new parameter name in pandas 1.4+
-    uss_df = pd.read_csv('universal_studio_branches.csv',
+    uss_df = pd.read_csv(uss_filepath,
                          encoding='utf-8',
                          encoding_errors='replace',
                          engine='python',
@@ -26,14 +28,14 @@ try:
 except:
     try:
         # try the old parameter name
-        uss_df = pd.read_csv('universal_studio_branches.csv',
+        uss_df = pd.read_csv(uss_filepath,
                              encoding='utf-8',
                              encoding_errors='replace',
                              engine='python',
                              error_bad_lines=False)
     except:
         # if all above methods fail, try to specify the separator and quote character
-        uss_df = pd.read_csv('universal_studio_branches.csv',
+        uss_df = pd.read_csv(uss_filepath,
                              encoding='utf-8',
                              encoding_errors='replace',
                              engine='python',
