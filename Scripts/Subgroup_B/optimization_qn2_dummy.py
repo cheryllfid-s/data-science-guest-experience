@@ -10,144 +10,63 @@ import simpy
 from datetime import datetime, timedelta
 import os
 
-# --- Load Survey Dataset ---
-def load_survey_data(file_path="survey.csv"):
-    if not os.path.exists(file_path):
-        raise FileNotFoundError(f"{file_path} not found. Please provide the survey dataset.")
+# Load the datasets
+df_survey = pd.read_csv("survey.csv")
+df_weather = pd.read_csv("weather_data.csv")
 
-    df = pd.read_csv(file_path)
+# --- Clean Survey Data ---
+df_survey = df_survey.rename(columns={
+    "On a scale of 1-5, how would you rate your overall experience at USS?": "Guest_Satisfaction_Score",
+    "How long did you wait in line for rides on average during your visit?": "Wait_Time",
+    "Timestamp": "Timestamp"
+})
 
-    # Rename columns for consistency
-    df = df.rename(columns={
-        "On a scale of 1-5, how would you rate your overall experience at USS?": "Guest_Satisfaction_Score",
-        "How long did you wait in line for rides on average during your visit?": "Wait_Time",
-        "Timestamp": "Timestamp"
-    })
+wait_time_mapping = {
+    "Less than 15 mins": 10,
+    "15-30 mins": 22.5,
+    "30-45 mins": 37.5,
+    "45 mins - 1 hr": 52.5,
+    "More than 1 hr": 75
+}
+df_survey["Wait_Time"] = df_survey["Wait_Time"].map(wait_time_mapping).fillna(37.5)
+df_survey["Guest_Satisfaction_Score"] = pd.to_numeric(df_survey["Guest_Satisfaction_Score"], errors="coerce")
+df_survey["Timestamp"] = pd.to_datetime(df_survey["Timestamp"]).dt.date
+df_survey["date"] = df_survey["Timestamp"]
 
-    # Convert Wait_Time to numeric values
-    wait_time_mapping = {
-        "Less than 15 mins": 10,
-        "15-30 mins": 22.5,
-        "30-45 mins": 37.5,
-        "45 mins - 1 hr": 52.5,
-        "More than 1 hr": 75
-    }
-    df["Wait_Time"] = df["Wait_Time"].map(wait_time_mapping).fillna(37.5)  # Default to 37.5 if unmapped
-
-    # Ensure Guest_Satisfaction_Score is numeric
-    df["Guest_Satisfaction_Score"] = pd.to_numeric(df["Guest_Satisfaction_Score"], errors="coerce")
-
-    # Convert Timestamp to date
-    df["Timestamp"] = pd.to_datetime(df["Timestamp"]).dt.date
-
-    required_columns = ["Guest_Satisfaction_Score", "Wait_Time", "Timestamp"]
-    missing_cols = [col for col in required_columns if col not in df.columns]
-    if missing_cols:
-        raise ValueError(f"Dataset missing required columns: {missing_cols}")
-
-    print("Survey Data - First 5 records:\n", df[required_columns].head())
-    return df
-
-# --- Fetch Weather Data ---
-def fetch_weather_data(df_survey, cache_file="weather_data.csv"):
-    if os.path.exists(cache_file):
-        df_weather = pd.read_csv(cache_file)
-        rename_dict = {'DATE': 'date', 'TEMP': 'temperature', 'PRCP': 'rainfall', 'HUMID': 'humidity'}
-        df_weather = df_weather.rename(columns={k: v for k, v in rename_dict.items() if k in df_weather.columns})
-        if 'date' not in df_weather.columns:
-            raise KeyError("Cached weather_data.csv does not contain a 'date' or 'DATE' column.")
-        df_weather["date"] = pd.to_datetime(df_weather["date"]).dt.date
-        print("Weather Data (cached) - First 5 records:\n", df_weather.head())
-        return df_weather
-
-    survey_dates = pd.to_datetime(df_survey["Timestamp"]).dt.date.unique()
-    endpoints = {
-        "temperature": "https://api.data.gov.sg/v1/environment/air-temperature",
-        "rainfall": "https://api.data.gov.sg/v1/environment/rainfall",
-        "humidity": "https://api.data.gov.sg/v1/environment/relative-humidity"
-    }
-    weather_data = {"date": [], "temperature": [], "rainfall": [], "humidity": []}
-
-    for date in survey_dates:
-        proxy_date = date.replace(year=2024)
-        date_str = proxy_date.strftime("%Y-%m-d")
-        daily_data = {"temperature": [], "rainfall": [], "humidity": []}
-
-        for key, url in endpoints.items():
-            try:
-                response = requests.get(url, params={"date": date_str})
-                data = response.json()
-                items = data.get("items", [])
-                for item in items:
-                    timestamp = pd.to_datetime(item["timestamp"])
-                    if timestamp.date() != proxy_date:
-                        continue
-                    readings = item.get("readings", [])
-                    for reading in readings:
-                        value = reading.get("value")
-                        if value is not None:
-                            daily_data[key].append(value)
-            except Exception as e:
-                print(f"Error fetching {key} for {date_str}: {e}")
-
-        weather_data["date"].append(proxy_date)
-        weather_data["temperature"].append(np.mean(daily_data["temperature"]) if daily_data["temperature"] else 28)
-        weather_data["rainfall"].append(np.mean(daily_data["rainfall"]) if daily_data["rainfall"] else 0)
-        weather_data["humidity"].append(np.mean(daily_data["humidity"]) if daily_data["humidity"] else 75)
-
-    df_weather = pd.DataFrame(weather_data)
-    df_weather.to_csv(cache_file, index=False)
-    print("Weather Data (fetched) - First 5 records:\n", df_weather.head())
-    return df_weather
+# --- Clean Weather Data ---
+df_weather = df_weather.rename(columns={
+    "date": "date",
+    "temperature": "temperature",
+    "rainfall": "rainfall",
+    "humidity": "humidity"
+})
+df_weather["date"] = pd.to_datetime(df_weather["date"]).dt.date
 
 # --- Merge Datasets ---
-def merge_datasets(df_survey, df_weather):
-    df_weather["date"] = pd.to_datetime(df_weather["date"]).dt.date
-    df_survey["date"] = pd.to_datetime(df_survey["Timestamp"]).dt.date.map(lambda x: x.replace(year=2024))
-    df_merged = pd.merge(df_survey, df_weather, on="date", how="inner")
-    if df_merged.empty:
-        print("Error: Merged DataFrame is empty. Check date alignment.")
-        print("Survey dates:", df_survey["date"].unique())
-        print("Weather dates:", df_weather["date"].unique())
-        return df_merged
-    print("Merged DataFrame columns:", df_merged.columns.tolist())
-    return df_merged
+df_merged = pd.merge(df_survey, df_weather, on="date", how="inner")
+df_merged = df_merged.dropna(subset=["Guest_Satisfaction_Score", "temperature", "rainfall", "humidity"])
 
-# --- Predict Satisfaction ---
-def predict_demand(df):
-    if df.empty:
-        print("Cannot predict demand: Dataset is empty.")
-        return None
+# --- Train Model ---
+X = df_merged[["temperature", "rainfall", "humidity"]]
+y = df_merged["Guest_Satisfaction_Score"]
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+model = RandomForestRegressor(n_estimators=100, random_state=42)
+model.fit(X_train, y_train)
 
-    X = df[["temperature", "rainfall", "humidity"]]
-    y = df["Guest_Satisfaction_Score"].fillna(df["Guest_Satisfaction_Score"].mean())
+# --- Evaluate Model ---
+y_pred = model.predict(X_test)
+rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+r2 = r2_score(y_test, y_pred)
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    model = RandomForestRegressor(n_estimators=100, random_state=42)
-    model.fit(X_train, y_train)
-    y_pred = model.predict(X_test)
-    rmse = np.sqrt(mean_squared_error(y_test, y_pred))
-    r2 = r2_score(y_test, y_pred)
-    print(f"Satisfaction Prediction - RMSE: {rmse:.2f}, R²: {r2:.2f}")
+# --- Create 7-Day Forecast ---
+future_dates = pd.date_range(start=datetime.now(), periods=7, freq="D").date
+forecast_weather = df_weather.tail(7).copy()
+forecast_weather = forecast_weather.reset_index(drop=True)
+forecast_weather["date"] = future_dates
+forecast_weather = forecast_weather[["date", "temperature", "rainfall", "humidity"]]
 
-    forecast_url = "https://api.data.gov.sg/v1/environment/4-day-weather-forecast"
-    response = requests.get(forecast_url)
-    forecast_data = response.json().get("items", [{}])[0].get("forecasts", [])
-    future_dates = pd.date_range(start=datetime.now(), periods=7, freq="D")
-    n_days = len(future_dates)
-    forecast_data_padded = forecast_data + [forecast_data[-1] if forecast_data else {"temperature": {"high": 28}, "forecast": "Partly cloudy"}] * (n_days - len(forecast_data))
-    temperature = [f.get("temperature", {}).get("high", 28) for f in forecast_data_padded[:n_days]]
-    rainfall = [5 if "rain" in f.get("forecast", "").lower() else 0 for f in forecast_data_padded[:n_days]]
-
-    df_future = pd.DataFrame({
-        "date": future_dates,
-        "temperature": temperature,
-        "rainfall": rainfall,
-        "humidity": [75] * n_days
-    })
-    future_pred = model.predict(df_future[["temperature", "rainfall", "humidity"]])
-    print("7-Day Satisfaction Forecast (1-5):\n", pd.DataFrame({"Date": future_dates, "Predicted Rating": future_pred}))
-    return model
+forecast_weather["predicted_satisfaction"] = model.predict(forecast_weather[["temperature", "rainfall", "humidity"]])
+forecast_weather.reset_index(drop=True, inplace=True)
 
 # --- Optimize Layouts ---
 class ThemePark:
@@ -340,19 +259,11 @@ def compare_layouts():
     print("- Swapped 'Transformers: The Ride' and 'Battlestar Galactica: CYLON' to move a high-traffic ride to the right, balancing guest flow.")
     print("- Result: Lower total experience time due to optimized walking distances and better distribution of guests.")
 
-# --- Main Execution ---
 if __name__ == "__main__":
-    # Load survey data
-    df_survey = load_survey_data()
+    # Satisfaction forecast already generated above
+    print("\n 7-Day Forecast of Guest Satisfaction:")
+    print(forecast_weather[["date", "temperature", "rainfall", "humidity", "predicted_satisfaction"]])
 
-    # Fetch weather data
-    df_weather = fetch_weather_data(df_survey)
-
-    # Merge datasets
-    df_merged = merge_datasets(df_survey, df_weather)
-
-    # Run prediction
-    demand_model = predict_demand(df_merged)
 
     # Run simulations for single and multi-queue
     single_queue_wait_times, single_queue_visits, single_queue_total_times = run_simulation(13000, attractions_map, "single_queue", use_right_entrance=True)
