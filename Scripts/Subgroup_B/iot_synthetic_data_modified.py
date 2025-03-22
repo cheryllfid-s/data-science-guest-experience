@@ -79,7 +79,7 @@ def generate_synthetic_data(start_date, end_date, num_samples=5000):
             if weather_info.get("rainfall", 0) > 5:
                 base_wait = max(base_wait - 30, 15)
             
-            queue_count = np.random.randint(50, 300) if attraction in POPULAR_ATTRACTIONS else np.random.randint(20, 100)
+            queue_count = np.random.randint(50, 200) if attraction in POPULAR_ATTRACTIONS else np.random.randint(20, 100)
             
             data.append({
                 "Timestamp": numeric_timestamp,
