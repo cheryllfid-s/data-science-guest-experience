@@ -72,9 +72,10 @@ uss_renamed = uss_df.rename(columns={
 disney_renamed['park_type'] = 'Disney'
 uss_renamed['park_type'] = 'USS'
 
-# add missing columns
+# add review id for USS dataset while ensuring the IDs do not tally with those from the Disney dataset
 if 'review_id' not in uss_renamed.columns:
     uss_renamed['review_id'] = uss_renamed.index + len(disney_renamed)
+# add review_title for disney dataset
 if 'review_title' not in disney_renamed.columns:
     disney_renamed['review_title'] = np.nan
 
