@@ -6,16 +6,8 @@ from datetime import datetime, timedelta
 from emoji import demojize
 import seaborn as sns
 import matplotlib.pyplot as plt
-import nltk
-import corpora
-
-from gensim.models import LdaModel
-from matplotlib.pyplot import thetagrids
 from scipy.stats import stats
 
-# ----- Required downloads -----
-# nltk.download('stopwords')
-# nltk.download('punkt_tab')
 
 ## ----- Import review and promotion events datasets ----- ##
 path = os.getcwd()
@@ -152,9 +144,6 @@ df_events = df_events.drop(columns=["duration"])
 """
 Data Analysis: Change in polarity scores, review rating, review volume; statistical analysis
 -------------------
-Calculate the change in polarity scores before vs during event:
- - A positive value indicates higher satisfaction during event period
- - A negative value indicates lower satisfaction during event period
 """
 
 # (1) Compute difference in key metrics before event vs during event
@@ -186,3 +175,128 @@ def compute_change_in_reviews(reviews_before_event, reviews_during_event):
 
 
 df_change_data = compute_change_in_reviews(reviews_before_events, reviews_during_events)
+
+# (2) Statistical analysis - understand whether event periods bring about statistically significant changes
+
+# Metrics to analyse
+metrics = {
+    "Review Rating Change": "review_rating_change",
+    "Review Polarity Change": "review_polarity_change",
+    "Review Volume Change": "review_volume_change"
+}
+
+for metric_name, col in metrics.items():
+    changes = df_change_data[col]
+
+    # Check normality using Shapiro-Wilk test
+    shapiro_stat, shapiro_p = stats.shapiro(changes)
+    print(f"Shapiro-Wilk Test for {metric_name}: p-value = {shapiro_p:.4f}")
+
+    # Choose appropriate test based on normality
+    if shapiro_p >= 0.05:
+        # Normally distributed: use one-sample t-test
+        test_stat, p_value = stats.ttest_1samp(changes, 0)
+        test_type = "T-test"
+    else:
+        # Not normally distributed: Use Wilcoxon signed-rank test
+        test_stat, p_value = stats.wilcoxon(changes)
+        test_type = "Wilcoxon Test"
+
+    # Print test results
+    print(f"{metric_name} ({test_type}): Test-statistic = {test_stat:.4f}, P-value = {p_value:.4f}")
+
+    # Print interpretation
+    if p_value < 0.05:
+        print(f"Significant change detected in {metric_name} before vs. during the event.\n")
+    else:
+        print(f"No significant change in {metric_name} before vs. during the event.\n")
+
+
+"""
+Analysis:
+-------------------
+There is no significant change in review volume, rating and polarity before vs during promotional events.
+
+"""
+##
+"""
+Data Visualisation: Plot the change data; Correlation matrix
+-------------------
+"""
+# ------ Visualise correlation matrix using heatmap ------
+correlation_matrix = df_change_data[['review_polarity_change', 'review_rating_change', 'review_volume_change']].corr()
+
+plt.figure(figsize=(8, 6))
+sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', center=0, linewidths=1, fmt='.2f', cbar=True)
+plt.title('Correlation Matrix of Review Polarity Change, Rating Change, and Volume Change')
+plt.tight_layout()
+plt.show()
+
+# ------ Visualise change using diverging bar plot ------
+
+def plot_review_change(ax, change_data, diff_col):
+    event_names = change_data.index.values
+    avg_change = change_data[diff_col]
+
+    df = pd.DataFrame({'event': event_names, 'difference': avg_change})
+    df['color'] = df['difference'].apply(lambda x: 'red' if x < 0 else 'blue')
+
+    ax.hlines(y=df.index, xmin=0, xmax=df['difference'], color=df['color'], alpha=0.7, linewidth=10)
+    ax.set_yticks(df.index)
+    ax.set_yticklabels(df['event'])
+    ax.set_xlabel(diff_col)
+    ax.set_title(f"{diff_col} before vs. during event periods")
+
+# fig 1. Individual plot for review_volume_change
+fig, ax = plt.subplots(figsize=(12, 8))
+plot_review_change(ax, df_change_data, "review_volume_change")
+plt.tight_layout()
+plt.show()
+
+# fig 2. Side-by-Side plot comparing review_polarity_change and review_rating_change
+fig, axes = plt.subplots(1, 2, figsize=(16, 8), sharey=True)
+plot_review_change(axes[0], df_change_data, "review_rating_change")
+plot_review_change(axes[1], df_change_data, "review_polarity_change")
+plt.tight_layout()
+plt.show()
+
+"""
+Analysis: 
+-------------
+Insights from correlation matrix:
+1. Review Volume and Sentiment, Review Volume and Ratings:
+    - Negligible negative correlation, which suggest that more reviews does not reflect guest satisfaction.
+    - While an increase in review volume typically signals higher engagement and interest in the campaign, it is not 
+    sufficient on its own to gauge guest satisfaction.
+    - To assess a campaign’s true impact, other factors, such as review sentiment and ratings, should be considered.
+    
+2.  Ratings and Sentiment
+    - Positive correlation, which indicates that higher ratings reflect better guest experience.
+    - To strengthen brand perception during event periods, campaigns should aim to create memorable experiences that not 
+    only generate reviews but also result in high ratings.
+ 
+
+Insights from visualisations:
+1. Plot of review_volume_change before vs during events:
+    - Comparing to the plots on review_rating_change and review_polarity_change, there is no visible trend. This 
+    aligns with our insights from the correlation matrix.
+
+2. Side-by-Side Plot of review_rating_change and review_polarity_change:
+    - Based on the plot, we can see that review_rating_change and review_polarity_change follow the same trend. This 
+    aligns with our insights from the correlation matrix. 
+"""
+
+## --- Conclusion --- ##
+"""
+Conclusion: 
+-------------
+Key findings:
+ - No significant change detected in review volume, rating and sentiment (polarity) before vs during promotional events
+ periods at USS.
+ - This suggests that promotional events by USS did not significantly affect review volume, ratings, or sentiment, 
+ indicating that current marketing strategies may not be effectively influencing guest satisfaction during events.
+
+In summary, for a campaign to improve guest satisfaction, USS should focus on fostering positive guest experiences rather
+than traditional campaign success metrics like engagement rate etc.
+"""
+
