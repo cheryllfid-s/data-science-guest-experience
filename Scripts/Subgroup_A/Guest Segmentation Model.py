@@ -89,17 +89,17 @@ import pandas as pd
 # Use normalized features from Step 3A
 X = scaled_features
 
-# 1️⃣ KMeans (again, for comparison)
+#  KMeans (again, for comparison)
 kmeans_model = KMeans(n_clusters=4, random_state=42, n_init=10)
 kmeans_labels = kmeans_model.fit_predict(X)
 kmeans_silhouette = silhouette_score(X, kmeans_labels)
 
-# 2️⃣ Hierarchical Clustering (Ward)
+#  Hierarchical Clustering (Ward)
 linkage_matrix = linkage(X, method='ward')
 hier_labels = fcluster(linkage_matrix, t=4, criterion='maxclust')
 hier_silhouette = silhouette_score(X, hier_labels)
 
-# 3️⃣ DBSCAN
+#  DBSCAN
 dbscan_model = DBSCAN(eps=1.5, min_samples=5)
 dbscan_labels = dbscan_model.fit_predict(X)
 dbscan_silhouette = silhouette_score(X, dbscan_labels) if len(set(dbscan_labels)) > 1 else -1
@@ -111,7 +111,7 @@ comparison_df = pd.DataFrame({
     'Clusters Found': [len(set(kmeans_labels)), len(set(hier_labels)), len(set(dbscan_labels))]
 })
 
-print("✅ Clustering Technique Comparison:")
+print(" Clustering Technique Comparison:")
 display(comparison_df)
 
 
@@ -125,7 +125,7 @@ display(comparison_df)
 # 2. **Hierarchical Clustering (Ward)** – Linkage-based model that builds a nested tree of clusters.
 # 3. **DBSCAN** – Density-based clustering that can find non-linear clusters and handle noise.
 # 
-# #### 📊 Model Performance Comparison:
+# ####  Model Performance Comparison:
 # 
 # | Model               | Silhouette Score | Clusters Found |
 # |---------------------|------------------|----------------|
@@ -204,7 +204,7 @@ for cluster_id, persona in persona_definitions.items():
 
 
 survey_with_segments.to_csv("survey_with_segments.csv", index=False)
-print("\n✅ Segmented survey data saved as 'survey_with_segments.csv'")
+print("\n Segmented survey data saved as 'survey_with_segments.csv'")
 
 # %%
 #  Visualize Segments (Personas)
@@ -310,7 +310,7 @@ for cluster_id, persona in persona_definitions.items():
 segment_strategy_df = pd.DataFrame.from_dict(segment_recommendations, orient='index')
 
 # Display the strategy table
-print("\n✅ Business Strategy Recommendations by Segment:")
+print("\n Business Strategy Recommendations by Segment:")
 display(segment_strategy_df)
 
 
