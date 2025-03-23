@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import simpy
 from datetime import datetime, timedelta
 import os
-os.chdir("C:/Users/parma/data-science-guest-experience/Scripts/Subgroup_B")
+
 
 # Load the datasets
 df_survey = pd.read_csv("../../data/survey.csv")
