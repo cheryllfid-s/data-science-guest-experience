@@ -322,12 +322,262 @@ Q1. 'How did you first hear about Universal Studios Singapore?'
 Q2. 'Have you seen any recent advertisements or promotions for USS?'
 Q3. 'What type of promotions or discounts would encourage you to visit USS?'
 """
-# (1) Analysis of Q1
+
+# (1) Generate tailored marketing strategies based on Q1
+
 q1_col = 'How did you first hear about Universal Studios Singapore?'
 
+# Define marketing strategies based on how guests first heard about USS
+q1_segment_recommendations = {}
+
+for cluster_id, persona in persona_definitions.items():
+    age_group = persona['Most Common Age Group']
+    group_type = persona['Most Common Group Type']
+    purpose = persona['Common Purpose']
+    rating = persona['Avg Experience Rating']
+    express_pct = persona['Express Pass Usage %']
+    size = persona['Cluster Size']
+
+    # Get most common Q1 response for the segment
+    segment_data = survey_with_segments[survey_with_segments['segment'] == cluster_id]
+    primary_response = segment_data[q1_col].value_counts().idxmax()
+
+    # Decide on segment label based on express pass usage
+    if express_pct >= 90:
+        tier = "Premium Spenders"
+    elif express_pct <= 10 and rating < 3.5:
+        tier = "Low Satisfaction Budget Guests"
+    elif "family" in group_type.lower():
+        tier = "Value-Conscious Families"
+    else:
+        tier = "Young Social Visitors"
+
+    # Decide on marketing strategy based on Q1 response and segment traits
+    if primary_response == 'Online ads':
+        if express_pct >= 90:
+            strategy = "Target premium digital ads, offer exclusive VIP packages online."
+        elif "family" in group_type.lower():
+            strategy = "Use online family-targeted ads with discounts for kids' attractions."
+        else:
+            strategy = "Social media influencer ads, exclusive digital coupons for young adults."
+
+    elif primary_response == 'Word of mouth':
+        if express_pct >= 90:
+            strategy = "Leverage word-of-mouth for VIP and referral discounts, create loyalty programs."
+        else:
+            strategy = "Engage customers through referral programs and positive review sharing."
+
+    elif primary_response == 'News':
+        if express_pct >= 90:
+            strategy = "Feature premium packages in high-end media outlets and news channels."
+        else:
+            strategy = "Use local news and media to engage families with promotional offers."
+
+    elif primary_response == 'Social media':
+        if express_pct >= 90:
+            strategy = "Partner with influencers for VIP promotions and exclusive offers on social platforms."
+        else:
+            strategy = "Offer limited-time promotions through social media contests and influencer events."
+
+    elif primary_response == 'Travel agencies/tour packages':
+        if express_pct >= 90:
+            strategy = "Collaborate with travel agencies to offer bundled premium packages."
+        else:
+            strategy = "Promote group tours and cost-effective travel packages through agencies."
+
+    else:
+        strategy = "Create tailored strategies based on the specific needs of the segment."
+
+    # Store strategy and segment info in dictionary
+    q1_segment_recommendations[cluster_id] = {
+        "Segment Name": tier,
+        "Age Group": age_group,
+        "Group Type": group_type,
+        "Visit Purpose": purpose,
+        "Avg Experience Rating": rating,
+        "Express Pass Usage %": express_pct,
+        "Segment Size": size,
+        "Primary Response": primary_response,
+        "Marketing Strategy": strategy
+    }
+
+# Convert to dataframe
+q1_segment_strategy_df = pd.DataFrame.from_dict(q1_segment_recommendations, orient='index')
+
+# Display the strategy table for Q1 responses
+print("\n Marketing Strategy Recommendations by Segment (Q1 Responses):")
+display(q1_segment_strategy_df)
 
 
-# (2) Analysis of Q2
+# (2) Generate tailored marketing strategies based on Q2
 
-# (3) Analysis of Q3
+q2_col = 'Have you seen any recent advertisements or promotions for USS?'
+
+# Define marketing strategies based on guests' exposure to USS ads
+q2_segment_recommendations = {}
+
+for cluster_id, persona in persona_definitions.items():
+    age_group = persona['Most Common Age Group']
+    group_type = persona['Most Common Group Type']
+    purpose = persona['Common Purpose']
+    rating = persona['Avg Experience Rating']
+    express_pct = persona['Express Pass Usage %']
+    size = persona['Cluster Size']
+
+    # Get the most common primary Q2 response for the segment
+    segment_data = q2_by_segment[q2_by_segment['segment'] == cluster_id]
+    primary_response = segment_data[q2_col].value_counts().idxmax()
+
+    # Decide on segment label based on express pass usage
+    if express_pct >= 90:
+        tier = "Premium Spenders"
+    elif express_pct <= 10 and rating < 3.5:
+        tier = "Low Satisfaction Budget Guests"
+    elif "family" in group_type.lower():
+        tier = "Value-Conscious Families"
+    else:
+        tier = "Young Social Visitors"
+
+    # Tailor marketing strategies based on both tier and primary response
+    if tier == "Premium Spenders":
+        if primary_response == 'Yes, but they did not influence my decision':
+            strategy = "Increase visibility through targeted promotions, reinforce brand presence."
+        elif primary_response == 'Yes and they influenced my decision to visit':
+            strategy = "Leverage this influence to promote upsell opportunities, loyalty programs."
+        elif primary_response == "No, I haven't seen any ads":
+            strategy = "Boost ad visibility and engagement across various channels, focus on awareness campaigns."
+
+    elif tier == "Low Satisfaction Budget Guests":
+        if primary_response == 'Yes, but they did not influence my decision':
+            strategy = "Enhance advertisement engagement, focusing on the value proposition."
+        elif primary_response == 'Yes and they influenced my decision to visit':
+            strategy = "Emphasize offers and discounts, capitalize on ad-driven decisions."
+        elif primary_response == "No, I haven't seen any ads":
+            strategy = "Increase awareness, particularly focusing on affordable options."
+
+    elif tier == "Value-Conscious Families":
+        if primary_response == 'Yes, but they did not influence my decision':
+            strategy = "Increase targeted family promotions in advertisements."
+        elif primary_response == 'Yes and they influenced my decision to visit':
+            strategy = "Create tailored family packages based on ad-driven decisions."
+        elif primary_response == "No, I haven't seen any ads":
+            strategy = "Boost family-oriented advertisements, increase ad presence in relevant channels."
+
+    elif tier == "Young Social Visitors":
+        if primary_response == 'Yes, but they did not influence my decision':
+            strategy = "Increase ad presence and awareness, focusing on interactive content for young visitors."
+        elif primary_response == 'Yes and they influenced my decision to visit':
+            strategy = "Leverage social media-driven campaigns for youth engagement and promotions."
+        elif primary_response == "No, I haven't seen any ads":
+            strategy = "Focus on influencer marketing and social media engagement to drive awareness."
+
+    # Store strategy and segment info in dictionary
+    q2_segment_recommendations[cluster_id] = {
+        "Segment Name": tier,
+        "Age Group": age_group,
+        "Group Type": group_type,
+        "Visit Purpose": purpose,
+        "Avg Experience Rating": rating,
+        "Express Pass Usage %": express_pct,
+        "Segment Size": size,
+        "Primary Response": primary_response,
+        "Marketing Strategy": strategy
+    }
+
+# Convert to DataFrame
+q2_segment_strategy_df = pd.DataFrame.from_dict(q2_segment_recommendations, orient='index')
+
+# Display the strategy table for Q2 responses
+print("\n Marketing Strategy Recommendations by Segment (Q2 Responses):")
+display(q2_segment_strategy_df)
+
+# (3) Generate tailored marketing strategies based on Q3
+
+q3_col = 'What type of promotions or discounts would encourage you to visit USS?'
+
+# Define marketing strategies based on guests' preferred promotion type
+q3_segment_recommendations = {}
+
+for cluster_id, persona in persona_definitions.items():
+    age_group = persona['Most Common Age Group']
+    group_type = persona['Most Common Group Type']
+    purpose = persona['Common Purpose']
+    rating = persona['Avg Experience Rating']
+    express_pct = persona['Express Pass Usage %']
+    size = persona['Cluster Size']
+
+    # Get most common primary Q3 response for the segment
+    segment_data = q3_exploded[q3_exploded['segment'] == cluster_id]
+    primary_response = segment_data[q3_col].value_counts().idxmax()
+
+    # Decide on segment label based on express pass usage
+    if express_pct >= 90:
+        tier = "Premium Spenders"
+    elif express_pct <= 10 and rating < 3.5:
+        tier = "Low Satisfaction Budget Guests"
+    elif "family" in group_type.lower():
+        tier = "Value-Conscious Families"
+    else:
+        tier = "Young Social Visitors"
+
+    # Tailor marketing strategies based on both tier and primary response
+    if tier == "Premium Spenders":
+        if primary_response == 'Discounted tickets':
+            strategy = "Offer exclusive high-end discounts or access to VIP experiences."
+        elif primary_response == 'Bundle deals (hotel + ticket packages etc.)':
+            strategy = "Promote luxury bundle deals including premium accommodations and special perks."
+        elif primary_response == 'Family/group discounts':
+            strategy = "Provide premium family group packages with VIP options."
+        elif primary_response == 'Seasonal event promotions':
+            strategy = "Offer VIP access to seasonal events and exclusive premium seating."
+
+    elif tier == "Low Satisfaction Budget Guests":
+        if primary_response == 'Discounted tickets':
+            strategy = "Offer affordable ticket discounts and emphasize value for money."
+        elif primary_response == 'Bundle deals (hotel + ticket packages etc.)':
+            strategy = "Promote cost-effective bundle deals with hotel stays for budget-conscious guests."
+        elif primary_response == 'Family/group discounts':
+            strategy = "Provide budget-friendly family group tickets with additional value-added services."
+        elif primary_response == 'Seasonal event promotions':
+            strategy = "Offer discounted seasonal events to attract budget-conscious visitors."
+
+    elif tier == "Value-Conscious Families":
+        if primary_response == 'Discounted tickets':
+            strategy = "Offer family-friendly ticket discounts and emphasize convenience."
+        elif primary_response == 'Bundle deals (hotel + ticket packages etc.)':
+            strategy = "Promote family-friendly bundles, offering hotel and ticket combos for more savings."
+        elif primary_response == 'Family/group discounts':
+            strategy = "Provide exclusive family discounts for larger groups and multi-day visits."
+        elif primary_response == 'Seasonal event promotions':
+            strategy = "Create family-centric seasonal events with bundled deals."
+
+    else:  # Young Social Visitors
+        if primary_response == 'Discounted tickets':
+            strategy = "Offer group discounts and emphasize social media perks."
+        elif primary_response == 'Bundle deals (hotel + ticket packages etc.)':
+            strategy = "Promote bundles that are ideal for young social visitors and friends."
+        elif primary_response == 'Family/group discounts':
+            strategy = "Offer group discounts for young visitors coming with friends."
+        elif primary_response == 'Seasonal event promotions':
+            strategy = "Leverage seasonal events for social media promotions and group discounts."
+
+    # Store strategy and segment info in dictionary
+    q3_segment_recommendations[cluster_id] = {
+        "Segment Name": tier,
+        "Age Group": age_group,
+        "Group Type": group_type,
+        "Visit Purpose": purpose,
+        "Avg Experience Rating": rating,
+        "Express Pass Usage %": express_pct,
+        "Segment Size": size,
+        "Primary Response": primary_response,
+        "Marketing Strategy": strategy
+    }
+
+# Convert to DataFrame
+q3_segment_strategy_df = pd.DataFrame.from_dict(q3_segment_recommendations, orient='index')
+
+# Display the strategy table for Q3 responses
+print("\n Marketing Strategy Recommendations by Segment (Q3 Responses):")
+display(q3_segment_strategy_df)
 
