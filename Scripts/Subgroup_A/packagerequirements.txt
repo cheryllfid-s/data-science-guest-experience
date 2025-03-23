@@ -11,3 +11,7 @@ KMeans
 sklearn.metrics
 silhouette_score
 matplotlib.pyplot
+emoji
+scipy
+textblob
+nltk
