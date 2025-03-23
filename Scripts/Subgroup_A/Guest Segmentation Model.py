@@ -313,5 +313,21 @@ segment_strategy_df = pd.DataFrame.from_dict(segment_recommendations, orient='in
 print("\n Business Strategy Recommendations by Segment:")
 display(segment_strategy_df)
 
+## --- Business Question 4: Impact on Marketing Strategies on Guest Behaviour --- ##
+"""
+Recommend tailored marketing strategies for specific segments
+-------------------
+We will be analysing the responses of 3 key questions from the survey.
+Q1. 'How did you first hear about Universal Studios Singapore?'
+Q2. 'Have you seen any recent advertisements or promotions for USS?'
+Q3. 'What type of promotions or discounts would encourage you to visit USS?'
+"""
+# (1) Analysis of Q1
+q1_col = 'How did you first hear about Universal Studios Singapore?'
 
+
+
+# (2) Analysis of Q2
+
+# (3) Analysis of Q3
 
