@@ -1,8 +1,8 @@
-# %%
+
 !pip install seaborn
 
 
-# %%
+
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import LabelEncoder, StandardScaler
@@ -77,7 +77,7 @@ plt.title("Elbow Method for Optimal k")
 plt.grid(True)
 plt.show()
 
-# %%
+
 ##Compare Clustering Techniques
 
 
@@ -116,9 +116,9 @@ display(comparison_df)
 
 
 
-# %% [markdown]
-# ### Why We Chose KMeans
-# 
+
+
+# markdown
 # We evaluated three clustering techniques to segment guests based on survey responses:
 # 
 # 1. **KMeans** – Centroid-based algorithm ideal for structured, normalized data.
@@ -148,7 +148,7 @@ display(comparison_df)
 # 
 # 
 
-# %%
+
 # Fit Final KMeans
 
 
@@ -157,7 +157,7 @@ optimal_k = 4
 kmeans = KMeans(n_clusters=optimal_k, random_state=42, n_init=10)
 df_segment['cluster'] = kmeans.fit_predict(scaled_features)
 
-# %%
+
 #Analyze and Summarize
 
 
@@ -176,7 +176,7 @@ plt.ylabel("Cluster")
 plt.xlabel("Feature")
 plt.show()
 
-# %%
+
 #Generate Guest Personas (Labels)
 
 
@@ -206,11 +206,11 @@ for cluster_id, persona in persona_definitions.items():
 survey_with_segments.to_csv("survey_with_segments.csv", index=False)
 print("\n Segmented survey data saved as 'survey_with_segments.csv'")
 
-# %%
+
 #  Visualize Segments (Personas)
 
 
-# 1A. Pie Chart: Segment Sizes
+# Pie Chart: Segment Sizes
 plt.figure(figsize=(6, 6))
 survey_with_segments['segment'].value_counts().plot.pie(autopct='%1.1f%%', startangle=90, cmap='tab20')
 plt.title("Segment Distribution (Pie Chart)")
@@ -218,7 +218,7 @@ plt.ylabel("")
 plt.tight_layout()
 plt.show()
 
-# 1B. Bar Chart: Age Group Distribution by Segment
+# Bar Chart: Age Group Distribution by Segment
 plt.figure(figsize=(10, 6))
 sns.countplot(data=survey_with_segments, x='age_group', hue='segment', palette='tab10')
 plt.title("Age Group Distribution by Segment")
@@ -229,7 +229,7 @@ plt.legend(title='Segment')
 plt.tight_layout()
 plt.show()
 
-# 1C. Express Pass Usage by Segment
+# Express Pass Usage by Segment
 plt.figure(figsize=(8, 6))
 sns.countplot(data=survey_with_segments, x='express_pass', hue='segment', palette='Set2')
 plt.title("Express Pass Usage by Segment")
@@ -239,7 +239,7 @@ plt.legend(title='Segment')
 plt.tight_layout()
 plt.show()
 
-# 1D. Revisit Intention Heatmap
+# Revisit Intention Heatmap
 revisit_heatmap = pd.crosstab(survey_with_segments['segment'], survey_with_segments['revisit'], normalize='index')
 plt.figure(figsize=(8, 4))
 sns.heatmap(revisit_heatmap, annot=True, cmap='YlGnBu', fmt='.1%')
@@ -250,7 +250,7 @@ plt.tight_layout()
 plt.show()
 
 
-# %%
+
 
 # Generate Business Strategy Summary per Segment
 
