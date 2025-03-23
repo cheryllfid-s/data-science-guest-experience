@@ -1,10 +1,6 @@
 import kagglehub
 import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
 import os
-import numpy as np
-import networkx as nx
 
 # Download latest version of dataset
 path = kagglehub.dataset_download("ayushtankha/hackathon")
