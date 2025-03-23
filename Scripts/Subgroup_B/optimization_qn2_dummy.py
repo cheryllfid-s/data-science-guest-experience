@@ -9,10 +9,11 @@ import matplotlib.pyplot as plt
 import simpy
 from datetime import datetime, timedelta
 import os
+os.chdir("C:/Users/parma/data-science-guest-experience/Scripts/Subgroup_B")
 
 # Load the datasets
-df_survey = pd.read_csv("survey.csv")
-df_weather = pd.read_csv("weather_data.csv")
+df_survey = pd.read_csv("../../data/survey.csv")
+df_weather = pd.read_csv("../../data/weather_data.csv")
 
 # --- Clean Survey Data ---
 df_survey = df_survey.rename(columns={

@@ -29,9 +29,10 @@ import matplotlib.pyplot as plt
 import simpy
 from datetime import datetime, timedelta
 import os
+os.chdir("C:/Users/parma/data-science-guest-experience/Scripts/Subgroup_B")
 
 # --- Load Survey Data ---
-def load_survey_data(file_path="survey.csv"):
+def load_survey_data(file_path="../../data/survey.csv"):
     """
     Loads and preprocesses survey data from survey.csv for demand prediction.
 
@@ -155,7 +156,7 @@ def load_survey_data(file_path="survey.csv"):
     return df
 
 # --- Load IoT Data ---
-def load_iot_data(file_path="synthetic_theme_park_data.csv"):
+def load_iot_data(file_path="../../data/synthetic_theme_park_data.csv"):
     """
     Loads synthetic IoT data for demand prediction.
 
@@ -653,6 +654,7 @@ def optimize_layout(df, model, feature_cols, scaler, imputer):
 # --- Main Execution ---
 if __name__ == "__main__":
     df_survey = load_survey_data()
+    print(df_survey.head())
     df_iot = load_iot_data()
     df_weather = fetch_weather_data(df_survey)
     df_merged = merge_datasets(df_weather, df_survey, df_iot)
