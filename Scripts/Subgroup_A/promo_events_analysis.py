@@ -66,7 +66,32 @@ def remove_duplicates(df):
 df_reviews = remove_duplicates(df_reviews)
 df_events = remove_duplicates(df_events)
 
-## --- Data exploration --- ##    # edit: added data exploration section
+## --- Sentiment analysis --- ##
+"""
+Sentiment analysis: df_reviews 
+-------------------
+Using TextBlob to compute the polarity scores 
+We will be analysing the 'combined_text' = review title + text
+"""
+
+# Combine the text columns
+df_reviews['combined_text'] = df_reviews['title'] + " " + df_reviews['review_text']
+df_reviews = df_reviews.drop(columns=['title', 'review_text'])
+
+
+# (1) Text preprocessing: convert emojis
+df_reviews["combined_text"] = df_reviews["combined_text"].apply(lambda text: demojize(text))
+
+# (2) TextBlob: compute polarity scores
+from textblob import TextBlob
+
+def analyse_sentiment(df, text_column):
+    df["polarity"] = df[text_column].apply(lambda text: TextBlob(text).sentiment.polarity)
+    return df
+
+df_reviews = analyse_sentiment(df_reviews, 'combined_text')
+
+## --- Data exploration --- ##    
 """
 Data exploration
 -------------------
@@ -122,3 +147,42 @@ reviews_before_events = filter_reviews_before_events(df_reviews, df_events)
 
 # Drop unnecessary column
 df_events = df_events.drop(columns=["duration"])
+
+## --- Data Analysis --- ##
+"""
+Data Analysis: Change in polarity scores, review rating, review volume; statistical analysis
+-------------------
+Calculate the change in polarity scores before vs during event:
+ - A positive value indicates higher satisfaction during event period
+ - A negative value indicates lower satisfaction during event period
+"""
+
+# (1) Compute difference in key metrics before event vs during event
+def compute_change_in_reviews(reviews_before_event, reviews_during_event):
+    changes = {}
+    for event, reviews_before in reviews_before_event.items():
+        # Get reviews during the event from the second dictionary
+        reviews_during = reviews_during_event.get(event)
+        if reviews_during is not None:
+            # Ensure the reviews are DataFrames before performing calculations
+            reviews_before = pd.DataFrame(reviews_before)
+            reviews_during = pd.DataFrame(reviews_during)
+
+            # Calculate average polarity score, review rating, and review volume before and during the event
+            before_avg = reviews_before[['polarity', 'rating']].mean()
+            during_avg = reviews_during[['polarity', 'rating']].mean()
+            before_volume = len(reviews_before)
+            during_volume = len(reviews_during)
+
+            # Calculate change in polarity score, review rating, and review volume
+            change = {
+                'review_polarity_change': during_avg['polarity'] - before_avg['polarity'],
+                'review_rating_change': during_avg['rating'] - before_avg['rating'],
+                'review_volume_change': during_volume - before_volume
+            }
+            changes[event] = change
+
+    return pd.DataFrame.from_dict(changes, orient='index')
+
+
+df_change_data = compute_change_in_reviews(reviews_before_events, reviews_during_events)
