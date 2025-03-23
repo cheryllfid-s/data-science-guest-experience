@@ -3,3 +3,11 @@ pandas
 seaborn
 matplotlib
 numpy
+sklearn.preprocessing 
+LabelEncoder
+StandardScaler
+sklearn.cluster
+KMeans
+sklearn.metrics
+silhouette_score
+matplotlib.pyplot
