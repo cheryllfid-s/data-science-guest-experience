@@ -29,7 +29,7 @@ import matplotlib.pyplot as plt
 import simpy
 from datetime import datetime, timedelta
 import os
-os.chdir("C:/Users/parma/data-science-guest-experience/Scripts/Subgroup_B")
+##os.chdir("C:/Users/parma/data-science-guest-experience/Scripts/Subgroup_B")
 
 # --- Load Survey Data ---
 def load_survey_data(file_path="../../data/survey.csv"):
