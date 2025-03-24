@@ -1,18 +1,26 @@
-## ----- Set up ----- ##
-import numpy as np
+## ----- Set up: import required packages ----- ##
+import kagglehub
 import pandas as pd
 import os
 from datetime import datetime, timedelta
 from emoji import demojize
 import seaborn as sns
 import matplotlib.pyplot as plt
-from scipy.stats import stats
+from scipy import stats
 
 
 ## ----- Import review and promotion events datasets ----- ##
-path = os.getcwd()
-# df_reviews = pd.read_csv(path + '/data/universal_studio_branches.csv')
-df_events = pd.read_csv(path + '/data/uss_promo_events.csv')
+# (1) Import uss_promo_events.csv
+events_path = os.path.join("../../data/uss_promo_events.csv")
+print(events_path)
+df_events = pd.read_csv(events_path)
+
+# (2) Download and import universal_studio_branches.csv
+kaggle_download_path = kagglehub.dataset_download("dwiknrd/reviewuniversalstudio")
+print("Path to dataset files:", kaggle_download_path)
+
+reviews_path = os.path.join(kaggle_download_path, "universal_studio_branches.csv")
+df_reviews = pd.read_csv(reviews_path)
 
 ## ----- Data cleaning ----- ##
 # (1) Check for missing values
