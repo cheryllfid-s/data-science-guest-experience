@@ -14,5 +14,4 @@ matplotlib.pyplot
 emoji
 scipy
 textblob
-nltk
 sklearn.feature_extraction.text
