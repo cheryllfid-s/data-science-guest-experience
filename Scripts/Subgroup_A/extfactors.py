@@ -4,371 +4,162 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from pathlib import Path
 import numpy as np
-from scipy.stats import pearsonr
-import statsmodels.api as sm
+from sklearn.feature_extraction.text import TfidfVectorizer
+from textblob import TextBlob
 
 # %%
 #Import data
-csv_path_segment = Path("../../data/survey_with_segments.csv").resolve()
-print(f"Absolute CSV path: {csv_path_segment}")
-print(f"File exists? {csv_path_segment.exists()}")
-df_survey = pd.read_csv(csv_path_segment)
-
 csv_path_reviews = Path("../../data/usstripadvisor.csv").resolve()
 print(f"Absolute CSV path: {csv_path_reviews}")
 print(f"File exists? {csv_path_reviews.exists()}")
 df_reviews = pd.read_csv(csv_path_reviews)
 
-csv_path_rain = Path("../../data/rainfall-monthly-total.csv").resolve()
-print(f"Absolute CSV path: {csv_path_reviews}")
-print(f"File exists? {csv_path_reviews.exists()}")
-df_rain = pd.read_csv(csv_path_rain)
+# %%
+# Segment keywords based on guest segmentation model
+segment_keywords = {
+    0: ["long queue","long wait", "expensive", "wait time", "crowded", "not worth", "overhyped"],
+    1: ["fun", "good experience", "nice place", "friends", "cool rides", "social"],
+    2: ["family", "kids", "children", "great for family","meal deals", "family time", "stroller", "cartoon characters", "family experience"],
+    3: ["express pass", "VIP", "express", "luxury", "premium", "fast pass", "exclusive", "experience", "personalized", "service", "high-end"]
+}
+
+# Function to assign segment based on keywords
+def assign_segment(review_text):
+    for segment, keywords in segment_keywords.items():
+        if any(keyword in review_text.lower() for keyword in keywords):
+            return segment
+    return np.nan  # Assign NaN if no keywords match
+
+# Apply the function to assign segments
+df_reviews["segment"] = df_reviews["review_text"].apply(assign_segment)
+
+# Drop NaN rows (if necessary)
+df_reviews = df_reviews.dropna(subset=["segment"])
+
+# Convert to integer type
+df_reviews["segment"] = df_reviews["segment"].astype(int)
+
+# Display the first few results
+print(df_reviews[["review_text", "segment"]].head())
 
 # %%
-# Format date for reviews
-def preprocess_reviews(df_reviews):
-    df_reviews['written_date'] = pd.to_datetime(df_reviews['written_date'])
-    df_reviews['visit_period'] = df_reviews['written_date'].dt.to_period('Q')
-    return df_reviews
-
-# Format date into generic quarters for reviews
-def adjust_review_periods(df_reviews):
-    df_reviews['generic_quarter'] = df_reviews['visit_period'].dt.quarter.map({
-        1: "Q1", 2: "Q2", 3: "Q3", 4: "Q4"
-    })
-    return df_reviews
-
-# Format date into visit_period(quarters) for survey
-def map_survey_periods(df_survey):
-    period_mapping = {
-        "January - March": "Q1",
-        "April - June": "Q2",
-        "July - September": "Q3",
-        "October - December": "Q4"
-    }
-    df_survey['visit_period'] = df_survey['Which part of the year did you visit USS?'].map(period_mapping)
-    df_survey = df_survey.dropna(subset=['visit_period'])
-    
-    return df_survey
-
-# Format date for rainfall
-def preprocess_rainfall(df_rain):
-    """Convert month to datetime and map it to quarters."""
-    df_rain['month'] = pd.to_datetime(df_rain['month'])
-
-    df_rain = df_rain[(df_rain['month'] >= '2009-12-01') & (df_rain['month'] <= '2019-12-31')]
-    df_rain['quarter'] = df_rain['month'].dt.to_period('Q')
-    
-    # Convert period to string format (Q1, Q2, etc.)
-    df_rain['quarter'] = df_rain['quarter'].dt.quarter.map({
-        1: "Q1", 2: "Q2", 3: "Q3", 4: "Q4"
-    })
-    # Aggregate rainfall data by quarter
-    quarterly_rainfall = df_rain.groupby('quarter')['total_rainfall'].mean().reset_index()
-    return quarterly_rainfall
-
-
-# %%
-# Preprocess data
-df_reviews = preprocess_reviews(df_reviews)
-#print(df_reviews.head())
-df_reviews = adjust_review_periods(df_reviews)
-#print(df_reviews.head())
-df_survey = map_survey_periods(df_survey)
-# print(df_survey.head())
-quarterly_rainfall = preprocess_rainfall(df_rain)
-# print(quarterly_rainfall.head())
-
-# %%
-# Compare ratings with segments
-def compare_ratings_with_segments(df_reviews, df_survey):
-    # Get average reviews ratings by quarter
-    reviews_avg = df_reviews.groupby('generic_quarter')['rating'].mean()
-    
-    # Get average survey ratings by quarter
-    survey_avg = df_survey.groupby('visit_period')['experience_rating'].mean()
-
-    # Segment-wise experience ratings (per quarter)
-    segment_quarter_avg = df_survey.groupby(['visit_period', 'segment'])['experience_rating'].mean().unstack()
-
-    # Combine reviews_avg and survey_avg into a comparison DataFrame
-    comparison = pd.DataFrame({
-        'Reviews_Avg': reviews_avg,
-        'Survey_Avg': survey_avg
-    })
-    
-    print("\nQuarterly Comparison of Reviews and Survey Ratings:")
-    print(comparison)
-
-    print("\nSegment-wise Average Ratings (by Quarter):")
-    print(segment_quarter_avg)
-
-    return comparison, segment_quarter_avg
-
-# Perform
-comparison, segment_quarter_avg = compare_ratings_with_segments(df_reviews, df_survey)
-
-# %%
-reviews_avg = comparison["Reviews_Avg"]
-survey_avg = comparison["Survey_Avg"]
-
-# Calculating Pearson correlation for significance
-correlation, p_value = pearsonr(reviews_avg, survey_avg)
-
-print(f"Pearson Correlation: {correlation:.2f}")
-print(f"P-value: {p_value:.4f}")
-
-# %% [markdown]
-# Since the Pearson Correlation is negative, we cannot segment the tripadvisor reviews dataset with the survey dataset using quarters of the year.
-# 
-# Therefore, we only use the survey dataset for more analysis.
-
-# %%
-# Heatmap for segment-wise survey ratings by quarter
-def plot_segment_quarter_comparison(segment_quarter_avg):
-    plt.figure(figsize=(8, 6))
-    sns.heatmap(segment_quarter_avg, annot=True, cmap='YlGnBu', fmt='.2f', cbar_kws={'label': 'Average Rating'})
-    plt.title('Segment-wise Average Ratings by Quarter')
-    plt.xlabel('Segment')
-    plt.ylabel('Quarter')
-    plt.show()
-
-# Call the plotting function
-plot_segment_quarter_comparison(segment_quarter_avg)
-
-# %%
-# Merge rainfall data with survey data
-print(df_survey)
-def merge_rainfall_with_survey(df_survey, quarterly_rainfall):
-    df_survey = df_survey.merge(quarterly_rainfall, left_on='visit_period', right_on='quarter', how='left')
-    df_survey.drop(columns=['quarter'], inplace=True)  # Remove duplicate column
-    
-    return df_survey
-
-# %%
-# Call the function to merge rainfall data with survey data
-df_survey = merge_rainfall_with_survey(df_survey, quarterly_rainfall)
-print(df_survey.head())
-
-
-# %%
-# Double line graph for segment 0 with total rainfall for the four quarters
-# Filter for segment 0
-df_segment_0 = df_survey[df_survey['segment'] == 0]
-
-# Group by visit_period and calculate the average for total_rainfall and experience_rating
-df_segment_0_avg = df_segment_0.groupby('visit_period')[['total_rainfall', 'experience_rating']].mean().reset_index()
-
-# Create the plot
-fig, ax1 = plt.subplots(figsize=(12, 6))
-
-# Line for total rainfall (left y-axis)
-sns.lineplot(data=df_segment_0_avg, x='visit_period', y='total_rainfall', label='Total Rainfall', marker='o', color='blue', ax=ax1)
-
-# Set labels and title for left y-axis
-ax1.set_xlabel('Visit Period (Q1 to Q4)', fontsize=14)
-ax1.set_ylabel('Total Rainfall (mm)', fontsize=14, color='blue')
-ax1.tick_params(axis='y', labelcolor='blue')
-
-# Create a second y-axis for experience rating (right y-axis)
-ax2 = ax1.twinx()
-ax2.set_ylim(0, 5)
-sns.lineplot(data=df_segment_0_avg, x='visit_period', y='experience_rating', label='Experience Rating', marker='o', color='green', ax=ax2)
-
-# Set labels for right y-axis
-ax2.set_ylabel('Experience Rating', fontsize=14, color='green')
-ax2.tick_params(axis='y', labelcolor='green')
-
-# Set plot title and adjust for readability
-plt.title('Total Rainfall and Experience Rating for Segment 0 Guests Across Quarters', fontsize=16)
-plt.xticks(rotation=45)  # Rotate x-axis labels for better readability
-
-# Show the plot
+# Plot the distribution of segments
+plt.figure(figsize=(8, 5))
+sns.countplot(x=df_reviews["segment"], palette="coolwarm")
+plt.xticks([0, 1, 2, 3], ["Budget Visitors", "Social Visitors", "Families", "Premium Spenders"])
+plt.xlabel("Segment")
+plt.ylabel("Number of Reviews")
+plt.title("TripAdvisor Review Segments")
 plt.show()
 
 # %%
-# Double line graph for segment 1 with total rainfall for the four quarters
-# Filter for segment 1
-df_segment_1 = df_survey[df_survey['segment'] == 1]
+# Sentiment analysis
+def get_sentiment(text):
+    return TextBlob(text).sentiment.polarity
 
-# Group by visit_period and calculate the average for total_rainfall and experience_rating
-df_segment_1_avg = df_segment_1.groupby('visit_period')[['total_rainfall', 'experience_rating']].mean().reset_index()
+df_reviews["sentiment"] = df_reviews["review_text"].apply(get_sentiment)
 
-# Create the plot
-fig, ax1 = plt.subplots(figsize=(12, 6))
-
-# Line for total rainfall (left y-axis)
-sns.lineplot(data=df_segment_1_avg, x='visit_period', y='total_rainfall', label='Total Rainfall', marker='o', color='blue', ax=ax1)
-
-# Set labels and title for left y-axis
-ax1.set_xlabel('Visit Period (Q1 to Q4)', fontsize=14)
-ax1.set_ylabel('Total Rainfall (mm)', fontsize=14, color='blue')
-ax1.tick_params(axis='y', labelcolor='blue')
-
-
-# Create a second y-axis for experience rating (right y-axis)
-ax2 = ax1.twinx()
-ax2.set_ylim(0, 5)
-sns.lineplot(data=df_segment_1_avg, x='visit_period', y='experience_rating', label='Experience Rating', marker='o', color='green', ax=ax2)
-
-# Set labels for right y-axis
-ax2.set_ylabel('Experience Rating', fontsize=14, color='green')
-ax2.tick_params(axis='y', labelcolor='green')
-
-# Set plot title and adjust for readability
-plt.title('Total Rainfall and Experience Rating for Segment 1 Guests Across Quarters', fontsize=16)
-plt.xticks(rotation=45)  # Rotate x-axis labels for better readability
-
-# Show the plot
+# Boxplot of sentiment scores by segment
+plt.figure(figsize=(8, 5))
+sns.boxplot(x=df_reviews["segment"], y=df_reviews["sentiment"], palette="coolwarm")
+plt.xticks([0, 1, 2, 3], ["Budget Visitors", "Social Visitors", "Families", "Premium Spenders"])
+plt.xlabel("Segment")
+plt.ylabel("Sentiment Score")
+plt.title("Sentiment Analysis of TripAdvisor Reviews by Segment")
 plt.show()
 
 # %%
-# Double line graph for segment 1 with total rainfall for the four quarters
-# Filter for segment 2
-df_segment_2 = df_survey[df_survey['segment'] == 2]
+# Function to label reviews mentioning rain
+def label_rain_reviews(df):
+    weather_keywords = ["rain", "wet", "storm", "downpour", "drizzle", "thunder", "shower"]
+    df["mentions_rain"] = df["review_text"].str.contains("|".join(weather_keywords), case=False, na=False)
+    return df
 
-# Group by visit_period and calculate the average for total_rainfall and experience_rating
-df_segment_2_avg = df_segment_2.groupby('visit_period')[['total_rainfall', 'experience_rating']].mean().reset_index()
+# Apply function
+df_reviews = label_rain_reviews(df_reviews)
 
-# Create the plot
-fig, ax1 = plt.subplots(figsize=(12, 6))
+# %%
+rain_reviews = df_reviews[df_reviews['mentions_rain'] == True]
+no_rain_reviews = df_reviews[df_reviews['mentions_rain'] == False]
 
-# Line for total rainfall (left y-axis)
-sns.lineplot(data=df_segment_2_avg, x='visit_period', y='total_rainfall', label='Total Rainfall', marker='o', color='blue', ax=ax1)
+# %%
+# Group by the 'segment' and calculate the average rating for reviews mentioning rain
+rain_segment_avg = rain_reviews.groupby('segment')['rating'].mean().reset_index()
 
-# Set labels and title for left y-axis
-ax1.set_xlabel('Visit Period (Q1 to Q4)', fontsize=14)
-ax1.set_ylabel('Total Rainfall (mm)', fontsize=14, color='blue')
-ax1.tick_params(axis='y', labelcolor='blue')
+# Group by the 'segment' and calculate the average rating for reviews not mentioning rain
+no_rain_segment_avg = no_rain_reviews.groupby('segment')['rating'].mean().reset_index()
 
-# Create a second y-axis for experience rating (right y-axis)
-ax2 = ax1.twinx()
-sns.lineplot(data=df_segment_2_avg, x='visit_period', y='experience_rating', label='Experience Rating', marker='o', color='green', ax=ax2)
+# Merging the two datasets to compare
+comparison = pd.merge(rain_segment_avg, no_rain_segment_avg, on='segment', suffixes=('_rain', '_no_rain'))
 
-# Set labels and limits for right y-axis
-ax2.set_ylabel('Experience Rating', fontsize=14, color='green')
-ax2.tick_params(axis='y', labelcolor='green')
-ax2.set_ylim(0, 5)  # Ensure rating axis is fixed from 0 to 5
+print(comparison)
 
-# Set plot title and adjust for readability
-plt.title('Total Rainfall and Experience Rating for Segment 2 Guests Across Quarters', fontsize=16)
-plt.xticks(rotation=45)  # Rotate x-axis labels for better readability
+# %%
+rain_segment_sentiment = rain_reviews.groupby('segment')['sentiment'].mean().reset_index()
+no_rain_segment_sentiment = no_rain_reviews.groupby('segment')['sentiment'].mean().reset_index()
 
-# Show the plot
+# Merging the sentiment results for comparison
+sentiment_comparison = pd.merge(rain_segment_sentiment, no_rain_segment_sentiment, on='segment', suffixes=('_rain', '_no_rain'))
+
+print(sentiment_comparison)
+
+# %%
+plt.figure(figsize=(10,6))
+
+# Plot for ratings comparison
+plt.bar(comparison['segment'], comparison['rating_rain'], width=0.4, label='Rain', align='center')
+plt.bar(comparison['segment'], comparison['rating_no_rain'], width=0.4, label='No Rain', align='edge')
+
+# Adding labels and title
+plt.xlabel('Segment')
+plt.ylabel('Average Rating')
+plt.title('Average Ratings by Segment: Rain vs No Rain')
+plt.legend()
+
 plt.show()
 
 # %%
-# Double line graph for segment 3 with total rainfall for the four quarters
-# Filter for segment 3
-df_segment_3 = df_survey[df_survey['segment'] == 3]
-
-# Group by visit_period and calculate the average for total_rainfall and experience_rating
-df_segment_3_avg = df_segment_3.groupby('visit_period')[['total_rainfall', 'experience_rating']].mean().reset_index()
-
-# Create the plot
-fig, ax1 = plt.subplots(figsize=(12, 6))
-
-# Line for total rainfall (left y-axis)
-sns.lineplot(data=df_segment_3_avg, x='visit_period', y='total_rainfall', label='Total Rainfall', marker='o', color='blue', ax=ax1)
-
-# Set labels and title for left y-axis
-ax1.set_xlabel('Visit Period (Q1 to Q4)', fontsize=14)
-ax1.set_ylabel('Total Rainfall (mm)', fontsize=14, color='blue')
-ax1.tick_params(axis='y', labelcolor='blue')
-
-# Create a second y-axis for experience rating (right y-axis)
-ax2 = ax1.twinx()
-sns.lineplot(data=df_segment_3_avg, x='visit_period', y='experience_rating', label='Experience Rating', marker='o', color='green', ax=ax2)
-
-# Set labels and limits for right y-axis
-ax2.set_ylabel('Experience Rating', fontsize=14, color='green')
-ax2.tick_params(axis='y', labelcolor='green')
-ax2.set_ylim(0, 5)  # Ensure rating axis is fixed from 0 to 5
-
-# Set plot title and adjust for readability
-plt.title('Total Rainfall and Experience Rating for Segment 3 Guests Across Quarters', fontsize=16)
-plt.xticks(rotation=45)  # Rotate x-axis labels for better readability
-
-# Show the plot
-plt.show()
-
-# %%
+# Melt the sentiment_comparison DataFrame to plot
+sentiment_melted = sentiment_comparison.melt(id_vars='segment', value_vars=['sentiment_rain', 'sentiment_no_rain'], 
+                                             var_name='weather_condition', value_name='sentiment')
 
 plt.figure(figsize=(10, 6))
 
-# Scatter plot with different colors for each segment
-sns.scatterplot(data=df_avg, x="total_rainfall", y="experience_rating", hue="segment", palette="Set1", style="segment")
+# Create a bar plot with 'weather_condition' as the hue to differentiate rain vs no rain
+sns.barplot(x='segment', y='sentiment', hue='weather_condition', data=sentiment_melted, palette=['blue', 'orange'])
 
-# Regression lines for each segment
-colors = ['red', 'blue', 'green', 'purple']
-for i, segment in enumerate([0, 1, 2, 3]):
-    df_segment = df_avg[df_avg["segment"] == segment]
-    sns.regplot(data=df_segment, x="total_rainfall", y="experience_rating", scatter=False, color=colors[i], label=f'Segment {segment} Trend')
+# Add labels and title
+plt.xlabel('Segment')
+plt.ylabel('Average Sentiment Score')
+plt.title('Average Sentiment Scores by Segment: Rain vs No Rain')
+plt.legend(title='Weather Condition')
 
-# Labels & title
-plt.xlabel("Total Rainfall (mm)")
-plt.ylabel("Experience Rating")
-plt.title("Impact of Rainfall on Experience Rating Across Segments")
-
-plt.legend(title="Segment & Trend", bbox_to_anchor=(1.05, 1), loc="upper left")  # Adjust legend placement
 plt.show()
 
 # %%
-colors = ['red', 'blue', 'green', 'purple']
+# Calculate the difference in sentiment between rain and no rain reviews for each segment
+sentiment_diff = sentiment_comparison.groupby('segment').apply(
+    lambda x: x['sentiment_rain'].mean() - x['sentiment_no_rain'].mean()).reset_index(name='sentiment_diff')
 
-# Loop over each segment and plot
-for i, segment in enumerate([0, 1, 2, 3]):
-    # Filter the dataframe for the current segment
-    df_segment = df_avg[df_avg["segment"] == segment]
-    
-    # Create a new figure for each segment
-    plt.figure(figsize=(10, 6))
+# Rename columns for clarity
+sentiment_diff.columns = ['segment', 'sentiment_diff']
 
-    # Scatter plot for the current segment
-    sns.scatterplot(data=df_segment, x="total_rainfall", y="experience_rating", color=colors[i], label=f'Segment {segment}')
-    
-    # Regression line for the current segment
-    sns.regplot(data=df_segment, x="total_rainfall", y="experience_rating", scatter=False, color=colors[i], label=f'Segment {segment} Trend')
-
-    # Labels & title
-    plt.xlabel("Total Rainfall (mm)")
-    plt.ylabel("Experience Rating")
-    plt.title(f"Impact of Rainfall on Experience Rating for Segment {segment}")
-    
-    # Add legend
-    plt.legend(title="Trend", bbox_to_anchor=(1.05, 1), loc="upper left")  # Adjust legend placement
-    
-    # Show plot
-    plt.show()
+# Display the sentiment differences for each segment
+print(sentiment_diff)
 
 # %%
-results = {}
+plt.figure(figsize=(10, 6))
+sns.barplot(x='segment', y='sentiment_diff', data=sentiment_diff, palette='coolwarm')
 
-# Loop through each segment and fit a linear regression model
-for segment in [0, 1, 2, 3]:
-    df_segment = df_avg[df_avg["segment"] == segment]
-    
-    # Define independent (X) and dependent (Y) variables
-    X = df_segment["total_rainfall"]  # Predictor
-    Y = df_segment["experience_rating"]  # Response
-    
-    # Add a constant to the model (intercept)
-    X = sm.add_constant(X)
-    
-    ## Fit the linear regression model
-    model = sm.OLS(Y, X).fit()
-    
-    # Store results
-    results[segment] = model
+# Add labels and title
+plt.xlabel('Segment')
+plt.ylabel('Sentiment Difference (Rain - No Rain)')
+plt.title('Sentiment Difference by Segment (Rain vs No Rain)')
 
-    # Print summary
-    print(f"\n--- Segment {segment} ---")
-    print(model.summary())
+plt.show()
 
 # %% [markdown]
-# Since the p-values are not significant, it suggests that rainfall does not have a strong enough statistical effect on experience ratings for these segments. However, the R-squared values indicate that rainfall still explains some variation in ratings, particularly negatively for Segment 2 (33.1%).
-# 
-# This shows that "Low Satisfaction Budget Guests" are the most affected by rain. 
+# Guests across all segments exhibited lower sentiment when keywords related to rain were mentioned in their reviews. This suggests that unfavorable weather conditions negatively impact the overall guest experience. Additionally, Segment 2 "Value-Conscious Families" and Segment 1 "Young Social Visitors" showed the strongest decline in sentiment, indicating that weather disruptions may disproportionately affect guests who are more price-sensitive or socially driven in their visits. The decline in sentiment could be attributed to longer wait times, fewer outdoor activities, or discomfort caused by wet conditions.
 # 
 # Value-conscious families with children are likely the most affected by rain due to:
 # 1. The disruption to outdoor attractions and play areas that children enjoy.
@@ -383,10 +174,205 @@ for segment in [0, 1, 2, 3]:
 # 
 # Higher Expectations for Value: As "value-conscious" guests, these families likely expect a lot of value for their money. Rain can lead to less value because outdoor attractions they were excited about might be inaccessible or less enjoyable, leading to dissatisfaction with the cost of the experience.
 
+# %%
+def categorize_by_month(df_reviews):
+    df_reviews['written_date'] = pd.to_datetime(df_reviews['written_date'], errors='coerce')
+    df_reviews['month'] = df_reviews['written_date'].dt.month_name()
+    return df_reviews
+
+# Apply the function to df_reviews
+df_reviews = categorize_by_month(df_reviews)
+#print(df_reviews[['written_date', 'month']].head())
+
+# %%
+# Function to analyze sentiment by segment and month
+def analyze_sentiment(text):
+    """Get sentiment polarity score for the review text."""
+    if pd.isna(text):  # Missing or NaN
+        return None
+    return TextBlob(text).sentiment.polarity
+
+def sentiment_analysis_by_segment_month(df_reviews):
+    # Apply sentiment analysis to the review text for each row
+    df_reviews['sentiment'] = df_reviews['review_text'].apply(analyze_sentiment)
+    # Group by 'segment' and 'month' to get average sentiment per group
+    sentiment_by_segment_month = df_reviews.groupby(['segment', 'month'])['sentiment'].mean().reset_index()
+
+    return sentiment_by_segment_month
+
+sentiment_by_segment_month = sentiment_analysis_by_segment_month(df_reviews)
+month_order = ['January', 'February', 'March', 'April', 'May', 'June', 
+               'July', 'August', 'September', 'October', 'November', 'December']
+
+# Convert the 'month' column to a categorical type with the correct order
+sentiment_by_segment_month['month'] = pd.Categorical(sentiment_by_segment_month['month'], categories=month_order, ordered=True)
+# Check the result
+print(sentiment_by_segment_month.head())
+
+# %%
+# Function to plot sentiment by segment and month
+def plot_sentiment_by_segment_month(sentiment_by_segment_month):
+    plt.figure(figsize=(12, 6))
+    sns.lineplot(x='month', y='sentiment', hue='segment', data=sentiment_by_segment_month, marker='o')
+
+    # Add labels and title
+    plt.xlabel('Month')
+    plt.ylabel('Average Sentiment Score')
+    plt.title('Average Sentiment by Segment and Month')
+
+    # Add legend
+    plt.legend(title='Segment', bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.show()
+
+# Plot the sentiment data
+plot_sentiment_by_segment_month(sentiment_by_segment_month)
+
+# %%
+df_reviews['month'] = df_reviews['written_date'].dt.month
+
+# Pivot table for sentiment by segment and month
+pivot_sentiment = df_reviews.pivot_table(values='sentiment', 
+                                        index='segment', 
+                                        columns='month', 
+                                        aggfunc='mean')
+
+# Heatmap for sentiment
+plt.figure(figsize=(12, 6))
+sns.heatmap(pivot_sentiment, annot=True, cmap='YlGnBu', fmt='.2f', cbar=True, 
+            xticklabels=['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'])
+
+plt.title('Seasonal Sentiment by Segment')
+plt.xlabel('Month')
+plt.ylabel('Segment')
+plt.show()
+
+# %%
+def categorize_season(month):
+    if month in [5, 6, 7]:
+        return 'Summer Holidays'
+    elif month in [11, 12, 1]:
+        return 'Winter Holidays'
+    elif month in [2, 3, 4]:
+        return 'Feb - Apr'
+    else:
+        return 'Aug - Oct'
+
+# Apply season categories
+df_reviews['season'] = df_reviews['written_date'].dt.month.apply(categorize_season)
+
+# Pivot table for sentiment by segment and season
+pivot_sentiment = df_reviews.pivot_table(values='sentiment', 
+                                         index='segment', 
+                                         columns='season', 
+                                         aggfunc='mean')
+season_order = ['Feb - Apr', 'Summer Holidays', 'Aug - Oct', 'Winter Holidays']
+pivot_sentiment = pivot_sentiment[season_order]
+# Heatmap for sentiment by season
+plt.figure(figsize=(10, 6))
+sns.heatmap(pivot_sentiment, annot=True, cmap='YlGnBu', fmt='.2f', cbar=True)
+
+plt.title('Seasonal Sentiment by Segment')
+plt.xlabel('Season')
+plt.ylabel('Segment')
+plt.show()
+
+# %%
+# Group sentiment by season and segment
+seasonal_sentiment = df_reviews.groupby(['season', 'segment'])['sentiment'].mean().reset_index()
+
+# Define the correct season order
+season_order = ['Feb - Apr', 'Summer Holidays', 'Aug - Oct', 'Winter Holidays']
+seasonal_sentiment['season'] = pd.Categorical(seasonal_sentiment['season'], categories=season_order, ordered=True)
+
+# Sort by season order
+seasonal_sentiment = seasonal_sentiment.sort_values('season')
+
+# Plot line graph
+plt.figure(figsize=(10, 6))
+sns.lineplot(x='season', y='sentiment', hue='segment', data=seasonal_sentiment, marker='o')
+
+# Customize labels and title
+plt.xlabel('Season')
+plt.ylabel('Average Sentiment Score')
+plt.title('Sentiment Trends Across Seasons by Segment')
+plt.legend(title='Segment')
+plt.grid(True)
+
+plt.show()
+
+# %%
+guest_volume = df_reviews.groupby(['segment', 'month']).size().reset_index(name='guest_count')
+
+# Plot the line graph
+plt.figure(figsize=(12, 6))
+
+# Create a line plot
+sns.lineplot(data=guest_volume, x='month', y='guest_count', hue='segment', marker='o', palette='tab10')
+
+# Titles and labels
+plt.title('Guest Volume by Segment and Month')
+plt.xlabel('Month')
+plt.ylabel('Guest Volume (Number of Reviews)')
+plt.xticks(ticks=range(1, 13), labels=['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'])
+plt.legend(title='Segment', loc='upper left')
+
+# Show the plot
+plt.show()
+
+# %%
+season_mapping = {
+    2: 'Feb-Apr', 3: 'Feb-Apr', 4: 'Feb-Apr',
+    5: 'Summer', 6: 'Summer', 7: 'Summer',
+    8: 'Aug-Oct', 9: 'Aug-Oct', 10: 'Aug-Oct',
+    11: 'Winter', 12: 'Winter', 1: 'Winter'
+}
+
+# Map months to seasons
+guest_volume['season'] = guest_volume['month'].map(season_mapping)
+
+# Create a duplicated dataframe where Feb-Apr appears again on the right
+guest_volume_dup = guest_volume[guest_volume['season'] == 'Feb-Apr'].copy()
+guest_volume_dup['season'] = 'Feb-Apr (2)'
+
+# Combine original with duplicated Feb-Apr
+guest_volume_extended = pd.concat([guest_volume, guest_volume_dup])
+
+# Maintain correct order
+season_order = ['Feb-Apr', 'Summer', 'Aug-Oct', 'Winter', 'Feb-Apr (2)']
+guest_volume_extended['season'] = pd.Categorical(guest_volume_extended['season'], categories=season_order, ordered=True)
+
+# Aggregate guest count by segment and season
+seasonal_guest_volume = guest_volume_extended.groupby(['segment', 'season'], observed=True)['guest_count'].sum().reset_index()
+
+# Plot the line graph
+plt.figure(figsize=(12, 6))
+
+# Create a line plot with reordered x-axis
+sns.lineplot(data=seasonal_guest_volume, x='season', y='guest_count', hue='segment', marker='o', 
+             palette=['blue', 'red', 'green', 'purple'])
+
+# Titles and labels
+plt.title('Guest Volume by Segment and Season (with Feb-Apr Comparison)')
+plt.xlabel('Season')
+plt.ylabel('Guest Volume (Number of Reviews)')
+plt.legend(title='Segment', loc='upper left')
+plt.grid(True)
+
+# Show the plot
+plt.show()
+
 # %% [markdown]
-# Possible operational adjustments:
-# 1. Rainy Day Passes: Introducing a rainy-day pass or a flexible ticket that allows guests to return on a different day or provides discounts on future visits if their experience was negatively affected by weather. This would offer reassurance to value-conscious families that their visit can still be worthwhile even in bad weather.
-# 2. Covered Walkways and Sheltered Areas: Ensure there are ample sheltered areas throughout the park where families can wait or relax without getting wet, particularly near popular attractions or dining areas. Indoor seating areas where families can rest and regroup would be a valuable addition.
-# 3. Temporary Covered Playgrounds: Install temporary covered play structures or outdoor tents with engaging activities that can shield families from rain but still allow children to play and  explore.  
+# The trend of guest count across all segments during the different periods remained fairly consistent. Regardless of the segment, the volume of guests in February to April and August to September periods were consistently lower when compared to the higher volume seen in the summer (May to July) and winter (November to January) periods. This pattern is likely due to various factors such as school schedules, the availability of special events, and the general holiday periods that contribute to an increase in visitors during the peak seasons.
+# 
+# While there are some fluctuations in the exact number of visitors across segments, the overall trend shows a clear drop in guest count in the low-season months (February to April and August to September). This reinforces the idea that external factors such as timing, weather, and events play a crucial role in driving guest attendance and satisfaction.
+# 
+# Overall, these trends suggest that Universal Studios experiences a cyclical pattern of higher and lower guest volumes based on the calendar year and external conditions, which could influence decisions related to staffing, promotions, and overall resource management.
 
-
+# %% [markdown]
+# Operational adjustments:
+# 1. Organize special events, festivals, or limited-time shows during off-peak periods to maintain high guest engagement. For example, consider hosting smaller-scale events, exclusive promotions, or theme nights tailored to specific segments.
+# 2. During months with lower guest volume, reduce staffing levels to maintain cost-efficiency. Conversely, during periods with peak attendance, ensure enough staff are available to handle the increased guest flow.
+# 3. For segments like Premium Spenders and Value-Conscious Families, offer loyalty programs or re-engagement incentives (e.g., discounts or priority access) to encourage repeat visits during quieter months.
+# 4. Send targeted emails with special offers or event notifications to guests who visited during peak times but might not typically visit during off-peak periods. These incentives could include discounts or exclusive offers to lure them back during quieter months.
