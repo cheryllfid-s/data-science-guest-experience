@@ -22,6 +22,7 @@ print("Path to dataset files:", kaggle_download_path)
 reviews_path = os.path.join(kaggle_download_path, "universal_studio_branches.csv")
 df_reviews = pd.read_csv(reviews_path)
 
+
 ## ----- Data cleaning ----- ##
 # (1) Check for missing values
 def handle_missing_values(df, drop=True, fill_value=None):
@@ -66,13 +67,10 @@ def remove_duplicates(df):
 df_reviews = remove_duplicates(df_reviews)
 df_events = remove_duplicates(df_events)
 
+
 ## --- Sentiment analysis --- ##
-"""
-Sentiment analysis: df_reviews 
--------------------
-Using TextBlob to compute the polarity scores 
-We will be analysing the 'combined_text' = review title + text
-"""
+# Using TextBlob to compute the polarity scores
+# We will be analysing the 'combined_text' = review title + text
 
 # Combine the text columns
 df_reviews['combined_text'] = df_reviews['title'] + " " + df_reviews['review_text']
@@ -91,13 +89,11 @@ def analyse_sentiment(df, text_column):
 
 df_reviews = analyse_sentiment(df_reviews, 'combined_text')
 
+
 ## --- Data exploration --- ##    
-"""
-Data exploration
--------------------
-Since 'df_events' contains information on past promotion events of Universal Studios Singapore (USS),
-we will filter the 'df_reviews' data to focus our analysis on USS reviews.
-"""
+# Since 'df_events' contains information on past promotion events of Universal Studios Singapore (USS),
+# we will filter the 'df_reviews' data to focus our analysis on USS reviews.
+
 # (1) Compute event duration
 df_events["duration"] = (df_events["end"] - df_events["start"]).dt.days
 
@@ -148,11 +144,9 @@ reviews_before_events = filter_reviews_before_events(df_reviews, df_events)
 # Drop unnecessary column
 df_events = df_events.drop(columns=["duration"])
 
+
 ## --- Data Analysis --- ##
-"""
-Data Analysis: Change in polarity scores, review rating, review volume; statistical analysis
--------------------
-"""
+# Data Analysis: Change in polarity scores, review rating, review volume; statistical analysis
 
 # (1) Compute difference in key metrics before event vs during event
 def compute_change_in_reviews(reviews_before_event, reviews_during_event):
@@ -219,19 +213,15 @@ for metric_name, col in metrics.items():
     else:
         print(f"No significant change in {metric_name} before vs. during the event.\n")
 
+# Analysis:
+# -------------------
+# There is no significant change in review volume, rating and polarity before vs during promotional events.
 
-"""
-Analysis:
--------------------
-There is no significant change in review volume, rating and polarity before vs during promotional events.
 
-"""
-##
-"""
-Data Visualisation: Plot the change data; Correlation matrix
--------------------
-"""
-# ------ Visualise correlation matrix using heatmap ------
+## --- Data Visualisation --- ##
+# Data Visualisation: Plot the change data; Correlation matrix
+
+# ------ Visualise correlation matrix ------
 correlation_matrix = df_change_data[['review_polarity_change', 'review_rating_change', 'review_volume_change']].corr()
 
 plt.figure(figsize=(8, 6))
@@ -268,43 +258,39 @@ plot_review_change(axes[1], df_change_data, "review_polarity_change")
 plt.tight_layout()
 plt.show()
 
-"""
-Analysis: 
--------------
-Insights from correlation matrix:
-1. Review Volume and Sentiment, Review Volume and Ratings:
-    - Negligible negative correlation, which suggest that more reviews does not reflect guest satisfaction.
-    - While an increase in review volume typically signals higher engagement and interest in the campaign, it is not 
-    sufficient on its own to gauge guest satisfaction.
-    - To assess a campaign’s true impact, other factors, such as review sentiment and ratings, should be considered.
-    
-2.  Ratings and Sentiment
-    - Positive correlation, which indicates that higher ratings reflect better guest experience.
-    - To strengthen brand perception during event periods, campaigns should aim to create memorable experiences that not 
-    only generate reviews but also result in high ratings.
- 
+# Analysis:
+# -------------
+# Insights from correlation matrix:
+# 1. Review Volume and Sentiment, Review Volume and Ratings:
+#     - Negligible negative correlation, which suggest that more reviews does not reflect guest satisfaction.
+#     - While an increase in review volume typically signals higher engagement and interest in the campaign, it is not
+#     sufficient on its own to gauge guest satisfaction.
+#     - To assess a campaign’s true impact, other factors, such as review sentiment and ratings, should be considered.
+#
+# 2.  Ratings and Sentiment
+#     - Positive correlation, which indicates that higher ratings reflect better guest experience.
+#     - To strengthen brand perception during event periods, campaigns should aim to create memorable experiences that not
+#     only generate reviews but also result in high ratings.
+#
+#
+# Insights from visualisations:
+# 1. Plot of review_volume_change before vs during events:
+#     - Comparing to the plots on review_rating_change and review_polarity_change, there is no visible trend. This
+#     aligns with our insights from the correlation matrix.
+#
+# 2. Side-by-Side Plot of review_rating_change and review_polarity_change:
+#     - Based on the plot, we can see that review_rating_change and review_polarity_change follow the same trend. This
+#     aligns with our insights from the correlation matrix.
 
-Insights from visualisations:
-1. Plot of review_volume_change before vs during events:
-    - Comparing to the plots on review_rating_change and review_polarity_change, there is no visible trend. This 
-    aligns with our insights from the correlation matrix.
 
-2. Side-by-Side Plot of review_rating_change and review_polarity_change:
-    - Based on the plot, we can see that review_rating_change and review_polarity_change follow the same trend. This 
-    aligns with our insights from the correlation matrix. 
-"""
-
-## --- Conclusion --- ##
-"""
-Conclusion: 
--------------
-Key findings:
- - No significant change detected in review volume, rating and sentiment (polarity) before vs during promotional events
- periods at USS.
- - This suggests that promotional events by USS did not significantly affect review volume, ratings, or sentiment, 
- indicating that current marketing strategies may not be effectively influencing guest satisfaction during events.
-
-In summary, for a campaign to improve guest satisfaction, USS should focus on fostering positive guest experiences rather
-than traditional campaign success metrics like engagement rate etc.
-"""
+## Conclusion:
+# -------------
+# Key findings:
+#  - No significant change detected in review volume, rating and sentiment (polarity) before vs during promotional events
+#  periods at USS.
+#  - This suggests that promotional events by USS did not significantly affect review volume, ratings, or sentiment,
+#  indicating that current marketing strategies may not be effectively influencing guest satisfaction during events.
+#
+# In summary, for a campaign to improve guest satisfaction, USS should focus on fostering positive guest experiences rather
+# than traditional campaign success metrics like engagement rate etc.
 
