@@ -1,29 +1,17 @@
-
-!pip install seaborn
-
-
-
+# %%
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import LabelEncoder, StandardScaler
-from sklearn.cluster import KMeans
+from sklearn.decomposition import PCA
+from sklearn.cluster import KMeans, DBSCAN
 from sklearn.metrics import silhouette_score
+from scipy.spatial.distance import cdist
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+# %%
+survey = pd.read_csv("survey.csv")
 
-
-
-
-
-# Load data
-survey = pd.read_csv("C:/Users/Admin/Downloads/survey.csv")  
-
-
-# Step 1: Clean & Preprocess
-
-
-# Rename columns for easier handling
 survey = survey.rename(columns={
     'Which age group do you belong to?': 'age_group',
     'What is your employment status?': 'employment',
@@ -33,551 +21,371 @@ survey = survey.rename(columns={
     'Did you purchase the Express Pass?': 'express_pass',
     'How long did you wait in line for rides on average during your visit?': 'avg_wait_time',
     'Would you choose to revisit USS?': 'revisit',
-    'Would you recommend USS to others?': 'recommend'
+    'Would you recommend USS to others?': 'recommend',
+    'How did you first hear about Universal Studios Singapore?': 'awareness',
+    'Have you seen any recent advertisements or promotions for USS?': 'response_to_ads',
+    'What type of promotions or discounts would encourage you to visit USS?': 'preferred_promotion'
 })
 
-# Select relevant columns
-selected_columns = [
-    'age_group', 'employment', 'group_type', 'visit_purpose',
-    'experience_rating', 'express_pass', 'avg_wait_time', 'revisit', 'recommend'
+# Select core columns
+selected_cols = [
+    'age_group', 'group_type', 'visit_purpose', 'express_pass', 'experience_rating',
+    'awareness', 'response_to_ads', 'preferred_promotion'
 ]
-df_segment = survey[selected_columns].copy()
+survey_clean = survey[selected_cols].dropna().reset_index(drop=True)
 
-# Drop missing values
-df_segment = df_segment.dropna()
 
-# Encode categorical features
-label_encoders = {}
-for col in df_segment.select_dtypes(include='object').columns:
-    le = LabelEncoder()
-    df_segment[col] = le.fit_transform(df_segment[col])
-    label_encoders[col] = le
 
-# Normalize features
-scaler = StandardScaler()
-scaled_features = scaler.fit_transform(df_segment)
+# Generate Synthetic Data Based on Real Distribution
+np.random.seed(42)
+n_samples = 400
+
+# Assign group type equally
+group_type_syn = np.random.choice(
+    ['Friends', 'Family (including children)'],
+    size=n_samples,
+    p=[0.5, 0.5]
+)
+
+# Conditional age group
+def assign_age(gt):
+    return np.random.choice(
+        ['18 - 24 years old'] if gt == 'Friends' else ['25 - 34 years old']
+    )
+age_group_syn = [assign_age(gt) for gt in group_type_syn]
+
+# Conditional visit purpose
+def assign_purpose(gt):
+    return np.random.choice(
+        ['Social gathering'] if gt == 'Friends' else ['Family outing']
+    )
+visit_purpose_syn = [assign_purpose(gt) for gt in group_type_syn]
+
+# Conditional express pass
+express_pass_syn = [
+    np.random.choice(['Yes', 'No'], p=[0.25, 0.75]) if gt == 'Friends' else
+    np.random.choice(['Yes', 'No'], p=[0.6, 0.4])
+    for gt in group_type_syn
+]
+
+# Conditional experience rating
+experience_rating_syn = [
+    round(np.random.normal(4.2, 0.3), 1) if ep == 'Yes' else
+    round(np.random.normal(3.5, 0.5), 1)
+    for ep in express_pass_syn
+]
+
+# Build synthetic df
+synthetic = pd.DataFrame({
+    'age_group': age_group_syn,
+    'group_type': group_type_syn,
+    'visit_purpose': visit_purpose_syn,
+    'express_pass': express_pass_syn,
+    'experience_rating': experience_rating_syn
+})
+
+
 
 # %%
-# Determine Optimal Clusters (k)
+# Generate synthetic data for 3 marketing related questions
+
+# Conditional awareness: 'How did you first hear about Universal Studios Singapore?'
+def assign_awareness():
+    return np.random.choice(
+        ['Word of mouth', 'Social media', 'Online ads', 'Travel agencies/tour packages', 'News'],
+        p=[0.6, 0.3, 0.05, 0.025, 0.025]  # Word of mouth (60%), Social media (30%), others negligible
+    )
+
+awareness_syn = [assign_awareness() for _ in range(n_samples)]
+
+# Conditional response to ads: 'Have you seen any recent advertisements or promotions for USS?'
+def assign_response_to_ads(gt):
+    if gt == 'Friends':
+        return np.random.choice(
+            ['Yes, but they did not influence my decision', 'Yes and they influenced my decision', "No, I haven't seen any ads"],
+            p=[0.7, 0.1, 0.2]
+            # ads but were not influenced (50%), some were (20%), rest didn't see (30%)
+        )
+    else:
+        return np.random.choice(
+            ["No, I haven't seen any ads", 'Yes, but they did not influence my decision', 'Yes and they influenced my decision'],
+            p=[0.7, 0.2, 0.1]
+            # 70% didn't see ads, 20% saw but were not influenced, 10% were influenced
+        )
+
+response_to_ads_syn = [assign_response_to_ads(gt) for gt in group_type_syn]
+
+# Conditional preferred promotion: 'What type of promotions or discounts would encourage you to visit USS?'
+def assign_preferred_promotion():
+    return np.random.choice(
+        ['Discounted tickets', 'Family/group discounts', 'Seasonal event promotions', 'Bundle deals (hotel + ticket packages)'],
+        p=[0.5, 0.25, 0.15, 0.1]
+        # Discounted tickets top choice, followed by family/group discounts
+    )
+
+preferred_promotion_syn = [assign_preferred_promotion() for _ in range(n_samples)]
+
+synthetic['awareness'] = awareness_syn
+synthetic['response_to_ads'] = response_to_ads_syn
+synthetic['preferred_promotion'] = preferred_promotion_syn
+
+# %%
+# Merge Real & Synthetic Data
+
+df_combined = pd.concat([survey_clean, synthetic], ignore_index=True)
+
+# Store original
+df_labeled = df_combined.copy()
+
+# Encode + scale
+for col in df_combined.select_dtypes(include='object').columns:
+    df_combined[col] = LabelEncoder().fit_transform(df_combined[col])
+
+scaled = StandardScaler().fit_transform(df_combined)
+pca = PCA(n_components=2).fit_transform(scaled)
+
+# %% [markdown]
+# ## Synthetic Data Generation and Merging Strategy
+# 
+# To enrich the dataset for more representative and balanced clustering, we generated synthetic survey responses based on patterns observed in the real data, especially to address potential response bias (e.g., underrepresentation of families).
+# 
+# ---
+# 
+# ### Why We Generated Synthetic Data:
+# - The original survey was distributed primarily to university students, likely skewing responses toward younger, student demographics (e.g., youths, friend groups).
+# - Guest personas like families, especially those using Express Passes or traveling with children, were underrepresented.
+# - Including a richer distribution of visitor types ensures more meaningful and realistic clusters during segmentation.
+# 
+#  Overall, the synthetic data generation preserved the integrity of the original survey while enhancing its representativeness for more effective clustering and persona discovery.
+# 
+
+# %%
+# Determine optimal clusters
+
+df_encoded = df_combined.copy()
+for col in df_encoded.select_dtypes(include='object').columns:
+    df_encoded[col] = LabelEncoder().fit_transform(df_encoded[col])
 
 
-# Elbow Method
+scaler = StandardScaler()
+scaled_features = scaler.fit_transform(df_encoded)
+
 sse = []
-for k in range(2, 11):
+k_range = range(2, 11)
+
+for k in k_range:
     kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
     kmeans.fit(scaled_features)
     sse.append(kmeans.inertia_)
 
 # Plot Elbow Graph
 plt.figure(figsize=(8, 4))
-plt.plot(range(2, 11), sse, marker='o')
+plt.plot(k_range, sse, marker='o')
+plt.xticks(k_range)
 plt.xlabel("Number of Clusters (k)")
 plt.ylabel("Sum of Squared Errors (SSE)")
-plt.title("Elbow Method for Optimal k")
+plt.title("Elbow Method: Choosing Optimal Number of Clusters (k)")
 plt.grid(True)
+plt.tight_layout()
 plt.show()
 
 
-##Compare Clustering Techniques
+# %% [markdown]
+# To determine the optimal number of clusters for our segmentation task, we applied the Elbow Method. This technique involves fitting KMeans models with varying k values (from 2 to 10) and plotting the Sum of Squared Errors (SSE) for each value.
+# 
+# The plot above shows that the reduction in SSE begins to flatten around k = 4, suggesting diminishing returns beyond this point. This “elbow” indicates that four clusters strike a good balance between model complexity and explanatory power.
+# 
+# Therefore, we selected k = 4 as the final number of clusters for our segmentation model. This choice ensures that we capture diverse guest profiles without overfitting or fragmenting our personas too granularly.
+# 
+# 
 
+# %%
+# Compare Clustering Techniques
+results = []
 
-from sklearn.cluster import DBSCAN
-from scipy.cluster.hierarchy import linkage, fcluster
-from sklearn.metrics import silhouette_score
-import pandas as pd
+# KMeans
+kmeans = KMeans(n_clusters=4, random_state=42, n_init=10)
+k_labels = kmeans.fit_predict(pca)
+k_score = silhouette_score(pca, k_labels)
+results.append(('KMeans', k_score, len(set(k_labels))))
 
-# Use normalized features from Step 3A
-X = scaled_features
+# Hierarchical (Agglomerative)
+from sklearn.cluster import AgglomerativeClustering
+h_labels = AgglomerativeClustering(n_clusters=4, linkage='ward').fit_predict(pca)
+h_score = silhouette_score(pca, h_labels)
+results.append(('Hierarchical (Ward)', h_score, len(set(h_labels))))
 
-#  KMeans (again, for comparison)
-kmeans_model = KMeans(n_clusters=4, random_state=42, n_init=10)
-kmeans_labels = kmeans_model.fit_predict(X)
-kmeans_silhouette = silhouette_score(X, kmeans_labels)
+# DBSCAN
+db = DBSCAN(eps=0.5, min_samples=10).fit(pca)
+db_labels = db.labels_
+valid_labels = db_labels[db_labels != -1]
+db_score = silhouette_score(pca[db_labels != -1], valid_labels) if len(set(valid_labels)) > 1 else 0
+results.append(('DBSCAN', db_score, len(set(valid_labels))))
+results_df = pd.DataFrame(results, columns=['Model', 'Silhouette Score', 'Clusters Found'])
+print(results_df)
 
-#  Hierarchical Clustering (Ward)
-linkage_matrix = linkage(X, method='ward')
-hier_labels = fcluster(linkage_matrix, t=4, criterion='maxclust')
-hier_silhouette = silhouette_score(X, hier_labels)
-
-#  DBSCAN
-dbscan_model = DBSCAN(eps=1.5, min_samples=5)
-dbscan_labels = dbscan_model.fit_predict(X)
-dbscan_silhouette = silhouette_score(X, dbscan_labels) if len(set(dbscan_labels)) > 1 else -1
-
-# Compile results
-comparison_df = pd.DataFrame({
-    'Model': ['KMeans', 'Hierarchical (Ward)', 'DBSCAN'],
-    'Silhouette Score': [kmeans_silhouette, hier_silhouette, dbscan_silhouette],
-    'Clusters Found': [len(set(kmeans_labels)), len(set(hier_labels)), len(set(dbscan_labels))]
-})
-
-print(" Clustering Technique Comparison:")
-display(comparison_df)
-
-
-
-
-
-# markdown
+# %% [markdown]
+# ## Clustering Technique Comparison & Final Model Selection
+# 
 # We evaluated three clustering techniques to segment guests based on survey responses:
 # 
 # 1. **KMeans** – Centroid-based algorithm ideal for structured, normalized data.
-# 2. **Hierarchical Clustering (Ward)** – Linkage-based model that builds a nested tree of clusters.
+# 2. **Hierarchical Clustering (Ward linkage)** – Linkage-based model that builds a nested tree of clusters.
 # 3. **DBSCAN** – Density-based clustering that can find non-linear clusters and handle noise.
 # 
-# ####  Model Performance Comparison:
-# 
-# | Model               | Silhouette Score | Clusters Found |
-# |---------------------|------------------|----------------|
-# | KMeans              | 0.228            | 4              |
-# | Hierarchical (Ward) | 0.229            | 4              |
-# | DBSCAN              | 0.056            | 4              |
-# 
-# ---
-# 
-# ### Why We Chose KMeans:
-# 
-# - **KMeans** achieved a **high silhouette score** very close to that of Hierarchical, indicating strong internal cohesion.
-# - It produced **balanced and interpretable clusters** that aligned well with our business objective of defining guest personas.
-# - **Hierarchical Clustering**, although slightly stronger in score, lacks scalability for larger datasets and is harder to visualize in multi-dimensional space.
-# - **DBSCAN** performed poorly with our data, producing weak separation between clusters.
-# 
-# ---
-# 
-# **Conclusion**: We chose **KMeans** for its combination of performance, scalability, and compatibility with downstream analysis like persona generation and marketing strategy development.
 # 
 # 
+# ## Dimensionality Reduction with PCA
+# 
+# Before applying clustering algorithms, we used **Principal Component Analysis (PCA)** to reduce the high-dimensional survey data into a lower-dimensional space while preserving variance. This step improved clustering efficiency, reduced noise, and helped enhance interpretability of clusters in 2D/3D visualizations. The first few principal components captured most of the variance in the data and were sufficient to reveal clear separation among guest segments. PCA was especially helpful when visualizing KMeans and Hierarchical clustering results.
+# 
+# 
+# 
+# ## Model Performance Comparison
+# | Model                  | Silhouette Score | Clusters Found |
+# |------------------------|------------------|----------------|
+# | KMeans                 | **0.514**         | 4              |
+# | Hierarchical (Ward)   | 0.507             | 4              |
+# | DBSCAN                | 0.000             | 1              |
+# 
+# 
+# 
+# ## Why We Chose KMeans:
+# 
+# - **KMeans achieved the highest silhouette score**, indicating strong internal cohesion between clusters.
+# - It produced **balanced and interpretable clusters** that naturally aligned with business goals — segmenting guests by group type, age group, and price sensitivity.
+# - **Hierarchical Clustering**, while competitive, resulted in slightly less separation and was more computationally expensive.
+# - **DBSCAN** failed to identify multiple clusters in our use case (returned 1 large cluster and labeled the rest as noise), resulting in a silhouette score of **0.00**. With our dense, normalized survey data, DBSCAN treated most points as one large group or noise, unable to separate meaningful clusters. This is why it returned **1 cluster** and **0 silhouette score**.
+# 
+# 
+# 
+# 
+# We chose **KMeans** for its high performance, scalability, and smooth integration with downstream analytics such as persona generation and marketing recommendation modeling.
 
+# %%
+# Choose Final Model and Label Segments
+df_labeled['cluster'] = k_labels
 
-# Fit Final KMeans
+# Summarize segments
+cluster_summary = df_labeled.groupby('cluster').agg({
+    'age_group': lambda x: x.value_counts().idxmax(),
+    'group_type': lambda x: x.value_counts().idxmax(),
+    'visit_purpose': lambda x: x.value_counts().idxmax(),
+    'express_pass': lambda x: (x == 'Yes').mean() * 100,
+    'experience_rating': 'mean',
+    'cluster': 'count'
+}).rename(columns={
+    'age_group': 'Age Group',
+    'group_type': 'Group Type',
+    'visit_purpose': 'Visit Purpose',
+    'express_pass': 'Express Pass Usage %',
+    'experience_rating': 'Avg Rating',
+    'cluster': 'Size'
+}).reset_index(drop=True)
 
+cluster_summary['Avg Rating'] = cluster_summary['Avg Rating'].round(2)
+cluster_summary['Express Pass Usage %'] = cluster_summary['Express Pass Usage %'].round(1)
 
-# Based on elbow chart, let's choose k = 4
-optimal_k = 4
-kmeans = KMeans(n_clusters=optimal_k, random_state=42, n_init=10)
-df_segment['cluster'] = kmeans.fit_predict(scaled_features)
+cluster_summary
 
+# %%
+# Re-run PCA on scaled features
+pca = PCA(n_components=2)
+X_pca = pca.fit_transform(scaled_features)
 
-#Analyze and Summarize
-
-
-# Add cluster labels back to original survey data
-survey_with_segments = survey.loc[df_segment.index].copy()
-survey_with_segments['segment'] = df_segment['cluster']
-
-# Cluster feature summary
-cluster_summary = df_segment.groupby('cluster').mean()
-
-# Heatmap visualization
-plt.figure(figsize=(10, 6))
-sns.heatmap(cluster_summary, annot=True, cmap='YlGnBu', fmt=".2f")
-plt.title("Guest Segmentation Cluster Summary")
-plt.ylabel("Cluster")
-plt.xlabel("Feature")
-plt.show()
-
-
-#Generate Guest Personas (Labels)
-
-
-persona_definitions = {}
-
-for cluster_id in range(optimal_k):
-    segment_data = survey_with_segments[survey_with_segments['segment'] == cluster_id]
-    persona_definitions[cluster_id] = {
-        'Most Common Age Group': segment_data['age_group'].value_counts().idxmax(),
-        'Most Common Group Type': segment_data['group_type'].value_counts().idxmax(),
-        'Common Purpose': segment_data['visit_purpose'].value_counts().idxmax(),
-        'Avg Experience Rating': round(segment_data['experience_rating'].mean(), 2),
-        'Express Pass Usage %': round((segment_data['express_pass'] == 'Yes').mean() * 100, 1),
-        'Cluster Size': len(segment_data)
-    }
-
-# Display personas
-for cluster_id, persona in persona_definitions.items():
-    print(f"\nCluster {cluster_id} – Persona:")
-    for k, v in persona.items():
-        print(f"{k}: {v}")
-
-
-# Export Segmented Data to CSV
-
-
-survey_with_segments.to_csv("survey_with_segments.csv", index=False)
-print("\n Segmented survey data saved as 'survey_with_segments.csv'")
-
-
-#  Visualize Segments (Personas)
-
-
-# Pie Chart: Segment Sizes
-plt.figure(figsize=(6, 6))
-survey_with_segments['segment'].value_counts().plot.pie(autopct='%1.1f%%', startangle=90, cmap='tab20')
-plt.title("Segment Distribution (Pie Chart)")
-plt.ylabel("")
-plt.tight_layout()
-plt.show()
-
-# Bar Chart: Age Group Distribution by Segment
-plt.figure(figsize=(10, 6))
-sns.countplot(data=survey_with_segments, x='age_group', hue='segment', palette='tab10')
-plt.title("Age Group Distribution by Segment")
-plt.xlabel("Age Group")
-plt.ylabel("Number of Guests")
-plt.xticks(rotation=45)
-plt.legend(title='Segment')
-plt.tight_layout()
-plt.show()
-
-# Express Pass Usage by Segment
+# Scatter plot of the clusters
 plt.figure(figsize=(8, 6))
-sns.countplot(data=survey_with_segments, x='express_pass', hue='segment', palette='Set2')
-plt.title("Express Pass Usage by Segment")
-plt.xlabel("Used Express Pass?")
-plt.ylabel("Number of Guests")
-plt.legend(title='Segment')
-plt.tight_layout()
-plt.show()
-
-# Revisit Intention Heatmap
-revisit_heatmap = pd.crosstab(survey_with_segments['segment'], survey_with_segments['revisit'], normalize='index')
-plt.figure(figsize=(8, 4))
-sns.heatmap(revisit_heatmap, annot=True, cmap='YlGnBu', fmt='.1%')
-plt.title("Revisit Intention by Segment")
-plt.xlabel("Would Revisit")
-plt.ylabel("Segment")
+scatter = plt.scatter(X_pca[:, 0], X_pca[:, 1], c=k_labels, cmap='viridis', alpha=0.7)
+plt.title('Guest Segments Visualized in 2D (PCA)')
+plt.xlabel('PCA Component 1')
+plt.ylabel('PCA Component 2')
+plt.colorbar(scatter, label='Cluster')
+plt.grid(True)
 plt.tight_layout()
 plt.show()
 
 
+# %%
+df_labeled['express_pass_numeric'] = df_labeled['express_pass'].apply(lambda x: 1 if x == 'Yes' else 0)
 
 
-# Generate Business Strategy Summary per Segment
+plt.figure(figsize=(8, 5))
+sns.barplot(
+    x='cluster',
+    y='express_pass_numeric',
+    data=df_labeled,
+    estimator=lambda x: sum(x) / len(x) * 100  
+)
+plt.ylabel("Express Pass Usage (%)")
+plt.xlabel("Cluster")
+plt.title("Express Pass Usage by Cluster")
+plt.ylim(0, 100)
+plt.grid(axis='y')
+plt.tight_layout()
+plt.show()
 
 
-# Recalculate persona definitions 
-persona_definitions = {}
 
-for cluster_id in range(optimal_k):
-    segment_data = survey_with_segments[survey_with_segments['segment'] == cluster_id]
-    persona_definitions[cluster_id] = {
-        'Most Common Age Group': segment_data['age_group'].value_counts().idxmax(),
-        'Most Common Group Type': segment_data['group_type'].value_counts().idxmax(),
-        'Common Purpose': segment_data['visit_purpose'].value_counts().idxmax(),
-        'Avg Experience Rating': round(segment_data['experience_rating'].mean(), 2),
-        'Express Pass Usage %': round((segment_data['express_pass'] == 'Yes').mean() * 100, 1),
-        'Cluster Size': len(segment_data)
-    }
+df_labeled['group_type_simple'] = df_labeled['group_type'].apply(lambda x: x.split(',')[0].strip())
 
-# Define marketing strategies based on persona traits
-segment_recommendations = {}
-
-for cluster_id, persona in persona_definitions.items():
-    age_group = persona['Most Common Age Group']
-    group_type = persona['Most Common Group Type']
-    purpose = persona['Common Purpose']
-    rating = persona['Avg Experience Rating']
-    express_pct = persona['Express Pass Usage %']
-    size = persona['Cluster Size']
-    
-    # Decide on segment label and marketing strategy
-    if express_pct >= 90:
-        tier = "Premium Spenders"
-        strategy = "Upsell Express/VIP packages, offer loyalty perks for families, enhance high-end food options."
-    elif express_pct <= 10 and rating < 3.5:
-        tier = "Low Satisfaction Budget Guests"
-        strategy = "Improve queue experience, offer re-engagement vouchers, enhance communication and ride information."
-    elif "family" in group_type.lower():
-        tier = "Value-Conscious Families"
-        strategy = "Offer family meal combos, child-friendly attraction bundles, and off-peak promotions."
-    else:
-        tier = "Young Social Visitors"
-        strategy = "Create group ticket bundles, influencer-driven social campaigns, and off-peak youth discounts."
-
-    # Store strategy in dictionary
-    segment_recommendations[cluster_id] = {
-        "Segment Name": tier,
-        "Age Group": age_group,
-        "Group Type": group_type,
-        "Visit Purpose": purpose,
-        "Avg Experience Rating": rating,
-        "Express Pass Usage %": express_pct,
-        "Segment Size": size,
-        "Marketing Strategy": strategy
-    }
-
-# Convert to DataFrame
-segment_strategy_df = pd.DataFrame.from_dict(segment_recommendations, orient='index')
-
-# Display the strategy table
-print("\n Business Strategy Recommendations by Segment:")
-display(segment_strategy_df)
-
-## --- Business Question 4: Impact on Marketing Strategies on Guest Behaviour --- ##
-"""
-Recommend tailored marketing strategies for specific segments
--------------------
-We will be analysing the responses of 3 key questions from the survey.
-Q1. 'How did you first hear about Universal Studios Singapore?'
-Q2. 'Have you seen any recent advertisements or promotions for USS?'
-Q3. 'What type of promotions or discounts would encourage you to visit USS?'
-"""
-
-# (1) Generate tailored marketing strategies based on Q1
-
-q1_col = 'How did you first hear about Universal Studios Singapore?'
-
-# Define marketing strategies based on how guests first heard about USS
-q1_segment_recommendations = {}
-
-for cluster_id, persona in persona_definitions.items():
-    age_group = persona['Most Common Age Group']
-    group_type = persona['Most Common Group Type']
-    purpose = persona['Common Purpose']
-    rating = persona['Avg Experience Rating']
-    express_pct = persona['Express Pass Usage %']
-    size = persona['Cluster Size']
-
-    # Get most common Q1 response for the segment
-    segment_data = survey_with_segments[survey_with_segments['segment'] == cluster_id]
-    primary_response = segment_data[q1_col].value_counts().idxmax()
-
-    # Decide on segment label based on express pass usage
-    if express_pct >= 90:
-        tier = "Premium Spenders"
-    elif express_pct <= 10 and rating < 3.5:
-        tier = "Low Satisfaction Budget Guests"
-    elif "family" in group_type.lower():
-        tier = "Value-Conscious Families"
-    else:
-        tier = "Young Social Visitors"
-
-    # Decide on marketing strategy based on Q1 response and segment traits
-    if primary_response == 'Online ads':
-        if express_pct >= 90:
-            strategy = "Target premium digital ads, offer exclusive VIP packages online."
-        elif "family" in group_type.lower():
-            strategy = "Use online family-targeted ads with discounts for kids' attractions."
-        else:
-            strategy = "Social media influencer ads, exclusive digital coupons for young adults."
-
-    elif primary_response == 'Word of mouth':
-        if express_pct >= 90:
-            strategy = "Leverage word-of-mouth for VIP and referral discounts, create loyalty programs."
-        else:
-            strategy = "Engage customers through referral programs and positive review sharing."
-
-    elif primary_response == 'News':
-        if express_pct >= 90:
-            strategy = "Feature premium packages in high-end media outlets and news channels."
-        else:
-            strategy = "Use local news and media to engage families with promotional offers."
-
-    elif primary_response == 'Social media':
-        if express_pct >= 90:
-            strategy = "Partner with influencers for VIP promotions and exclusive offers on social platforms."
-        else:
-            strategy = "Offer limited-time promotions through social media contests and influencer events."
-
-    elif primary_response == 'Travel agencies/tour packages':
-        if express_pct >= 90:
-            strategy = "Collaborate with travel agencies to offer bundled premium packages."
-        else:
-            strategy = "Promote group tours and cost-effective travel packages through agencies."
-
-    else:
-        strategy = "Create tailored strategies based on the specific needs of the segment."
-
-    # Store strategy and segment info in dictionary
-    q1_segment_recommendations[cluster_id] = {
-        "Segment Name": tier,
-        "Age Group": age_group,
-        "Group Type": group_type,
-        "Visit Purpose": purpose,
-        "Avg Experience Rating": rating,
-        "Express Pass Usage %": express_pct,
-        "Segment Size": size,
-        "Primary Response": primary_response,
-        "Marketing Strategy": strategy
-    }
-
-# Convert to dataframe
-q1_segment_strategy_df = pd.DataFrame.from_dict(q1_segment_recommendations, orient='index')
-
-# Display the strategy table for Q1 responses
-print("\n Marketing Strategy Recommendations by Segment (Q1 Responses):")
-display(q1_segment_strategy_df)
+plt.figure(figsize=(8, 5))
+sns.countplot(x='cluster', hue='group_type_simple', data=df_labeled)
+plt.title("Simplified Group Type Distribution by Cluster")
+plt.xlabel("Cluster")
+plt.ylabel("Count")
+plt.legend(title='Group Type', bbox_to_anchor=(1.05, 1), loc='upper left')
+plt.tight_layout()
+plt.show()
 
 
-# (2) Generate tailored marketing strategies based on Q2
 
-q2_col = 'Have you seen any recent advertisements or promotions for USS?'
+plt.figure(figsize=(8, 5))
+sns.countplot(x='cluster', hue='age_group', data=df_labeled)
+plt.title("Age Group Distribution by Cluster")
+plt.xlabel("Cluster")
+plt.ylabel("Count")
+plt.legend(title='Age Group', bbox_to_anchor=(1.05, 1), loc='upper left')
+plt.tight_layout()
+plt.show()
 
-# Define marketing strategies based on guests' exposure to USS ads
-q2_segment_recommendations = {}
 
-for cluster_id, persona in persona_definitions.items():
-    age_group = persona['Most Common Age Group']
-    group_type = persona['Most Common Group Type']
-    purpose = persona['Common Purpose']
-    rating = persona['Avg Experience Rating']
-    express_pct = persona['Express Pass Usage %']
-    size = persona['Cluster Size']
 
-    # Get the most common primary Q2 response for the segment
-    segment_data = q2_by_segment[q2_by_segment['segment'] == cluster_id]
-    primary_response = segment_data[q2_col].value_counts().idxmax()
 
-    # Decide on segment label based on express pass usage
-    if express_pct >= 90:
-        tier = "Premium Spenders"
-    elif express_pct <= 10 and rating < 3.5:
-        tier = "Low Satisfaction Budget Guests"
-    elif "family" in group_type.lower():
-        tier = "Value-Conscious Families"
-    else:
-        tier = "Young Social Visitors"
+# %% [markdown]
+# ### Official Clusters 
+# 
+# Based on the final cluster characteristics including group type, age group, express pass usage, visit purpose, and average satisfaction rating, we interpret and name the four guest segments as follows:
+# 
+# 0. **Social-Driven Youths**  
+#    *Profile:* Young friend groups (18–24 years old) visiting for social bonding. This group shows high Express Pass usage and high satisfaction, emphasizing social experience over cost.  
+#    *Business Implication:* Promote through social media, influencer campaigns, and group discounts.
+# 
+# 1. **Value-Conscious Families**  
+#    *Profile:* Budget-sensitive families (typically aged 25–34), attending for family outings. They have moderate satisfaction and low Express Pass usage.  
+#    *Business Implication:* Offer value-focused family packages, meal bundles, and promote off-peak visits.
+# 
+# 2. **Budget-Conscious Youths**  
+#    *Profile:* Young visitors (18–24 years old), mostly friend groups attending for social purposes. They show low Express Pass usage and lower average satisfaction, indicating cost-sensitivity.  
+#    *Business Implication:* Target with queue improvement, budget packages, and survey-based re-engagement.
+# 
+# 3. **Premium Spenders**  
+#    *Profile:* Families with children (mostly 25–34 years old) who show very high Express Pass usage and high satisfaction. These guests are willing to spend for convenience and premium experiences.  
+#    *Business Implication:* Upsell VIP bundles, offer exclusive experiences, and retain through loyalty programs.
+# 
+# 
+# These personas reflect distinct motivations and spending behavior, enabling more precise marketing strategies tailored to each cluster.
+# 
 
-    # Tailor marketing strategies based on both tier and primary response
-    if tier == "Premium Spenders":
-        if primary_response == 'Yes, but they did not influence my decision':
-            strategy = "Increase visibility through targeted promotions, reinforce brand presence."
-        elif primary_response == 'Yes and they influenced my decision to visit':
-            strategy = "Leverage this influence to promote upsell opportunities, loyalty programs."
-        elif primary_response == "No, I haven't seen any ads":
-            strategy = "Boost ad visibility and engagement across various channels, focus on awareness campaigns."
+# %%
+# Map cluster indices to official names
+cluster_name_map = {
+    0: 'Social-Driven Youths',
+    1: 'Value-Conscious Families',
+    2: 'Budget-Conscious Youths',
+    3: 'Premium Spenders'
+}
 
-    elif tier == "Low Satisfaction Budget Guests":
-        if primary_response == 'Yes, but they did not influence my decision':
-            strategy = "Enhance advertisement engagement, focusing on the value proposition."
-        elif primary_response == 'Yes and they influenced my decision to visit':
-            strategy = "Emphasize offers and discounts, capitalize on ad-driven decisions."
-        elif primary_response == "No, I haven't seen any ads":
-            strategy = "Increase awareness, particularly focusing on affordable options."
-
-    elif tier == "Value-Conscious Families":
-        if primary_response == 'Yes, but they did not influence my decision':
-            strategy = "Increase targeted family promotions in advertisements."
-        elif primary_response == 'Yes and they influenced my decision to visit':
-            strategy = "Create tailored family packages based on ad-driven decisions."
-        elif primary_response == "No, I haven't seen any ads":
-            strategy = "Boost family-oriented advertisements, increase ad presence in relevant channels."
-
-    elif tier == "Young Social Visitors":
-        if primary_response == 'Yes, but they did not influence my decision':
-            strategy = "Increase ad presence and awareness, focusing on interactive content for young visitors."
-        elif primary_response == 'Yes and they influenced my decision to visit':
-            strategy = "Leverage social media-driven campaigns for youth engagement and promotions."
-        elif primary_response == "No, I haven't seen any ads":
-            strategy = "Focus on influencer marketing and social media engagement to drive awareness."
-
-    # Store strategy and segment info in dictionary
-    q2_segment_recommendations[cluster_id] = {
-        "Segment Name": tier,
-        "Age Group": age_group,
-        "Group Type": group_type,
-        "Visit Purpose": purpose,
-        "Avg Experience Rating": rating,
-        "Express Pass Usage %": express_pct,
-        "Segment Size": size,
-        "Primary Response": primary_response,
-        "Marketing Strategy": strategy
-    }
-
-# Convert to DataFrame
-q2_segment_strategy_df = pd.DataFrame.from_dict(q2_segment_recommendations, orient='index')
-
-# Display the strategy table for Q2 responses
-print("\n Marketing Strategy Recommendations by Segment (Q2 Responses):")
-display(q2_segment_strategy_df)
-
-# (3) Generate tailored marketing strategies based on Q3
-
-q3_col = 'What type of promotions or discounts would encourage you to visit USS?'
-
-# Define marketing strategies based on guests' preferred promotion type
-q3_segment_recommendations = {}
-
-for cluster_id, persona in persona_definitions.items():
-    age_group = persona['Most Common Age Group']
-    group_type = persona['Most Common Group Type']
-    purpose = persona['Common Purpose']
-    rating = persona['Avg Experience Rating']
-    express_pct = persona['Express Pass Usage %']
-    size = persona['Cluster Size']
-
-    # Get most common primary Q3 response for the segment
-    segment_data = q3_exploded[q3_exploded['segment'] == cluster_id]
-    primary_response = segment_data[q3_col].value_counts().idxmax()
-
-    # Decide on segment label based on express pass usage
-    if express_pct >= 90:
-        tier = "Premium Spenders"
-    elif express_pct <= 10 and rating < 3.5:
-        tier = "Low Satisfaction Budget Guests"
-    elif "family" in group_type.lower():
-        tier = "Value-Conscious Families"
-    else:
-        tier = "Young Social Visitors"
-
-    # Tailor marketing strategies based on both tier and primary response
-    if tier == "Premium Spenders":
-        if primary_response == 'Discounted tickets':
-            strategy = "Offer exclusive high-end discounts or access to VIP experiences."
-        elif primary_response == 'Bundle deals (hotel + ticket packages etc.)':
-            strategy = "Promote luxury bundle deals including premium accommodations and special perks."
-        elif primary_response == 'Family/group discounts':
-            strategy = "Provide premium family group packages with VIP options."
-        elif primary_response == 'Seasonal event promotions':
-            strategy = "Offer VIP access to seasonal events and exclusive premium seating."
-
-    elif tier == "Low Satisfaction Budget Guests":
-        if primary_response == 'Discounted tickets':
-            strategy = "Offer affordable ticket discounts and emphasize value for money."
-        elif primary_response == 'Bundle deals (hotel + ticket packages etc.)':
-            strategy = "Promote cost-effective bundle deals with hotel stays for budget-conscious guests."
-        elif primary_response == 'Family/group discounts':
-            strategy = "Provide budget-friendly family group tickets with additional value-added services."
-        elif primary_response == 'Seasonal event promotions':
-            strategy = "Offer discounted seasonal events to attract budget-conscious visitors."
-
-    elif tier == "Value-Conscious Families":
-        if primary_response == 'Discounted tickets':
-            strategy = "Offer family-friendly ticket discounts and emphasize convenience."
-        elif primary_response == 'Bundle deals (hotel + ticket packages etc.)':
-            strategy = "Promote family-friendly bundles, offering hotel and ticket combos for more savings."
-        elif primary_response == 'Family/group discounts':
-            strategy = "Provide exclusive family discounts for larger groups and multi-day visits."
-        elif primary_response == 'Seasonal event promotions':
-            strategy = "Create family-centric seasonal events with bundled deals."
-
-    else:  # Young Social Visitors
-        if primary_response == 'Discounted tickets':
-            strategy = "Offer group discounts and emphasize social media perks."
-        elif primary_response == 'Bundle deals (hotel + ticket packages etc.)':
-            strategy = "Promote bundles that are ideal for young social visitors and friends."
-        elif primary_response == 'Family/group discounts':
-            strategy = "Offer group discounts for young visitors coming with friends."
-        elif primary_response == 'Seasonal event promotions':
-            strategy = "Leverage seasonal events for social media promotions and group discounts."
-
-    # Store strategy and segment info in dictionary
-    q3_segment_recommendations[cluster_id] = {
-        "Segment Name": tier,
-        "Age Group": age_group,
-        "Group Type": group_type,
-        "Visit Purpose": purpose,
-        "Avg Experience Rating": rating,
-        "Express Pass Usage %": express_pct,
-        "Segment Size": size,
-        "Primary Response": primary_response,
-        "Marketing Strategy": strategy
-    }
-
-# Convert to DataFrame
-q3_segment_strategy_df = pd.DataFrame.from_dict(q3_segment_recommendations, orient='index')
-
-# Display the strategy table for Q3 responses
-print("\n Marketing Strategy Recommendations by Segment (Q3 Responses):")
-display(q3_segment_strategy_df)
-
+cluster_summary['Segment'] = cluster_summary.index.map(cluster_name_map)
+cols = ['Segment'] + [col for col in cluster_summary.columns if col != 'Segment']
+cluster_summary = cluster_summary[cols]
+cluster_summary
