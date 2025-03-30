@@ -10,7 +10,21 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # %%
-survey = pd.read_csv("survey.csv")
+# Get the directory of the current script (guest_satisfaction.py)
+script_dir = Path(__file__).parent
+
+# Navigate project root (Git/) and then into data/
+project_root = script_dir.parent.parent  # Adjust based on your structure
+csv_path = project_root / "data" / "survey.csv"
+
+# Verify  path
+print(f"Absolute CSV path: {csv_path}")
+print(f"File exists? {csv_path.exists()}")
+
+# Load the CSV
+survey = pd.read_csv(csv_path)
+
+
 
 survey = survey.rename(columns={
     'Which age group do you belong to?': 'age_group',
