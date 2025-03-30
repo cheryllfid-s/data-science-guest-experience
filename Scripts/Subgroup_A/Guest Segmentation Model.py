@@ -237,6 +237,7 @@ db_score = silhouette_score(pca[db_labels != -1], valid_labels) if len(set(valid
 results.append(('DBSCAN', db_score, len(set(valid_labels))))
 results_df = pd.DataFrame(results, columns=['Model', 'Silhouette Score', 'Clusters Found'])
 print(results_df)
+print("\n")
 
 # %% [markdown]
 # ## Clustering Technique Comparison & Final Model Selection
@@ -403,3 +404,69 @@ cluster_summary['Segment'] = cluster_summary.index.map(cluster_name_map)
 cols = ['Segment'] + [col for col in cluster_summary.columns if col != 'Segment']
 cluster_summary = cluster_summary[cols]
 cluster_summary
+
+## --- Analysis for Business Question 4: Recommend tailored marketing strategies for specific segments --- ##
+
+# Compute top response for each segment
+def compute_top_response(df, cluster_col, response_col, cluster_map):
+    top_response = df.groupby(cluster_col)[response_col].agg(
+        lambda x: x.value_counts().idxmax()).reset_index()
+    top_response[cluster_col] = top_response[cluster_col].map(cluster_map)
+    return top_response
+
+# --- Analysing 3 key questions from the data --- ##
+print("--- Business Question 4: Recommend tailored marketing strategies for specific segments ---")
+
+# (1) Awareness: 'How did you first hear about Universal Studios Singapore?'
+top_awareness = compute_top_response(df_labeled, 'cluster', 'awareness', cluster_name_map)
+print("### Awareness: 'How did you first hear about Universal Studios Singapore?' ###")
+print(top_awareness)
+print("\n")
+
+
+# (2) Response to ads: 'Have you seen any recent advertisements or promotions for USS?'
+top_response_to_ads = compute_top_response(df_labeled, 'cluster', 'response_to_ads', cluster_name_map)
+print("### Response to ads: 'Have you seen any recent advertisements or promotions for USS?' ###")
+print(top_response_to_ads)
+print("\n")
+
+
+# (3) Preferred promotion: 'What type of promotions or discounts would encourage you to visit USS?'
+top_preferred_promotion = compute_top_response(df_labeled, 'cluster', 'preferred_promotion', cluster_name_map)
+print("### Preferred promotion: 'What type of promotions or discounts would encourage you to visit USS?' ###")
+print(top_preferred_promotion)
+
+# %% [markdown]
+# Insight 1:
+# Across all segments, word-of-mouth emerged as the primary awareness source. This shows that peer recommendations and
+# personal experiences are much more impactful than traditional advertising.
+#
+# Business impact 1:
+# Prioritise word-of-mouth marketing through social media. Partner with influencers and introduce incentives for guests
+# to share their authentic USS experience through user-generated-content. Such incentives could include a discount for
+# their next visit or referral discounts.
+# ---------------------------------------------------------------------------------------------------------------------
+# Insight 2:
+# Families had limited advertisement exposure, while youths saw advertisements but were not influenced to visit.
+# - Advertisements may not be reaching families through the most effective channels.
+# - Approach of advertisements may not be resonating with youths.
+#
+# Business impact 2:
+# - Given that word-of-mouth is effective across all segments, continue to prioritise this channel.
+# - Collaborate with family-focused influencers or content creators to highlight the family-friendly aspects of USS,
+# such as kid-friendly attractions, family discounts, and safety measures.
+# - Engage youths with interactive campaigns on TikTok/Instagram instead of traditional advertisements. For example,
+# offering behind-the-scenes exclusives or guest interviews can be a starting point to build an online community,
+# foster a sense of inclusivity and build rapport with guests.
+# ---------------------------------------------------------------------------------------------------------------------
+# Insight 3:
+# Discounts are the most preferred promotion type, but analysis of past promotional events showed no significant impact on
+# guest satisfaction. This highlights a need to shift toward focusing on guest experience instead.
+#
+# Business impact 3:
+# Shift focus from discounts to creating unique, memorable experiences for guests.
+# For instance,
+# - Lucky draw events where winner gets exclusive backstage access or meet-and-greet opportunities.
+# - Exclusive polaroid photo sessions at iconic spots in USS, offering guests a tangible souvenir that adds a personal touch.
+# By leaving guests with memorable experiences that go beyond discount, guest are more likely to share their experience
+# with others, driving promotion and brand awareness through word-of-mouth.
