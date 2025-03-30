@@ -1,0 +1,22 @@
+[33mb44c33d[m Delete some of the unnecessary files
+[33mb5cf9f2[m .
+[33mb7a32b8[m added documentation for the latest version of demand prediction modelling
+[33m34323cd[m changed some stuff about synthetic data, minor changes to prediction model
+[33m3ef49ef[m new predict demand model in progress
+[33m6f9044a[m Redo satisfaction prediction in optimization_qn2, no demand prediction
+[33m52303e6[m Updated uss_optimization.py to answer question 1 and created uss_optimization_FirstP.py to traceback to initial prototype and also deleted some useless code.
+[33m6397bbe[m Update and do some changes
+[33mf05e69e[m Shift response.csv to correct folder, ready for work using pandas
+[33m56f751f[m Delete data/survey
+[33m36b3be6[m Delete Scripts/Subgroup_A/guest-satisfaction.py
+[33mea10192[m Delete src directory
+[33m3f5232c[m Delete src/temp
+[33me10165b[m Delete Universal Studios Singapore Survey (Responses) - Form Responses 1.csv
+[33me2e5c92[m Delete data/temp
+[33m1ed2340[m Delete data
+[33mb434aa8[m Delete data
+[33ma4e58ed[m Subgroup B code updates and resources
+[33m13aac67[m Delete LICENSE.chromedriver
+[33m0b2e5f0[m Delete chromedriver.exe
+[33m4ff9184[m Initial commit with full project implementation"
+[33mbc43a9c[m Initial commit with full project implementation"
