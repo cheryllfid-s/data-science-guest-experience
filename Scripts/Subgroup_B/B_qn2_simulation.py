@@ -15,7 +15,7 @@ import os
 df_survey = pd.read_csv("../../data/survey.csv")
 df_weather = pd.read_csv("../../data/weather_data.csv")
 
-#  Clean Survey Data 
+#  Clean survey data
 df_survey = df_survey.rename(columns={
     "On a scale of 1-5, how would you rate your overall experience at USS?": "Guest_Satisfaction_Score",
     "How long did you wait in line for rides on average during your visit?": "Wait_Time",
@@ -34,7 +34,7 @@ df_survey["Guest_Satisfaction_Score"] = pd.to_numeric(df_survey["Guest_Satisfact
 df_survey["Timestamp"] = pd.to_datetime(df_survey["Timestamp"]).dt.date
 df_survey["date"] = df_survey["Timestamp"]
 
-#  Clean Weather Data 
+#  Clean weather_data
 df_weather = df_weather.rename(columns={
     "date": "date",
     "temperature": "temperature",
@@ -43,23 +43,23 @@ df_weather = df_weather.rename(columns={
 })
 df_weather["date"] = pd.to_datetime(df_weather["date"]).dt.date
 
-#  Merge Datasets 
+#  Merge datasets
 df_merged = pd.merge(df_survey, df_weather, on="date", how="inner")
 df_merged = df_merged.dropna(subset=["Guest_Satisfaction_Score", "temperature", "rainfall", "humidity"])
 
-# Train Model 
+# We train the model 
 X = df_merged[["temperature", "rainfall", "humidity"]]
 y = df_merged["Guest_Satisfaction_Score"]
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 model = RandomForestRegressor(n_estimators=100, random_state=42)
 model.fit(X_train, y_train)
 
-# Evaluate Model
+# then we evaluate model
 y_pred = model.predict(X_test)
 rmse = np.sqrt(mean_squared_error(y_test, y_pred))
 r2 = r2_score(y_test, y_pred)
 
-# Create 7-Day Forecast 
+# Create 7-Day Forecast for use in simulation
 future_dates = pd.date_range(start=datetime.now(), periods=7, freq="D").date
 forecast_weather = df_weather.tail(7).copy()
 forecast_weather = forecast_weather.reset_index(drop=True)
@@ -97,8 +97,8 @@ class ThemePark:
                 wait_time = env.now - arrival_time
                 self.wait_times[attraction_name].append(wait_time)
                 self.visit_counts[attraction_name] += 1
-                service_rate = 16 if self.layout == "single_queue" else 4
-                ride_duration = np.random.exponential(7 / service_rate)
+                service_rate = 16 if self.layout == "single_queue" else 4 # estimated service rate based on USS rides
+                ride_duration = np.random.exponential(7 / service_rate) # USS rides are 2-4mins, this gives us a good average estimation
                 yield env.timeout(ride_duration)
         self.total_times.append(env.now - start_time)
 
@@ -113,10 +113,10 @@ class ThemePark:
 def run_simulation(num_guests, attractions, layout, use_right_entrance=True):
     env = simpy.Environment()
     park = ThemePark(env, attractions, layout, use_right_entrance)
-    arrival_rates = {
+    arrival_rates = { # we simulate morning 10am-12pm, peak 12pm - 5pm afternoon, and slower 5-7pm evening guest flows
         "Morning": (0, 120, 0.5),
         "Afternoon": (120, 420, 0.1667),
-        "Evening": (420, 540, 0.25)
+        "Evening": (420, 540, 0.25) 
     }
     env.process(park.generate_guests(num_guests, arrival_rates))
     env.run(until=540)
@@ -181,9 +181,9 @@ def compare_layouts():
 
 
     print("\nJustification for Modified Layout:")
-    print("- Removed right entrance to reduce congestion at central attractions.")
-    print("- Swapped Transformers and CYLON to rebalance flow.")
-    print("- Result: Lower wait times and better guest distribution most of the time (quite reliably, we did the best we can)")
+    print("We removed right entrance to reduce congestion at congested attractions CYLON and Transformers.")
+    print("Swapped Transformers and CYLON to rebalance flow.")
+    print("Result: Lower wait times and better guest distribution most of the time (quite reliably, we did the best we can)")
 
 # Main
 if __name__ == "__main__":

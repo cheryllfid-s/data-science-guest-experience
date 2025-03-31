@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import simpy
-from datetime import datetime
+from datetime import datetime, timedelta
 from sklearn.model_selection import train_test_split, cross_val_score, KFold
 from sklearn.preprocessing import LabelEncoder
 from sklearn.ensemble import RandomForestRegressor
@@ -15,8 +15,8 @@ from sdv.metadata import Metadata
 from sdv.single_table import GaussianCopulaSynthesizer
 
 # set proper working directory if not yet, and change new_directory to wherever your repo is locally
-new_directory = r"C:\Users\parma\data-science-guest-experience\data-science-guest-experience\Scripts\Subgroup_B" 
-os.chdir(new_directory)
+# new_directory = r"C:\Users\parma\data-science-guest-experience\data-science-guest-experience\Scripts\Subgroup_B" 
+# os.chdir(new_directory)
 
 # Loading datasets
 ## Load survey data
@@ -460,15 +460,11 @@ print(df_combined_processed.columns.tolist()) #to check all the columns are corr
 ## Modelling with XGBoost
 """
 Purpose:
-Trains an XGBoost regression model on the given dataset to predict the specified target variable (default: 'Avg_Wait_Time'). 
-The function returns the trained model and evaluates its performance using common regression metrics (RMSE and MAE).
- Additionally, it calculates and prints the correlation between the predicted target and the input features.
+Trains an XGBoost regression model on the given dataset to predict the specified target variable (default: 'Avg_Wait_Time'). The function returns the trained model and evaluates its performance using common regression metrics (RMSE and MAE). Additionally, it calculates and prints the correlation between the predicted target and the input features.
 
 Arguments:
-- df (pd.DataFrame): The dataset to train the model on. This dataset should include both features and the target variable. 
-                    The features may include categorical variables such as Favorite_Attraction, Age_Group, Employment_Status, and more.
-- target (str): The column name of the target variable that the model is trying to predict. 
-                By default, this is set to 'Avg_Wait_Time', but it can be changed to any other column in the dataset (e.g., Queue_Time).
+- df (pd.DataFrame): The dataset to train the model on. This dataset should include both features and the target variable. The features may include categorical variables such as Favorite_Attraction, Age_Group, Employment_Status, and more.
+- target (str): The column name of the target variable that the model is trying to predict. By default, this is set to 'Avg_Wait_Time', but it can be changed to any other column in the dataset (e.g., Queue_Time).
 
 Returns:
 - model (XGBRegressor): The trained XGBoost regression model.
@@ -476,7 +472,6 @@ Returns:
 - RMSE: Root Mean Squared Error (RMSE) for model performance evaluation.
 - MAE: Mean Absolute Error (MAE) for model performance evaluation.
 """
-
 def train_demand_model(df, target='Avg_Wait_Time'):
     # define feature columns based on the dataset
     if 'theme_Zone_Visited' in df.columns: # if IoT data is present
