@@ -1,4 +1,5 @@
 from datacleaning_A import *
+from guest_satisfaction import GuestSatisfactionAnalysis
 from guest_journey import GuestJourneyAnalysis
 from promo_events_analysis import USSPromoAnalysis
 from extfactors import analyse
