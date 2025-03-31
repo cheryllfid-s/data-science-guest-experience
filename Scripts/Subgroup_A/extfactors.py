@@ -204,7 +204,7 @@ def q5_analyse(df_reviews_cleaned):
     sentiseasonheat(df_reviews_cleaned)
 
     guest_volume = df_reviews_cleaned.groupby(['segment', 'month']).size().reset_index(name='guest_count')
-    def guestvolmonth(df_reviews_cleaned):
+    def guestvolmonth(guest_volume):
         # Plot the line graph
         plt.figure(figsize=(12, 6))
 
@@ -220,15 +220,18 @@ def q5_analyse(df_reviews_cleaned):
 
         # Show the plot
         plt.show()
-    guestvolmonth(df_reviews_cleaned)
+    guestvolmonth(guest_volume)
+    print(guest_volume.head())
+    
+
 
     def guestvolseason(guest_volume):
         season_mapping = {
-        2: 'Feb-Apr', 3: 'Feb-Apr', 4: 'Feb-Apr',
-        5: 'Summer Holidays', 6: 'Summer Holidays', 7: 'Summer Holidays',
-        8: 'Aug-Oct', 9: 'Aug-Oct', 10: 'Aug-Oct',
-        11: 'Winter Holidays', 12: 'Winter Holidays', 1: 'Winter Holidays'
-    }
+        'February': 'Feb-Apr', 'March': 'Feb-Apr', 'April': 'Feb-Apr',
+        'May': 'Summer Holidays', 'June': 'Summer Holidays', 'July': 'Summer Holidays',
+        'August': 'Aug-Oct', 'September': 'Aug-Oct', 'October': 'Aug-Oct',
+        'November': 'Winter Holidays', 'December': 'Winter Holidays', 'January': 'Winter Holidays'
+        }
 
         # Map months to seasons
         guest_volume['season'] = guest_volume['month'].map(season_mapping)
@@ -246,7 +249,9 @@ def q5_analyse(df_reviews_cleaned):
 
         # Aggregate guest count by segment and season
         seasonal_guest_volume = guest_volume_extended.groupby(['segment', 'season'], observed=True)['guest_count'].sum().reset_index()
-
+        return seasonal_guest_volume
+    seasonal_guest_volume = guestvolseason(guest_volume)
+    def plot_seasonal_volume(seasonal_guest_volume):
         # Plot the line graph
         plt.figure(figsize=(12, 6))
 
@@ -263,8 +268,8 @@ def q5_analyse(df_reviews_cleaned):
 
         # Show the plot
         plt.show()
-    guestvolseason(df_reviews_cleaned)
-
+    plot_seasonal_volume(seasonal_guest_volume)
+    # Analysis:
     # The trend of guest count across Budget-Conscious Youths,Premium Spenders, and Social-Driven Youths segments during the different periods remained fairly consistent. For Value-Conscious Families segment, the volume of guests in February to April and August to September periods were lower when compared to the higher volume seen in the summer (May to July) and winter (November to January) periods. 
     # 
     # This pattern is likely influenced by several factors, including seasonal availability, as families, particularly those with children, tend to visit more during school holidays in the summer and winter. Furthermore, the winter holiday period (November to January) aligns with family vacations and year-end celebrations, contributing to higher guest volume. 
