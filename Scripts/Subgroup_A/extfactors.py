@@ -15,38 +15,50 @@ print(f"File exists? {csv_path_reviews.exists()}")
 df_reviews = pd.read_csv(csv_path_reviews)
 
 # %%
-# Segment keywords based on guest segmentation model
-segment_keywords = {
-    0: ["long queue","long wait", "expensive", "wait time", "crowded", "not worth", "overhyped"],
-    1: ["fun", "good experience", "nice place", "friends", "cool rides", "social"],
-    2: ["family", "kids", "children", "great for family","meal deals", "family time", "stroller", "cartoon characters", "family experience"],
-    3: ["express pass", "VIP", "express", "luxury", "premium", "fast pass", "exclusive", "experience", "personalized", "service", "high-end"]
+# Define keyword categories
+keywords = {
+    "youth": ["friends", "bros", "squad", "group", "hangout", "party", "social", "fun", "young", "teen", "college", "students"],
+    "family": ["family", "kids", "children", "parents", "mom", "dad", "toddler", "baby", "grandparents"],
+    "express_pass": ["express pass", "fast lane", "skip queue", "VIP", "no wait", "priority", "worth the money", "premium"],
+    "budget": ["expensive", "cost", "too pricey", "not worth", "overpriced", "save money", "cheap", "budget", "affordable", "long wait"]
 }
 
-# Function to assign segment based on keywords
-def assign_segment(review_text):
-    for segment, keywords in segment_keywords.items():
-        if any(keyword in review_text.lower() for keyword in keywords):
-            return segment
-    return np.nan  # Assign NaN if no keywords match
+# Function to assign segment based on scores from both title and text
+def assign_segment(row):
+    full_text = f"{row['title']} {row['review_text']}".lower()  # Combine title and text
+    
+    # Count occurrences of keywords in each category
+    scores = {category: sum(full_text.count(word) for word in words) for category, words in keywords.items()}
+    
+    # Determine the dominant category for each aspect
+    age_group = "youth" if scores["youth"] > scores["family"] else "family"
+    spending_type = "express_pass" if scores["express_pass"] > scores["budget"] else "budget"
+    
+    # Assign segment based on the dominant categories
+    if age_group == "youth" and spending_type == "express_pass":
+        return 0  # Social-Driven Youths
+    elif age_group == "family" and spending_type == "budget":
+        return 1  # Value-Conscious Families
+    elif age_group == "youth" and spending_type == "budget":
+        return 2  # Budget-Conscious Youths
+    elif age_group == "family" and spending_type == "express_pass":
+        return 3  # Premium Spenders
+    else:
+        return -1  # Unclassified
 
-# Apply the function to assign segments
-df_reviews["segment"] = df_reviews["review_text"].apply(assign_segment)
+# Apply segmentation function using both title and text
+df_reviews['segment'] = df_reviews.apply(assign_segment, axis=1)
 
-# Drop NaN rows (if necessary)
-df_reviews = df_reviews.dropna(subset=["segment"])
+# Print sample results
+print(df_reviews[['title', 'review_text', 'segment']].head())
 
-# Convert to integer type
-df_reviews["segment"] = df_reviews["segment"].astype(int)
 
-# Display the first few results
-print(df_reviews[["review_text", "segment"]].head())
 
 # %%
 # Plot the distribution of segments
 plt.figure(figsize=(8, 5))
 sns.countplot(x=df_reviews["segment"], palette="coolwarm")
-plt.xticks([0, 1, 2, 3], ["Budget Visitors", "Social Visitors", "Families", "Premium Spenders"])
+plt.xticks([0, 1, 2, 3], ["Social-Driven Youths", "Value-Conscious Families","Budget-Conscious Youths", "Premium Spenders" ], rotation=45, ha='right')
 plt.xlabel("Segment")
 plt.ylabel("Number of Reviews")
 plt.title("TripAdvisor Review Segments")
@@ -62,7 +74,7 @@ df_reviews["sentiment"] = df_reviews["review_text"].apply(get_sentiment)
 # Boxplot of sentiment scores by segment
 plt.figure(figsize=(8, 5))
 sns.boxplot(x=df_reviews["segment"], y=df_reviews["sentiment"], palette="coolwarm")
-plt.xticks([0, 1, 2, 3], ["Budget Visitors", "Social Visitors", "Families", "Premium Spenders"])
+plt.xticks([0, 1, 2, 3], ["Social-Driven Youths", "Value-Conscious Families","Budget-Conscious Youths", "Premium Spenders" ])
 plt.xlabel("Segment")
 plt.ylabel("Sentiment Score")
 plt.title("Sentiment Analysis of TripAdvisor Reviews by Segment")
@@ -75,7 +87,6 @@ def label_rain_reviews(df):
     df["mentions_rain"] = df["review_text"].str.contains("|".join(weather_keywords), case=False, na=False)
     return df
 
-# Apply function
 df_reviews = label_rain_reviews(df_reviews)
 
 # %%
@@ -111,6 +122,8 @@ plt.bar(comparison['segment'], comparison['rating_rain'], width=0.4, label='Rain
 plt.bar(comparison['segment'], comparison['rating_no_rain'], width=0.4, label='No Rain', align='edge')
 
 # Adding labels and title
+plt.xticks([0, 1, 2, 3], ["Social-Driven Youths", "Value-Conscious Families","Budget-Conscious Youths", "Premium Spenders" ])
+
 plt.xlabel('Segment')
 plt.ylabel('Average Rating')
 plt.title('Average Ratings by Segment: Rain vs No Rain')
@@ -129,6 +142,8 @@ plt.figure(figsize=(10, 6))
 sns.barplot(x='segment', y='sentiment', hue='weather_condition', data=sentiment_melted, palette=['blue', 'orange'])
 
 # Add labels and title
+plt.xticks([0, 1, 2, 3],["Social-Driven Youths", "Value-Conscious Families","Budget-Conscious Youths", "Premium Spenders" ])
+
 plt.xlabel('Segment')
 plt.ylabel('Average Sentiment Score')
 plt.title('Average Sentiment Scores by Segment: Rain vs No Rain')
@@ -152,6 +167,8 @@ plt.figure(figsize=(10, 6))
 sns.barplot(x='segment', y='sentiment_diff', data=sentiment_diff, palette='coolwarm')
 
 # Add labels and title
+plt.xticks([0, 1, 2, 3], ["Social-Driven Youths", "Value-Conscious Families","Budget-Conscious Youths", "Premium Spenders" ])
+
 plt.xlabel('Segment')
 plt.ylabel('Sentiment Difference (Rain - No Rain)')
 plt.title('Sentiment Difference by Segment (Rain vs No Rain)')
@@ -159,9 +176,9 @@ plt.title('Sentiment Difference by Segment (Rain vs No Rain)')
 plt.show()
 
 # %% [markdown]
-# Guests across all segments exhibited lower sentiment when keywords related to rain were mentioned in their reviews. This suggests that unfavorable weather conditions negatively impact the overall guest experience. Additionally, Segment 2 "Value-Conscious Families" and Segment 1 "Young Social Visitors" showed the strongest decline in sentiment, indicating that weather disruptions may disproportionately affect guests who are more price-sensitive or socially driven in their visits. The decline in sentiment could be attributed to longer wait times, fewer outdoor activities, or discomfort caused by wet conditions.
+# Guests across all segments exhibited lower sentiment when keywords related to rain were mentioned in their reviews. This suggests that unfavorable weather conditions negatively impact the overall guest experience. Additionally, Segment 1 "Value-Conscious Families" and Segment 2 "Budget-Conscious Youths" showed the strongest decline in sentiment, indicating that weather disruptions may disproportionately affect guests who are more price-sensitive in their visits. The decline in sentiment could be attributed to fewer outdoor activities or discomfort caused by wet conditions.
 # 
-# Value-conscious families with children are likely the most affected by rain due to:
+# Value-conscious families with children are the most affected by rain likely due to:
 # 1. The disruption to outdoor attractions and play areas that children enjoy.
 # 2. Comfort and convenience concerns for both children and parents.
 # 3. Limited access to family-friendly amenities and attractions in the rain.
@@ -169,10 +186,9 @@ plt.show()
 # 
 # This may be due to the rain disrupting outdoor play areas and attractions, making them less enjoyable or inaccessible. For families with children, the rain might limit the park experience, especially when children are not able to engage in outdoor activities they find exciting. Parents might be more cautious about outdoor rides, especially if they are wet or slippery. Parents of young children might decide to avoid certain activities if the weather poses any safety risks, even if there are indoor alternatives.
 # 
+# Furthermore, parents with young children often bring strollers and in rainy conditions, strollers become harder to maneuver or may get wet, creating additional inconvenience. The need for rain gear for the entire family (umbrellas, ponchos) can add to the stress, especially if the park does not provide adequate shelter or rain protection. Moreover, for these value-conscious families, they might feel the cost of poncho for each family too much to spend on top of the admission tickets.
 # 
-# Poncho and Strollers: Parents with young children often bring strollers. In rainy conditions, strollers become harder to maneuver or may get wet, creating additional inconvenience. The need for rain gear for the entire family (umbrellas, ponchos) can add to the stress, especially if the park does not provide adequate shelter or rain protection. Moreover, for these value-conscious families, they might feel the cost of poncho for each family too much to spend on top of the admission tickets.
-# 
-# Higher Expectations for Value: As "value-conscious" guests, these families likely expect a lot of value for their money. Rain can lead to less value because outdoor attractions they were excited about might be inaccessible or less enjoyable, leading to dissatisfaction with the cost of the experience.
+# As "value-conscious" guests, these families likely expect a lot of value for their money. Rain can lead to less value because outdoor attractions they were excited about might be inaccessible or less enjoyable, leading to dissatisfaction with the cost of the experience.
 
 # %%
 def categorize_by_month(df_reviews):
@@ -187,7 +203,6 @@ df_reviews = categorize_by_month(df_reviews)
 # %%
 # Function to analyze sentiment by segment and month
 def analyze_sentiment(text):
-    """Get sentiment polarity score for the review text."""
     if pd.isna(text):  # Missing or NaN
         return None
     return TextBlob(text).sentiment.polarity
@@ -364,11 +379,13 @@ plt.grid(True)
 plt.show()
 
 # %% [markdown]
-# The trend of guest count across all segments during the different periods remained fairly consistent. Regardless of the segment, the volume of guests in February to April and August to September periods were consistently lower when compared to the higher volume seen in the summer (May to July) and winter (November to January) periods. This pattern is likely due to various factors such as school schedules, the availability of special events, and the general holiday periods that contribute to an increase in visitors during the peak seasons.
+# The trend of guest count across Budget-Conscious Youths,Premium Spenders, and Social-Driven Youths segments during the different periods remained fairly consistent. For Value-Conscious Families segment, the volume of guests in February to April and August to September periods were lower when compared to the higher volume seen in the summer (May to July) and winter (November to January) periods. 
+# 
+# This pattern is likely influenced by several factors, including seasonal availability, as families, particularly those with children, tend to visit more during school holidays in the summer and winter. Furthermore, the winter holiday period (November to January) aligns with family vacations and year-end celebrations, contributing to higher guest volume. 
 # 
 # While there are some fluctuations in the exact number of visitors across segments, the overall trend shows a clear drop in guest count in the low-season months (February to April and August to September). This reinforces the idea that external factors such as timing, weather, and events play a crucial role in driving guest attendance and satisfaction.
 # 
-# Overall, these trends suggest that Universal Studios experiences a cyclical pattern of higher and lower guest volumes based on the calendar year and external conditions, which could influence decisions related to staffing, promotions, and overall resource management.
+# Overall, these trends suggest that Universal Studios experiences a cyclical pattern of higher and lower guest volumes for Value-Conscious Families segment based on the calendar year and external conditions, which could influence decisions related to staffing, promotions, and overall resource management.
 
 # %% [markdown]
 # Operational adjustments:
@@ -376,3 +393,5 @@ plt.show()
 # 2. During months with lower guest volume, reduce staffing levels to maintain cost-efficiency. Conversely, during periods with peak attendance, ensure enough staff are available to handle the increased guest flow.
 # 3. For segments like Premium Spenders and Value-Conscious Families, offer loyalty programs or re-engagement incentives (e.g., discounts or priority access) to encourage repeat visits during quieter months.
 # 4. Send targeted emails with special offers or event notifications to guests who visited during peak times but might not typically visit during off-peak periods. These incentives could include discounts or exclusive offers to lure them back during quieter months.
+
+
