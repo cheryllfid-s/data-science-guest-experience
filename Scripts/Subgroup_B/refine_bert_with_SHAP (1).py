@@ -37,7 +37,7 @@ print(f"Using device: {device}")
 
 # Read data
 try:
-    disney_df = pd.read_csv('data/DisneylandReviews.csv', encoding='utf-8', encoding_errors='replace')
+    disney_df = pd.read_csv('../../data/DisneylandReviews.csv', encoding='utf-8', encoding_errors='replace')
     print(f"Successfully loaded Disney data, {len(disney_df)} rows")
 except FileNotFoundError:
     raise FileNotFoundError("DisneylandReviews.csv not found. Please ensure the file exists in the current directory.")
@@ -49,20 +49,20 @@ disney_df['Rating'] = pd.to_numeric(disney_df['Rating'], errors='coerce')
 disney_df['Review_Text'] = disney_df['Review_Text'].astype(str)
 
 try:
-    uss_df = pd.read_csv('data/universal_studio_branches.csv',
+    uss_df = pd.read_csv('../../data/universal_studio_branches.csv',
                          encoding='utf-8',
                          encoding_errors='replace',
                          engine='python',
                          on_bad_lines='skip')
 except:
     try:
-        uss_df = pd.read_csv('data/universal_studio_branches.csv',
+        uss_df = pd.read_csv('../../data/universal_studio_branches.csv',
                              encoding='utf-8',
                              encoding_errors='replace',
                              engine='python',
                              error_bad_lines=False)
     except:
-        uss_df = pd.read_csv('data/universal_studio_branches.csv',
+        uss_df = pd.read_csv('../../data/universal_studio_branches.csv',
                              encoding='utf-8',
                              encoding_errors='replace',
                              engine='python',
