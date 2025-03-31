@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import simpy
 from datetime import datetime, timedelta
 import os
+import pickle
 
 
 # Load the datasets
@@ -185,6 +186,20 @@ def compare_layouts():
     print("Swapped Transformers and CYLON to rebalance flow.")
     print("Result: Lower wait times and better guest distribution most of the time (quite reliably, we did the best we can)")
 
+    comparison_results = {
+    "avg_wait_times_1_multi": avg_wait_times_1_multi,
+    "visit_counts_1_multi": visit_counts_1_multi,
+    "avg_wait_per_guest_1": avg_wait_per_guest_1,
+
+    "avg_wait_times_2_multi": avg_wait_times_2_multi,
+    "visit_counts_2_multi": visit_counts_2_multi,
+    "avg_wait_per_guest_2": avg_wait_per_guest_2
+    }
+
+    # Save the results to a file
+    with open("b_qn2_comparison.pkl", "wb") as f:
+        pickle.dump(comparison_results, f)
+
 # Main
 if __name__ == "__main__":
     print("\n7-Day Forecast of Guest Satisfaction:")
@@ -199,6 +214,9 @@ if __name__ == "__main__":
     print("Visit Counts:", multi_queue_visits)
 
     compare_layouts()
+
+
+
 
     # Visualization
     # plt.figure(figsize=(10, 6))

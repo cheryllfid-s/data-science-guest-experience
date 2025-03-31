@@ -1,0 +1,27 @@
+import pickle
+
+def mainB():
+    # Load the comparison results saved earlier
+    with open("b_qn2_comparison.pkl", "rb") as f:
+        comp = pickle.load(f)
+
+    # Print: Current Layout
+    print("\nQuestion 3: Optimization of Attraction Layout and Schedules")
+    print("\nCurrent USS Layout (Two Entrances) - Multi Queue:")
+    for attraction, time in comp["avg_wait_times_1_multi"].items():
+        print(f"{attraction}: {time:.2f} min")
+    print(f"Average Wait Time per Guest: {comp['avg_wait_per_guest_1']:.2f} min")
+    print("Visit Counts:", comp["visit_counts_1_multi"])
+
+    # Print: Modified Layout
+    print("\nModified USS Layout (Left Entrance Only, Swapped Transformers and CYLON) - Multi Queue:")
+    for attraction, time in comp["avg_wait_times_2_multi"].items():
+        print(f"{attraction}: {time:.2f} min")
+    print(f"Average Wait Time per Guest: {comp['avg_wait_per_guest_2']:.2f} min")
+    print("Visit Counts:", comp["visit_counts_2_multi"])
+    print("\nWe removed right entrance to reduce congestion at congested attractions CYLON and Transformers.")
+    print("Swapped Transformers and CYLON to rebalance flow.")
+    print("Result: Lower wait times and better guest distribution most of the time (quite reliably, we did the best we can)")
+
+if __name__ == "__main__":
+    mainB()
