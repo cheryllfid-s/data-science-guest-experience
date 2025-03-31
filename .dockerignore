@@ -1,1 +1,27 @@
+__pycache__
+*.py[cod]
+
+*.ipynb
+.ipynb_checkpoints
+
+.DS_Store
+Thumbs.db
+
+.vscode/
+.idea
+
+.git
+.gitignore
+
+*.log
+*.png
+*.jpg
+*.jpeg
+*.csv
+*.zip 
+*.tar.gz
+*.h5
+outputs/
+data/ 
+figures/
 
