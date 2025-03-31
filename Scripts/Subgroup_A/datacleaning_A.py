@@ -1,6 +1,8 @@
 import kagglehub
 import pandas as pd
 import os
+from emoji import demojize
+from textblob import TextBlob
 
 # (Q3) data journey analysis 
 def prepare_tivoli_data():
@@ -61,7 +63,7 @@ def prepare_tivoli_data():
 
 
 # (4) analysis of past promotion events
-def handle_missing_values(df, drop=True, fill_value=None):
+def q4_handle_missing_values(df, drop=True, fill_value=None):
     missing_counts = df.isnull().sum()
     if missing_counts.sum() == 0:
         print("No missing values found.")
@@ -76,7 +78,7 @@ def handle_missing_values(df, drop=True, fill_value=None):
 
     return df
 
-def remove_duplicates(df):
+def q4_remove_duplicates(df):
     # check if there are duplicated rows
     dup_count = df.duplicated().sum()
     print(f"Number of duplicate rows: {dup_count}")
@@ -88,44 +90,58 @@ def remove_duplicates(df):
     else:
         print("No duplicates found.")
     return df
+
+def q4_analyse_sentiment(df, text_column):
+    df["polarity"] = df[text_column].apply(lambda text: TextBlob(text).sentiment.polarity)
+    return df
     
-def prepare_reviews_data():
-    # Download and import universal_studio_branches.csv
+def q4_prepare_reviews_data():
+    # (1) Download and import universal_studio_branches.csv
     kaggle_download_path = kagglehub.dataset_download("dwiknrd/reviewuniversalstudio")
     print("Path to dataset files:", kaggle_download_path)
-
+    
     reviews_path = os.path.join(kaggle_download_path, "universal_studio_branches.csv")
     df_reviews = pd.read_csv(reviews_path)
 
-    # Check for missing values
+    # (2) Check for missing values
     df_reviews = handle_missing_values(df_reviews)
 
-    # Convert to datetime object
+    # (3) Convert to datetime object
     df_reviews["written_date"] = pd.to_datetime(df_reviews["written_date"], errors='coerce')
 
-    # Remove duplicates
+    # (4) Remove duplicates
     df_reviews = remove_duplicates(df_reviews)
+
+    # (5) Combine the text columns
+    df_reviews['combined_text'] = df_reviews['title'] + " " + df_reviews['review_text']
+    df_reviews = df_reviews.drop(columns=['title', 'review_text'])
+
+    # (6) Convert emojis
+    df_reviews["combined_text"] = df_reviews["combined_text"].apply(lambda text: demojize(text))
+
+    # (7) Compute polarity scores
+    df_reviews = analyse_sentiment(df_reviews, 'combined_text')
 
     return df_reviews
 
-def prepare_events_data():
-    # Import uss_promo_events.csv
+def q4_prepare_events_data():
+    # (1) Import uss_promo_events.csv
     events_path = os.path.join("../../data/uss_promo_events.csv")
     print(events_path)
     df_events = pd.read_csv(events_path)
 
-    # Check for missing values
+    # (2) Check for missing values
     df_events = handle_missing_values(df_events)
 
-    # Convert to datetime object
+    # (3) Convert to datetime object
     df_events["start"] = pd.to_datetime(df_events["start"], format='%b %d, %Y', errors='coerce')
     df_events["end"] = pd.to_datetime(df_events["end"], format='%b %d, %Y', errors='coerce')
     df_events = df_events.sort_values("start")  # order events by start date
 
-    # Remove duplicates
+    # (4) Remove duplicates
     df_events = remove_duplicates(df_events)
 
-    # Compute event duration
+    # (5) Compute event duration
     df_events["duration"] = (df_events["end"] - df_events["start"]).dt.days
 
     return df_events
