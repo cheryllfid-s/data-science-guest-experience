@@ -7,7 +7,7 @@ from sklearn.metrics import silhouette_score
 from scipy.spatial.distance import cdist
 import matplotlib.pyplot as plt
 import seaborn as sns
-
+from pathlib import Path
 
 # Get the directory of the current script (guest_satisfaction.py)
 script_dir = Path(__file__).parent
