@@ -19,9 +19,6 @@ def mainB():
         print(f"{attraction}: {time:.2f} min")
     print(f"Average Wait Time per Guest: {comp['avg_wait_per_guest_2']:.2f} min")
     print("Visit Counts:", comp["visit_counts_2_multi"])
-    print("\nWe removed right entrance to reduce congestion at congested attractions CYLON and Transformers.")
-    print("Swapped Transformers and CYLON to rebalance flow.")
-    print("Result: Lower wait times and better guest distribution most of the time (quite reliably, we did the best we can)")
 
 if __name__ == "__main__":
     mainB()
