@@ -1,4 +1,3 @@
-# %%
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import LabelEncoder, StandardScaler
@@ -9,7 +8,7 @@ from scipy.spatial.distance import cdist
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# %%
+
 # Get the directory of the current script (guest_satisfaction.py)
 script_dir = Path(__file__).parent
 
@@ -100,7 +99,7 @@ synthetic = pd.DataFrame({
 
 
 
-# %%
+
 # Generate synthetic data for 3 marketing related questions
 
 # Conditional awareness: 'How did you first hear about Universal Studios Singapore?'
@@ -143,7 +142,7 @@ synthetic['awareness'] = awareness_syn
 synthetic['response_to_ads'] = response_to_ads_syn
 synthetic['preferred_promotion'] = preferred_promotion_syn
 
-# %%
+
 # Merge Real & Synthetic Data
 
 df_combined = pd.concat([survey_clean, synthetic], ignore_index=True)
@@ -158,7 +157,7 @@ for col in df_combined.select_dtypes(include='object').columns:
 scaled = StandardScaler().fit_transform(df_combined)
 pca = PCA(n_components=2).fit_transform(scaled)
 
-# %% [markdown]
+
 # ## Synthetic Data Generation and Merging Strategy
 # 
 # To enrich the dataset for more representative and balanced clustering, we generated synthetic survey responses based on patterns observed in the real data, especially to address potential response bias (e.g., underrepresentation of families).
@@ -173,7 +172,7 @@ pca = PCA(n_components=2).fit_transform(scaled)
 #  Overall, the synthetic data generation preserved the integrity of the original survey while enhancing its representativeness for more effective clustering and persona discovery.
 # 
 
-# %%
+
 # Determine optimal clusters
 
 df_encoded = df_combined.copy()
@@ -204,7 +203,7 @@ plt.tight_layout()
 plt.show()
 
 
-# %% [markdown]
+# 
 # To determine the optimal number of clusters for our segmentation task, we applied the Elbow Method. This technique involves fitting KMeans models with varying k values (from 2 to 10) and plotting the Sum of Squared Errors (SSE) for each value.
 # 
 # The plot above shows that the reduction in SSE begins to flatten around k = 4, suggesting diminishing returns beyond this point. This “elbow” indicates that four clusters strike a good balance between model complexity and explanatory power.
@@ -213,7 +212,7 @@ plt.show()
 # 
 # 
 
-# %%
+
 # Compare Clustering Techniques
 results = []
 
@@ -239,7 +238,7 @@ results_df = pd.DataFrame(results, columns=['Model', 'Silhouette Score', 'Cluste
 print(results_df)
 print("\n")
 
-# %% [markdown]
+
 # ## Clustering Technique Comparison & Final Model Selection
 # 
 # We evaluated three clustering techniques to segment guests based on survey responses:
@@ -277,7 +276,7 @@ print("\n")
 # 
 # We chose **KMeans** for its high performance, scalability, and smooth integration with downstream analytics such as persona generation and marketing recommendation modeling.
 
-# %%
+
 # Choose Final Model and Label Segments
 df_labeled['cluster'] = k_labels
 
@@ -303,7 +302,7 @@ cluster_summary['Express Pass Usage %'] = cluster_summary['Express Pass Usage %'
 
 cluster_summary
 
-# %%
+
 # Re-run PCA on scaled features
 pca = PCA(n_components=2)
 X_pca = pca.fit_transform(scaled_features)
@@ -320,7 +319,7 @@ plt.tight_layout()
 plt.show()
 
 
-# %%
+
 df_labeled['express_pass_numeric'] = df_labeled['express_pass'].apply(lambda x: 1 if x == 'Yes' else 0)
 
 
@@ -366,7 +365,7 @@ plt.show()
 
 
 
-# %% [markdown]
+
 # ### Official Clusters 
 # 
 # Based on the final cluster characteristics including group type, age group, express pass usage, visit purpose, and average satisfaction rating, we interpret and name the four guest segments as follows:
@@ -391,7 +390,7 @@ plt.show()
 # These personas reflect distinct motivations and spending behavior, enabling more precise marketing strategies tailored to each cluster.
 # 
 
-# %%
+
 # Map cluster indices to official names
 cluster_name_map = {
     0: 'Social-Driven Youths',
