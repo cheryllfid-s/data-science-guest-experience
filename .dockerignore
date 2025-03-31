@@ -19,6 +19,6 @@ Thumbs.db
 *.jpeg
 *.tar.gz
 *.h5
-.xml
-.patch
+*.xml
+*.patch
 
