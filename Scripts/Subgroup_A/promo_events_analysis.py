@@ -28,7 +28,10 @@ def compute_change_in_reviews(reviews_before_event, reviews_during_event):
     - 'review_volume_change': Change in the number of reviews
     """
     changes = {}
-    for event, reviews_before in reviews_before_event.items(): # Iterate through each event, get corresponding reviews before event
+    print("Computing changes in review polarity, ratings and volume before vs during event...")
+
+    # Iterate through each event, get corresponding reviews before event
+    for event, reviews_before in reviews_before_event.items():
         reviews_during = reviews_during_event.get(event)       # Get corresponding reviews during event
         if reviews_during is not None:
 
@@ -49,6 +52,7 @@ def compute_change_in_reviews(reviews_before_event, reviews_during_event):
             # Store the computed changes for the current event in a dict
             changes[event] = change
 
+            
     # Convert dict into dataframe for easier analysis
     return pd.DataFrame.from_dict(changes, orient='index')
 
@@ -70,7 +74,8 @@ def visualize_review_changes(df_change_data):
     """
 
     # (1) Correlation matrix visualization
-    correlation_matrix = df_change_data[['review_polarity_change', 'review_rating_change', 'review_volume_change']].corr()
+    correlation_matrix = df_change_data[
+        ['review_polarity_change', 'review_rating_change', 'review_volume_change']].corr()
 
     plt.figure(figsize=(8, 6))
     sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', center=0, linewidths=1, fmt='.2f', cbar=True)
@@ -171,18 +176,62 @@ def metrics_analysis(df_change_data):
 
 
 class USSPromoAnalysis:
+    """
+    Analyzes the impact of promotional events on guest satisfaction at **Universal Studios Singapore (USS)**
+    by examining changes in guest reviews before and during each event.
+    Focusing on USS reviews since the events data contains USS-specific promotional events only.
+
+    Parameters:
+    - df_reviews (pd.DataFrame): DataFrame containing reviews with columns:
+        - 'written_date' (datetime): Date the review was written
+        - 'branch' (str): Universal Studios branch (Florida, Japan, **Singapore**)
+        - 'rating' (float): Guest rating of the experience
+        - 'polarity' (float): Sentiment polarity score of the review
+        - other review-related columns (e.g., username, review text)
+
+    - df_events (pd.DataFrame): DataFrame containing event details with columns:
+        - 'event' (str): Event name
+        - 'start' (datetime): Event start date
+        - 'end' (datetime): Event end date
+        - 'duration' (int): Event duration in days
+        - other columns containing details about the promotion (e.g., type, specific discounts)
+
+    Methods:
+    - filter_reviews_during_events(): Filters reviews written during each event period
+    - filter_reviews_before_events(): Filters reviews written before each event period
+    - run_promo_events_analysis(): Runs the full promotional event analysis pipeline, including:
+        1. Filtering reviews before and during events
+        2. Computing changes in review metrics
+        3. Performing statistical analysis
+        4. Visualizing review changes
+    """
     def __init__(self, df_reviews, df_events):
+        """
+        Initializes the analysis with review and event data
+        """
         self.df_reviews = df_reviews
         self.df_events = df_events
 
     # --- Filter for reviews written during event period --- #
     def filter_reviews_during_events(self, branch='Universal Studios Singapore'):
+        """
+        Filters reviews written DURING each event period at the specified branch.
+
+        Parameters:
+        - branch (str): The Universal Studios branch to filter reviews for (default: USS)
+
+        Returns:
+        - dict: key = event name (appended with start date),
+                value = DataFrames containing reviews written DURING the event
+        """
         print("Filtering for reviews written during each event period...")
         event_reviews_dict = {}
         for _, event in self.df_events.iterrows():
             event_key = f"{event['event']} ({event['start'].date()})"  # event as unique key
             start = event["start"]
             end = event["end"]
+
+            # Filter reviews within the event period
             filtered_reviews = self.df_reviews[
                 (self.df_reviews["written_date"] >= start) &
                 (self.df_reviews["written_date"] <= end) &
@@ -193,13 +242,24 @@ class USSPromoAnalysis:
 
     # --- Filter for reviews written before event period --- #
     def filter_reviews_before_events(self, branch='Universal Studios Singapore'):
+        """
+        Filters reviews written BEFORE each event period at the specified branch.
+
+        Parameters:
+        - branch (str): The Universal Studios branch to filter reviews for (default: USS)
+
+        Returns:
+        - dict: key = event name (appended with start date),
+                value = DataFrames containing reviews written BEFORE the event
+        """
         print("Filtering for reviews written before each event period...")
         event_reviews_dict = {}
         for _, event in self.df_events.iterrows():
-            event_key = f"{event['event']} ({event['start'].date()})"
-            start = event["start"] - timedelta(days=event["duration"])
-            end = event["start"] - timedelta(days=1)
+            event_key = f"{event['event']} ({event['start'].date()})"   # event as unique key
+            start = event["start"] - timedelta(days=event["duration"])  # before event period start
+            end = event["start"] - timedelta(days=1)                    # one day before event starts
 
+            # Filter reviews within the pre-event period
             filtered_reviews = self.df_reviews[
                 (self.df_reviews["written_date"] >= start) &
                 (self.df_reviews["written_date"] <= end) &
@@ -212,6 +272,17 @@ class USSPromoAnalysis:
 
 
     def run_promo_events_analysis(self):
+        """
+         Runs the full promotional event analysis pipeline.
+
+         Steps:
+         1. Filters reviews written before and during each event.
+         2. Computes changes in review polarity, volume, and ratings.
+         3. Performs statistical analysis to check significance.
+         4. Visualizes the changes in review metrics.
+
+         The results will be printed and visualized.
+         """
         # (1) Filter for reviews written before and during events
         reviews_during_event = self.filter_reviews_during_events()
         reviews_before_event = self.filter_reviews_before_events()
