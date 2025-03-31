@@ -6,40 +6,24 @@ This project aims to develop a data-driven system that maps and analyzes guest j
 ## Prerequisites
 - Python 3.8 or higher
 - Git
-- [Docker](https://www.docker.com/get-started) & Docker Compose
+- [Docker](https://www.docker.com/get-started) and Docker Compose
 
-Though instructions have been provided below for set up without Docker, its use is recommended.
-
-## Docker Instructions 
-### 1. Build and Start the Docker Container
-```bash
-docker-compose up --build
-```
-### 2. Stop the Docker Container
-```bash
-docker-compose down
-```
-
-
-## Set Up Instructions (Without Docker)
+## Running the Docker
 ### 1. Clone the Repository
 ```bash
 git clone https://github.com/darderrdur17/data-science-guest-experience.git
 cd data-science-guest-experience
 ```
-### 2. Creating Virtual Environment
+### 2. Build and Start the Docker Container
 ```bash
-python3 -m venv venv
-source venv/bin/activate
+docker-compose up --build
 ```
-### 3. Installing Python Dependencies 
+### 3. Stop the Docker Container
 ```bash
-pip install -r requirements.txt
+docker-compose down
 ```
 
 ## Running the Project
 The entry point of this project is:
 ```bash
 Scripts/main.py
-```
-
