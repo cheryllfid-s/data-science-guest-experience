@@ -104,6 +104,17 @@ def evaluate(y_true, y_pred, target_name):
     print(f"R² Score: {r2_score(y_true, y_pred):.2f}")
 
 evaluate(y_staff_test, y_pred, "Staff Count")
+# Save the model
+with open('staff_count_model.pkl', 'wb') as model_file:
+    pickle.dump(model, model_file)
+    print("Model saved as 'staff_count_model.pkl'.")
+
+# Load the model from the file (optional, for demonstration)
+with open('staff_count_model.pkl', 'rb') as model_file:
+    loaded_model = pickle.load(model_file)
+
+# Predictions with the loaded model (optional, for demonstration)
+y_pred_loaded = loaded_model.predict(X_test)
 
 # Visualization
 plt.figure(figsize=(10, 5))
