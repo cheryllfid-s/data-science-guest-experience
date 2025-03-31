@@ -18,5 +18,9 @@ def mainA():
     USSPromoAnalysis_obj = USSPromoAnalysis(q4_df_reviews, q4_df_events)
     USSPromoAnalysis_obj.run_promo_events_analysis()
 
+    print("Question 5: External Factors on Guest Satisfaction")
+    q5_df_reviews = q5_clean_data()
+    analyse(q5_df_reviews)
+
 if __name__ == "__main__":
     mainA()
