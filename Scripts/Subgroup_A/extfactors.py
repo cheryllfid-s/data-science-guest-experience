@@ -8,7 +8,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from textblob import TextBlob
 
 # %%
-def analyse(df_reviews_cleaned):
+def q5_analyse(df_reviews_cleaned):
     # Bar plot of segment distribution
     def plotdistsegment(df_reviews_cleaned):
         plt.figure(figsize=(8, 5))
