@@ -5,411 +5,457 @@ import matplotlib.pyplot as plt
 import os
 import numpy as np
 import networkx as nx
-
-# Download latest version of disney dataset
-path = kagglehub.dataset_download("ayushtankha/hackathon")
-print("Path to dataset files:", path)
-
-waitingtimes_path = os.path.join(path, "waiting_times.csv")
-waiting_times_df = pd.read_csv(waitingtimes_path)
-
-parkattr_path = os.path.join(path, "link_attraction_park.csv")
-parkattr_df = pd.read_csv(parkattr_path)
-
-attendace_path = os.path.join(path, "attendance.csv")
-attendance_df = pd.read_csv(attendace_path)
-
-#FORMATTING THE DATA
-#(1) turn the deb_time into datetime objects and remove seconds (they are all 0)
-waiting_times_df['DEB_TIME'] = pd.to_datetime(waiting_times_df['DEB_TIME'])
-waiting_times_df['DEB_TIME'] = waiting_times_df['DEB_TIME'].dt.strftime('%H:%M')
-
-#(2) turn guest_carried into integers + round off capacity and adjust capacity to their nearest integers
-waiting_times_df['GUEST_CARRIED'] = waiting_times_df['GUEST_CARRIED'].astype(int)
-waiting_times_df['CAPACITY'] = waiting_times_df['CAPACITY'].round().astype(int)
-waiting_times_df['ADJUST_CAPACITY'] = waiting_times_df['ADJUST_CAPACITY'].round().astype(int)
-
-#(3)sorting based on the date and time of debarkation 
-waiting_times_df = waiting_times_df.sort_values(['WORK_DATE', 'DEB_TIME'])
-
-#some data has guest_carried = capacity = wait time max = 0 -- ride was not operational
-#for common journey paths, we want to analyse ones where all rides were operational 
-
-waitingtimes_oper = waiting_times_df[
-    (waiting_times_df['GUEST_CARRIED'] != 0) & 
-    (waiting_times_df['CAPACITY'] != 0)
-]
-
-waitingtimes_oper = waitingtimes_oper.sort_values(['WORK_DATE','DEB_TIME', 'WAIT_TIME_MAX'],ascending=[True, True, False])
-WTsorted_nonzero = waitingtimes_oper.sort_values(['WAIT_TIME_MAX'],ascending=False)  
-waitingtimes_oper = waitingtimes_oper.drop(columns=['DEB_TIME_HOUR','FIN_TIME', 'NB_UNITS', 'OPEN_TIME', 'UP_TIME','NB_MAX_UNIT', 'DOWNTIME'])
-
-
-#merge with link_attraction_park.csv
-parkattr_df[['ATTRACTION', 'PARK']] = parkattr_df['ATTRACTION;PARK'].str.split(";", expand=True)
-parkattr_df = parkattr_df.drop(columns=['ATTRACTION;PARK'])
-merged_df = pd.merge(waitingtimes_oper, parkattr_df, left_on='ENTITY_DESCRIPTION_SHORT', right_on='ATTRACTION', how='inner')
-merged_df = merged_df.drop(columns=['ENTITY_DESCRIPTION_SHORT'])
-
-#dividing between parks
-tivoli_g = merged_df[merged_df['PARK'] == 'Tivoli Gardens']
-tivoli_g['WORK_DATE'] = pd.to_datetime(tivoli_g['WORK_DATE'])
-tivoli_g['TIMESTAMP'] = pd.to_datetime(tivoli_g['WORK_DATE'].astype(str) + ' ' + tivoli_g['DEB_TIME'])
-
-#finding covid dates
-
-attendance_df['USAGE_DATE'] = pd.to_datetime(attendance_df['USAGE_DATE'])
-covid = attendance_df[(attendance_df['USAGE_DATE'] >= '2020-03-01') & (attendance_df['USAGE_DATE'] <= '2021-08-01')]
-
-plt.plot(covid['USAGE_DATE'], covid['attendance'])
-plt.xlabel('USAGE_DATE')
-plt.ylabel('attendance')
-plt.title('Attendance over time (2019 to mid 2021)')
-plt.show()
-
-#total negative data
-negative_att = attendance_df[attendance_df['attendance'] < 0]
-
-#noncovid data
-noncovid = attendance_df[(attendance_df['USAGE_DATE'] < '2020-03-01') | (attendance_df['USAGE_DATE'] > '2021-08-01')]
-print(noncovid)
-noncovidneg = noncovid[noncovid['attendance'] < 0] #noncovid negatives = 0 
-noncovid = noncovid[noncovid['attendance'] > 0]
-
-#Separating noncovid data based on 'FACILITY_NAME'
-tivoli_noncovid = noncovid[noncovid['FACILITY_NAME'] == 'Tivoli Gardens']
-
-# Calculate the median attendance
-tivoli_median_attendance = tivoli_noncovid['attendance'].median()
-
-# Get the two rows corresponding to the median attendance
-tivoli_median_rows = tivoli_noncovid.iloc[(tivoli_noncovid['attendance'] - tivoli_median_attendance).abs().argsort()[:2]]
-
-print("\nTivoli Gardens median attendance rows:")
-print(tivoli_median_rows)
-
-tivoli_g_all = tivoli_g #keep for later
-
-#finding covid dates
-
-attendance_df['USAGE_DATE'] = pd.to_datetime(attendance_df['USAGE_DATE'])
-covid = attendance_df[(attendance_df['USAGE_DATE'] >= '2020-03-01') & (attendance_df['USAGE_DATE'] <= '2021-08-01')]
-
-plt.plot(covid['USAGE_DATE'], covid['attendance'])
-plt.xlabel('USAGE_DATE')
-plt.ylabel('attendance')
-plt.title('Attendance over time (2019 to mid 2021)')
-plt.show()
-
-#total negative data
-negative_att = attendance_df[attendance_df['attendance'] < 0]
-
-#noncovid data
-noncovid = attendance_df[(attendance_df['USAGE_DATE'] < '2020-03-01') | (attendance_df['USAGE_DATE'] > '2021-08-01')]
-print(noncovid)
-noncovidneg = noncovid[noncovid['attendance'] < 0] #noncovid negatives = 0 
-noncovid = noncovid[noncovid['attendance'] > 0]
-
-#Separating noncovid data based on 'FACILITY_NAME'
-tivoli_noncovid = noncovid[noncovid['FACILITY_NAME'] == 'Tivoli Gardens']
-
-# Calculate the median attendance
-tivoli_median_attendance = tivoli_noncovid['attendance'].median()
-
-# Get the two rows corresponding to the median attendance
-tivoli_median_rows = tivoli_noncovid.iloc[(tivoli_noncovid['attendance'] - tivoli_median_attendance).abs().argsort()[:2]]
-
-print("\nTivoli Gardens median attendance rows:")
-print(tivoli_median_rows)
-
-tivoli_g_all = tivoli_g #keep for later
-
-#line graph plotting for median wait times against time of day:
-def plot_median_wait_times(df, title_suffix=""):
-    median_wait_times = df.groupby(['DEB_TIME', 'ATTRACTION'])['WAIT_TIME_MAX'].median().unstack()
-    plt.figure(figsize=(12, 6))
-    colors = plt.cm.get_cmap('tab20', len(median_wait_times.columns))
-
-    for i, attraction in enumerate(median_wait_times.columns):
-        plt.plot(median_wait_times.index, median_wait_times[attraction], label=attraction, color=colors(i), marker='o', markersize=4)
-
-    plt.xlabel('Time of Day')
-    plt.ylabel('Median Waiting Time (minutes)')
-    plt.title(f'Median Waiting Time Throughout the Day {title_suffix} - Tivoli Gardens')
-    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-    plt.grid(False)
-    plt.xticks(median_wait_times.index[::4], rotation=45)  # Show x-axis labels per hour
-    plt.show()
-
-#correlation matrix between all rides function:
-def plot_ride_correlation_heatmap(df, title_suffix=""):
-
-    tivoli_pivot = df.pivot(index='TIMESTAMP', columns='ATTRACTION', values='WAIT_TIME_MAX')
-    correlation_matrix = tivoli_pivot.corr()
-
-    plt.figure(figsize=(12, 6))
-    sns.heatmap(correlation_matrix, annot=True, cmap="coolwarm", fmt=".2f")
-    plt.title(f"Correlation Between Ride Waiting Times {title_suffix}")
-    plt.show()
-
-
-#correlation matrix between rides (family) (youth/adults) function:
-def analyze_ride_correlations(df, title_suffix="", reference_ride=""):
-    tivoli_pivot = df.pivot(index='TIMESTAMP', columns='ATTRACTION', values='WAIT_TIME_MAX')
-    correlation_matrix = tivoli_pivot.corr()
-
-    reference_correlations = correlation_matrix[reference_ride]
-
-    family_rides = []
-    youth_rides = []
-
-    for ride, correlation in reference_correlations.items():
-        if correlation < 0.5:
-            family_rides.append(ride)
-        else:
-            youth_rides.append(ride)
-
-    print("Family Rides:", family_rides)
-    print("Youth/Young Adult Rides:", youth_rides)
-
-    family_corr = correlation_matrix.loc[family_rides, family_rides]
-    youth_corr = correlation_matrix.loc[youth_rides, youth_rides]
-
-    plt.figure(figsize=(8, 6))
-    sns.heatmap(family_corr, annot=True, cmap='coolwarm')
-    plt.title(f"Correlation Between Family Rides {title_suffix}")
-    plt.show()
-
-    plt.figure(figsize=(10, 8))
-    sns.heatmap(youth_corr, annot=True, cmap='coolwarm')
-    plt.title(f"Correlation Between Youth/Young Adult Rides {title_suffix}")
-    plt.show()
-
-#analysing (possible) guest movements:
-def analyze_guest_movement(df, reference_ride=''):
-
-    tivoli_pivot = df.pivot(index='TIMESTAMP', columns='ATTRACTION', values='WAIT_TIME_MAX')
-    correlation_matrix = tivoli_pivot.corr()
-
-    reference_correlations = correlation_matrix[reference_ride]
-
-    family_rides = []
-    youth_rides = []
-
-    for ride, correlation in reference_correlations.items():
-        if correlation < 0.5:
-            family_rides.append(ride)
-        else:
-            youth_rides.append(ride)
-
-    # Family Rides Movement Analysis
-    family_pivot = tivoli_pivot[family_rides]
-    family_shifted = family_pivot.shift(1)
-    family_changes = family_pivot - family_shifted
-
-    family_movement_counts = []
-
-    for from_ride in family_changes.columns:
-        for to_ride in family_changes.columns:
-            if from_ride != to_ride:
-                movement = ((family_changes[from_ride] < 0) & (family_changes[to_ride] > 0)).sum()
-                family_movement_counts.append({"from": from_ride, "to": to_ride, "count": movement})
-
-    fam_movements = pd.DataFrame(family_movement_counts)
-
-    # Youth Rides Movement Analysis
-    youth_pivot = tivoli_pivot[youth_rides]
-    youth_shifted = youth_pivot.shift(1)
-    youth_changes = youth_pivot - youth_shifted
-
-    youth_movement_counts = []
-
-    for from_ride in youth_changes.columns:
-        for to_ride in youth_changes.columns:
-            if from_ride != to_ride:
-                movement = ((youth_changes[from_ride] < 0) & (youth_changes[to_ride] > 0)).sum()
-                youth_movement_counts.append({"from": from_ride, "to": to_ride, "count": movement})
-
-    youth_adult_movements = pd.DataFrame(youth_movement_counts)
-
-    return fam_movements, youth_adult_movements
-
-def analyze_guest_movement_covid(df):
-    tivoli_pivot = df.pivot(index='TIMESTAMP', columns='ATTRACTION', values='WAIT_TIME_MAX')
-    ride_changes = tivoli_pivot.diff() 
-
-    movement_counts = []
-
-    for from_ride in ride_changes.columns:
-        for to_ride in ride_changes.columns:
-            if from_ride != to_ride:
-                movement = ((ride_changes[from_ride] < 0) & (ride_changes[to_ride] > 0)).sum()
-                movement_counts.append({"from": from_ride, "to": to_ride, "count": movement})
-
-    movements_df = pd.DataFrame(movement_counts)
-
-    return movements_df
-
-def calculate_avg_wait_times(df):
-    wait = df.groupby('ATTRACTION')['WAIT_TIME_MAX'].mean().to_dict()
-    wait_df = pd.DataFrame(list(wait.items()), columns=['Ride', 'Avg_Wait_Time'])
-    return wait_df
-
-def plot_guest_transitions_vs_wait_time(movement_df, waitdf, title, group_name="Families"):
-
-    merged_df = movement_df.merge(waitdf, left_on='from', right_on='Ride').drop(columns=['Ride'])
-
-    plt.figure(figsize=(12, 6))
-    sns.lineplot(data=merged_df, x='Avg_Wait_Time', y='count', marker='o')
-    plt.xlabel('Average Waiting Time (mins)')
-    plt.ylabel('Guest Movement Count')
-    plt.title(f'{title} -- {group_name}')
-    plt.show()
-
-def markov_chain_analysis(df, title):
-    graph = nx.DiGraph()
-    for _, row in df.iterrows():
-        graph.add_edge(row['from'], row['to'], weight=row['count'])
-
-    rides = list(graph.nodes())
-    transition_matrix = np.zeros((len(rides), len(rides)))
-
-    for i, from_ride in enumerate(rides):
-        total_outflow = sum(graph.get_edge_data(from_ride, to_ride)['weight'] for to_ride in graph.successors(from_ride))
-        if total_outflow > 0:
-            for j, to_ride in enumerate(rides):
-                if graph.has_edge(from_ride, to_ride):
-                    transition_matrix[i, j] = graph.get_edge_data(from_ride, to_ride)['weight'] / total_outflow
-
-    eigenvalues, eigenvectors = np.linalg.eig(transition_matrix.T)
-    steady_state = np.abs(eigenvectors[:, np.argmax(eigenvalues)])
-    steady_state /= steady_state.sum()
-
-    steady_state_distribution = pd.Series(steady_state, index=rides)
-
-    print(f"\n{title} - Steady-State Distribution:")
-    print(steady_state_distribution)
-
-noncovid_dates = noncovid['USAGE_DATE']
-tivoli_g = tivoli_g[tivoli_g['WORK_DATE'].isin(noncovid_dates)]
-
-#common guest journey analysis
-plot_median_wait_times(tivoli_g, "")
-plot_ride_correlation_heatmap(tivoli_g, title_suffix="")
-
-analyze_ride_correlations(tivoli_g, title_suffix="",reference_ride ="Scooby Doo")
-
-fam_movements, youth_adult_movements = analyze_guest_movement(tivoli_g, 'Scooby Doo')
-
-wait_regular = calculate_avg_wait_times(tivoli_g)
-plot_guest_transitions_vs_wait_time(fam_movements, wait_regular, 'Family Ride Guest Journey', group_name="Families")
-plot_guest_transitions_vs_wait_time(youth_adult_movements, wait_regular, 'Thrill Ride Guest Journey', group_name="Youth/Young Adults")
-
-family_outflow = fam_movements.groupby('from')['count'].sum().sort_values(ascending=False)
-print("Family Rides - Highest Outgoing Traffic:")
-print(family_outflow)
-
-youth_outflow = youth_adult_movements.groupby('from')['count'].sum().sort_values(ascending=False)
-print("\nYouth Rides - Highest Outgoing Traffic:")
-print(youth_outflow)
-
-print("\nFamily Rides - Most Frequent Transitions:")
-print(fam_movements.sort_values(by='count', ascending=False))
-
-print("\nYouth Rides - Most Frequent Transitions:")
-print(youth_adult_movements.sort_values(by='count', ascending=False))
-
-markov_chain_analysis(fam_movements, "Family Rides")
-markov_chain_analysis(youth_adult_movements, "Youth Rides")
-
-tivoli_attendance_df = attendance_df[attendance_df['FACILITY_NAME'] == 'Tivoli Gardens']
-daily_attendance_tivoli = tivoli_attendance_df.groupby(tivoli_attendance_df['USAGE_DATE'].dt.date)['attendance'].sum()
-
-busy_threshold = daily_attendance_tivoli.quantile(0.75)
-print("Cutoff attendance for busy days:", busy_threshold)
-
-# busy days
-busy_days = daily_attendance_tivoli[daily_attendance_tivoli > busy_threshold].index
-tivoli_busy = tivoli_g[tivoli_g['WORK_DATE'].isin(busy_days)]
-
-plot_median_wait_times(tivoli_busy, "when busy")
-plot_ride_correlation_heatmap(tivoli_busy, title_suffix="when busy") 
-
-analyze_ride_correlations(tivoli_busy, title_suffix="when busy", reference_ride="Scooby Doo")
-
-fam_movements_busy, youth_adult_movements_busy = analyze_guest_movement(tivoli_busy, 'Scooby Doo')
-wait_busy = calculate_avg_wait_times(tivoli_busy)
-plot_guest_transitions_vs_wait_time(fam_movements_busy, wait_busy, 'Ride Guest Journey During Busy Days', group_name="Families")
-plot_guest_transitions_vs_wait_time(youth_adult_movements_busy, wait_busy, 'Ride Guest Journey During Busy Days', group_name="Youth/Young Adults")
-
-family_outflow_busy = fam_movements_busy.groupby('from')['count'].sum().sort_values(ascending=False)
-print("Family Rides during Busy Days - Highest Outgoing Traffic:")
-print(family_outflow_busy)
-
-youth_outflow = youth_adult_movements_busy.groupby('from')['count'].sum().sort_values(ascending=False)
-print("\nYouth Rides during Busy Days- Highest Outgoing Traffic:")
-print(youth_outflow)
-
-print("\nFamily Rides during Busy Days - Most Frequent Transitions:")
-print(fam_movements_busy.sort_values(by='count', ascending=False))
-
-print("\nYouth Rides during Busy Days - Most Frequent Transitions:")
-print(youth_adult_movements_busy.sort_values(by='count', ascending=False))
-
-markov_chain_analysis(fam_movements_busy, "Family Rides during Busy Days")
-markov_chain_analysis(youth_adult_movements_busy, "Youth Rides during Busy Days")
-
-quiet_threshold = daily_attendance_tivoli.quantile(0.25)
-print("Cutoff attendance for quiet days:", quiet_threshold)
-
-# quiet days
-quiet_days = daily_attendance_tivoli[daily_attendance_tivoli < quiet_threshold].index
-tivoli_quiet = tivoli_g[tivoli_g['WORK_DATE'].isin(quiet_days)]
-
-plot_median_wait_times(tivoli_quiet, "")
-plot_ride_correlation_heatmap(tivoli_quiet, title_suffix="")
-
-analyze_ride_correlations(tivoli_quiet, title_suffix="",reference_ride ="Scooby Doo")
-
-fam_movements_quiet, youth_adult_movements_quiet = analyze_guest_movement(tivoli_quiet, 'Scooby Doo')
-wait_regular = calculate_avg_wait_times(tivoli_quiet)
-plot_guest_transitions_vs_wait_time(fam_movements, wait_regular, 'Ride Guest Journey During Quiet Days', group_name="Families")
-plot_guest_transitions_vs_wait_time(youth_adult_movements, wait_regular, 'Ride Guest Journey During Quiet Days', group_name="Youth/Young Adults")
-
-family_outflow_quiet = fam_movements_quiet.groupby('from')['count'].sum().sort_values(ascending=False)
-print("Family Rides during Quiet Days - Highest Outgoing Traffic:")
-print(family_outflow)
-
-youth_outflow = youth_adult_movements_quiet.groupby('from')['count'].sum().sort_values(ascending=False)
-print("\nYouth Rides during Quite Days- Highest Outgoing Traffic:")
-print(youth_outflow)
-
-print("\nFamily Rides during Quite Days - Most Frequent Transitions:")
-print(fam_movements_quiet.sort_values(by='count', ascending=False))
-
-print("\nYouth Rides during Quiet Days - Most Frequent Transitions:")
-print(youth_adult_movements_quiet.sort_values(by='count', ascending=False))
-
-markov_chain_analysis(fam_movements_quiet, "Family Rides during Quiet Days")
-markov_chain_analysis(youth_adult_movements_quiet, "Youth Rides during Quiet Days")
-
-#COVID-19
-
-covid_dates = covid['USAGE_DATE']
-covid_tivoli = tivoli_g_all[tivoli_g_all['WORK_DATE'].isin(covid_dates)]
-
-plot_median_wait_times(tivoli_quiet, "")
-plot_ride_correlation_heatmap(tivoli_quiet, title_suffix="")
-
-covid_movement = analyze_guest_movement_covid(tivoli_quiet)
-wait_covid = calculate_avg_wait_times(covid_tivoli)
-plot_guest_transitions_vs_wait_time(covid_movement, wait_covid, 'Ride Guest Journeys during Covid', group_name="")
-
-covid_outflow = covid_movement.groupby('from')['count'].sum().sort_values(ascending=False)
-print("\nRides During the Covid-19 Pandemic -- Highest Outgoing Traffic")
-print(covid_outflow)
-
-print("\nFRides during the Covid-19 Pandemic - Most Frequent Transitions:")
-print(covid_movement.sort_values(by='count', ascending=False))
-
-markov_chain_analysis(covid_movement, "Rides during the Covid-19 Pandemic")
+from difflib import SequenceMatcher
+from itertools import combinations
+from scipy.stats import entropy
+
+class GuestJourneyAnalysis: 
+    def __init__(self, tivoli_g, attendance_df, covid, negative_att):
+        self.tivoli_g = tivoli_g
+        self.attendance_df = attendance_df  
+        self.covid = covid
+        self.negative_att = negative_att
+
+    def label_express_pass_by_daytype(self, df, threshold=0.3):
+        thresholds = df.groupby(['ATTRACTION', 'DAY_TYPE'])['WAIT_TIME_MAX'].quantile(threshold).to_dict()
+        
+        def is_express(row):
+            key = (row['ATTRACTION'], row['DAY_TYPE'])
+            return row['WAIT_TIME_MAX'] < thresholds.get(key, np.inf)
+        
+        df['EXPRESS_PASS'] = df.apply(is_express, axis=1)
+        return df
+    def get_ride_segments(self, df, reference_ride="Scooby Doo"):
+        pivot = df.pivot(index='TIMESTAMP', columns='ATTRACTION', values='WAIT_TIME_MAX')
+        correlation_matrix = pivot.corr()
+        reference_corr = correlation_matrix[reference_ride]
+
+        family_rides = [ride for ride, corr in reference_corr.items() if corr < 0.5]
+        youth_rides = [ride for ride, corr in reference_corr.items() if corr >= 0.5]
+        return family_rides, youth_rides
+
+    def label_guest_by_ridetype(self, sequences, family_rides, youth_rides):
+        guest_types = {}
+        for guest_id, seq in sequences.items():
+            fam_count = sum(1 for ride in seq if ride in family_rides)
+            youth_count = sum(1 for ride in seq if ride in youth_rides)
+            if fam_count > youth_count:
+                guest_types[guest_id] = "Family"
+            elif youth_count > fam_count:
+                guest_types[guest_id] = "Youth"
+            else:
+                guest_types[guest_id] = "Mixed"
+        return pd.Series(guest_types)
+
+    #tagging the day types
+    def determine_day_types(self, attendance_df, covid, facility_name='Tivoli Gardens'):
+        tivoli_attendance_df = attendance_df[attendance_df['FACILITY_NAME'] == facility_name]
+        daily_attendance = tivoli_attendance_df.groupby(tivoli_attendance_df['USAGE_DATE'].dt.date)['attendance'].sum()
+
+        busy_threshold = daily_attendance.quantile(0.75)
+        quiet_threshold = daily_attendance.quantile(0.25)
+
+        busy_days = daily_attendance[daily_attendance > busy_threshold].index
+        quiet_days = daily_attendance[daily_attendance < quiet_threshold].index
+        covid_dates = self.covid['USAGE_DATE'].drop_duplicates().dt.date
+        return busy_days, quiet_days, covid_dates
+
+    def tag_day_type(self, df, covid_dates, busy_days, quiet_days):
+        df['DAY_TYPE'] = 'normal'
+        df.loc[df['WORK_DATE'].isin(covid_dates), 'DAY_TYPE'] = 'covid'
+        df.loc[df['WORK_DATE'].isin(busy_days), 'DAY_TYPE'] = 'busy'
+        df.loc[df['WORK_DATE'].isin(quiet_days), 'DAY_TYPE'] = 'quiet'
+        return df
+
+
+    #Getting the individual guest movements 
+
+    def simulate_guest_sequences(self, df, time_gap_seconds=1800):
+        df = df.sort_values(by='TIMESTAMP')
+        df['GAP'] = df['TIMESTAMP'].diff().dt.total_seconds().fillna(0)
+        df['GUEST_ID'] = (df['GAP'] > time_gap_seconds).cumsum()
+        guest_sequences = df.groupby('GUEST_ID')['ATTRACTION'].apply(list)
+        express_map = df.groupby('GUEST_ID')['EXPRESS_PASS'].mean().apply(lambda x: x > 0.5)
+        return guest_sequences, express_map
+
+    def label_guest_sequences_as_express(self, df, guest_sequences, threshold=0.25):
+        thresholds = df.groupby(['ATTRACTION', 'DAY_TYPE'])['WAIT_TIME_MAX'].quantile(threshold).to_dict()
+        
+        guest_labels = {}
+        for guest_id, sequence in guest_sequences.items():
+            guest_df = df[df['GUEST_ID'] == guest_id]
+            if guest_df.empty:
+                guest_labels[guest_id] = False
+                continue
+
+            low_wait_count = 0
+            for _, row in guest_df.iterrows():
+                key = (row['ATTRACTION'], row['DAY_TYPE'])
+                ride_threshold = thresholds.get(key, np.inf)
+                if row['WAIT_TIME_MAX'] < ride_threshold:
+                    low_wait_count += 1
+
+            express_ratio = low_wait_count / len(guest_df)
+            guest_labels[guest_id] = express_ratio > 0.6  # Adjustable threshold
+        return pd.Series(guest_labels)
+
+
+    def generate_guest_summary(self, df, reference_ride="Scooby Doo", gap_seconds=1800):
+        # Step 1: Simulate guest sequences
+        sequences, _ = self.simulate_guest_sequences(df, time_gap_seconds=gap_seconds)
+
+        # Step 2: Assign GUEST_ID to main df
+        df = df.sort_values(by='TIMESTAMP')
+        df['GAP'] = df['TIMESTAMP'].diff().dt.total_seconds().fillna(0)
+        df['GUEST_ID'] = (df['GAP'] > gap_seconds).cumsum()
+
+        # Step 3: Label express pass guests
+        guest_express_labels = self.label_guest_sequences_as_express(df, sequences)
+
+        # Step 4: Segment ride types
+        family_rides, youth_rides = self.get_ride_segments(df, reference_ride)
+        guest_ride_types = self.label_guest_by_ridetype(sequences, family_rides, youth_rides)
+
+        # Step 5: Build guest summary
+        guest_summary = pd.DataFrame({
+            'GUEST_ID': sequences.index,
+            'RIDE_SEQUENCE': sequences.values,
+            'EXPRESS_PASS': guest_express_labels,
+            'RIDE_TYPE': guest_ride_types
+        })
+
+        # Step 6: Add DAY_TYPE per guest
+        guest_daytypes = df.groupby('GUEST_ID')['DAY_TYPE'].first()
+        guest_summary['DAY_TYPE'] = guest_summary['GUEST_ID'].map(guest_daytypes)
+
+        return guest_summary
+
+    def plot_median_wait_times(self, df, day_type=None, title_suffix=""):
+        if day_type:
+            df = df[df['DAY_TYPE'] == day_type]
+            title_suffix = f"({day_type.title()} Days)"
+
+        median_wait_times = df.groupby(['DEB_TIME', 'ATTRACTION'])['WAIT_TIME_MAX'].median().unstack()
+
+        plt.figure(figsize=(12, 6))
+        colors = plt.cm.get_cmap('tab20', len(median_wait_times.columns))
+
+        for i, attraction in enumerate(median_wait_times.columns):
+            plt.plot(median_wait_times.index, median_wait_times[attraction],
+                    label=attraction, color=colors(i), marker='o', markersize=4)
+
+        plt.xlabel('Time of Day')
+        plt.ylabel('Median Waiting Time (minutes)')
+        plt.title(f'Median Waiting Time Throughout the Day {title_suffix} - Tivoli Gardens')
+        plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+        plt.xticks(median_wait_times.index[::4], rotation=45)
+        plt.grid(False)
+        plt.tight_layout()
+        plt.show()
+
+    def plot_ride_correlation_heatmap(self, df, day_type=None, title_suffix=""):
+        if day_type:
+            df = df[df['DAY_TYPE'] == day_type]
+            title_suffix = f"({day_type.title()} Days)"
+
+        tivoli_pivot = df.pivot(index='TIMESTAMP', columns='ATTRACTION', values='WAIT_TIME_MAX')
+        correlation_matrix = tivoli_pivot.corr()
+
+        plt.figure(figsize=(12, 6))
+        sns.heatmap(correlation_matrix, annot=True, cmap="coolwarm", fmt=".2f")
+        plt.title(f"Correlation Between Ride Waiting Times {title_suffix}")
+        plt.tight_layout()
+        plt.show()
+
+    def analyze_ride_correlations(self, df, reference_ride="", day_type=None):
+        if day_type:
+            df = df[df['DAY_TYPE'] == day_type]
+
+        tivoli_pivot = df.pivot(index='TIMESTAMP', columns='ATTRACTION', values='WAIT_TIME_MAX')
+        correlation_matrix = tivoli_pivot.corr()
+
+        # Correlation with the reference ride
+        reference_correlations = correlation_matrix[reference_ride]
+
+        # Segment rides
+        family_rides = [ride for ride, corr in reference_correlations.items() if corr < 0.5]
+        youth_rides = [ride for ride, corr in reference_correlations.items() if corr >= 0.5]
+
+        return family_rides, youth_rides
+
+    def analyze_guest_movement(self, df, reference_ride=None, day_type=None):
+        if day_type:
+            df = df[df['DAY_TYPE'] == day_type]
+
+        # Pivot ride wait times
+        tivoli_pivot = df.pivot(index='TIMESTAMP', columns='ATTRACTION', values='WAIT_TIME_MAX')
+
+        if day_type == 'covid':
+            # Skip segmentation: analyze all ride movements together
+            ride_changes = tivoli_pivot.diff()
+
+            movement_counts = []
+            for from_ride in ride_changes.columns:
+                for to_ride in ride_changes.columns:
+                    if from_ride != to_ride:
+                        movement = ((ride_changes[from_ride] < 0) & (ride_changes[to_ride] > 0)).sum()
+                        movement_counts.append({"from": from_ride, "to": to_ride, "count": movement})
+
+            all_movements = pd.DataFrame(movement_counts)
+            return all_movements, None
+
+        # Non-covid days requires a reference_ride (dividing between family and youth)
+        if not reference_ride:
+            raise ValueError("You must provide a reference_ride for non-covid day types.")
+
+        # Segmenting using correlation
+        correlation_matrix = tivoli_pivot.corr()
+        reference_correlations = correlation_matrix[reference_ride]
+
+        family_rides = [ride for ride, corr in reference_correlations.items() if corr < 0.5]
+        youth_rides = [ride for ride, corr in reference_correlations.items() if corr >= 0.5]
+
+        # Family
+        family_pivot = tivoli_pivot[family_rides]
+        family_changes = family_pivot - family_pivot.shift(1)
+
+        family_movement_counts = []
+        for from_ride in family_changes.columns:
+            for to_ride in family_changes.columns:
+                if from_ride != to_ride:
+                    movement = ((family_changes[from_ride] < 0) & (family_changes[to_ride] > 0)).sum()
+                    family_movement_counts.append({"from": from_ride, "to": to_ride, "count": movement})
+        fam_movements = pd.DataFrame(family_movement_counts)
+
+        # Youth
+        youth_pivot = tivoli_pivot[youth_rides]
+        youth_changes = youth_pivot - youth_pivot.shift(1)
+
+        youth_movement_counts = []
+        for from_ride in youth_changes.columns:
+            for to_ride in youth_changes.columns:
+                if from_ride != to_ride:
+                    movement = ((youth_changes[from_ride] < 0) & (youth_changes[to_ride] > 0)).sum()
+                    youth_movement_counts.append({"from": from_ride, "to": to_ride, "count": movement})
+        youth_movements = pd.DataFrame(youth_movement_counts)
+
+        return fam_movements, youth_movements
+
+    def markov_chain_analysis(self, df, title):
+        graph = nx.DiGraph()
+        for _, row in df.iterrows():
+            graph.add_edge(row['from'], row['to'], weight=row['count'])
+
+        rides = list(graph.nodes())
+        transition_matrix = np.zeros((len(rides), len(rides)))
+
+        for i, from_ride in enumerate(rides):
+            total_outflow = sum(graph.get_edge_data(from_ride, to_ride)['weight'] for to_ride in graph.successors(from_ride))
+            if total_outflow > 0:
+                for j, to_ride in enumerate(rides):
+                    if graph.has_edge(from_ride, to_ride):
+                        transition_matrix[i, j] = graph.get_edge_data(from_ride, to_ride)['weight'] / total_outflow
+
+        eigenvalues, eigenvectors = np.linalg.eig(transition_matrix.T)
+        steady_state = np.abs(eigenvectors[:, np.argmax(eigenvalues)])
+        steady_state /= steady_state.sum()
+
+        steady_state_distribution = pd.Series(steady_state, index=rides)
+
+        print(f"\n{title} - Steady-State Distribution:")
+        print(steady_state_distribution)
+
+    def guest_avg_wait_top_rides(self, df, target_rides):
+        df = df[df['ATTRACTION'].isin(target_rides)]
+        df = df.sort_values(by='TIMESTAMP')
+        df['GAP'] = df['TIMESTAMP'].diff().dt.total_seconds().fillna(0)
+        df['GUEST_ID'] = (df['GAP'] > 1800).cumsum()
+        avg_wait = df.groupby(['GUEST_ID', 'DAY_TYPE'])['WAIT_TIME_MAX'].mean().reset_index()
+        avg_wait = avg_wait.rename(columns={'WAIT_TIME_MAX': 'AVG_WAIT_TIME_TOP_3'})
+        return avg_wait
+
+    def calculate_outflow_for_top_rides(self, df, top_rides, reference_ride="Scooby Doo"):
+        outflow_summary = []
+
+        for day_type in df['DAY_TYPE'].unique():
+            if day_type == "covid":
+                movement_df, _ = self.analyze_guest_movement(df, day_type=day_type)
+            else:
+                movement_df, _ = self.analyze_guest_movement(df, reference_ride=reference_ride, day_type=day_type)
+
+            outflow = movement_df.groupby('from')['count'].sum()
+            filtered_outflow = outflow[outflow.index.isin(top_rides)]
+            avg_outflow = filtered_outflow.mean()
+
+            outflow_summary.append({
+                'DAY_TYPE': day_type,
+                'AVG_OUTFLOW_TOP_3': avg_outflow
+            })
+
+        return pd.DataFrame(outflow_summary)
+
+    def plot_combined_wait_and_outflow(self, wait_df, outflow_df):
+        combined = wait_df.groupby('DAY_TYPE')['AVG_WAIT_TIME_TOP_3'].mean().reset_index()
+        combined = combined.merge(outflow_df, on='DAY_TYPE')
+
+        fig, ax1 = plt.subplots(figsize=(10, 6))
+
+        # Wait time (line)
+        ax1.set_ylabel('Avg Wait Time (mins)', color='blue')
+        sns.lineplot(data=combined, x='DAY_TYPE', y='AVG_WAIT_TIME_TOP_3', marker='o', ax=ax1, color='blue', label='Avg Wait Time')
+        ax1.tick_params(axis='y', labelcolor='blue')
+
+        # Outflow (bar)
+        ax2 = ax1.twinx()
+        ax2.set_ylabel('Avg Guest Outflow (top 3 rides)', color='red')
+        sns.barplot(data=combined, x='DAY_TYPE', y='AVG_OUTFLOW_TOP_3', ax=ax2, alpha=0.3, color='red')
+        ax2.tick_params(axis='y', labelcolor='red')
+
+        plt.title('Guest Willingness to Wait vs Ride Popularity (Top 3 Rides)')
+        plt.tight_layout()
+        plt.show()
+
+    def plot_avg_wait_boxplot(self, df):
+        plt.figure(figsize=(10, 6))
+        sns.boxplot(data=df, x='DAY_TYPE', y='AVG_WAIT_TIME_TOP_3', palette='Set2')
+        sns.stripplot(data=df, x='DAY_TYPE', y='AVG_WAIT_TIME_TOP_3', color='black', size=3, alpha=0.3, jitter=0.2)
+
+        plt.title("Guest Wait Time Tolerance for Top 3 Rides (Boxplot)")
+        plt.xlabel("Day Type")
+        plt.ylabel("Avg Wait Time per Guest (Top 3 Rides) [mins]")
+        plt.grid(True, axis='y', linestyle='--', alpha=0.6)
+        plt.tight_layout()
+        plt.show()
+
+    def sequence_similarity(self, seq1, seq2):
+        return SequenceMatcher(None, seq1, seq2).ratio()
+
+    def average_similarity(self, sequences):
+        combos = list(combinations(sequences, 2))
+        if not combos:
+            return 0
+        return np.mean([self.sequence_similarity(a, b) for a, b in combos])
+
+    def compute_sequence_entropy(self, seq):
+        counts = pd.Series(seq).value_counts(normalize=True)
+        return entropy(counts)
+
+
+    def run_guestjourneyanalysis(self):
+        # Differing the covid and non-covid dates
+        busy_days, quiet_days, covid_dates = self.determine_day_types(self.attendance_df, self.covid)
+        self.tivoli_g = self.tag_day_type(self.tivoli_g, covid_dates, busy_days, quiet_days)
+        self.tivoli_g = self.label_express_pass_by_daytype(self.tivoli_g)
+
+        self.plot_median_wait_times(self.tivoli_g, day_type="normal", title_suffix="Normal Days")
+        self.plot_ride_correlation_heatmap(self.tivoli_g, day_type="normal", title_suffix="Normal Days")
+        self.plot_median_wait_times(self.tivoli_g, day_type="busy", title_suffix="Busy Days")
+        self.plot_ride_correlation_heatmap(self.tivoli_g, day_type="busy", title_suffix="Busy Days")
+        self.plot_median_wait_times(self.tivoli_g, day_type="quiet", title_suffix="Quiet Days")
+        self.plot_ride_correlation_heatmap(self.tivoli_g, day_type="quiet", title_suffix="Quiet Days")
+        self.plot_median_wait_times(self.tivoli_g, day_type="covid", title_suffix="COVID Days")
+
+        # Segmenting of Guests -- Family w/ Kids vs. Youths
+        family_rides, youth_rides = self.analyze_ride_correlations(self.tivoli_g, day_type='normal', reference_ride="Scooby Doo")
+        family_rides_busy, youth_rides_busy = self.analyze_ride_correlations(self.tivoli_g, day_type='busy', reference_ride="Scooby Doo")
+        family_rides_quiet, youth_rides_quiet = self.analyze_ride_correlations(self.tivoli_g, day_type='quiet', reference_ride="Scooby Doo")
+
+        fam_movements, youth_movements = self.analyze_guest_movement(self.tivoli_g, reference_ride='Scooby Doo', day_type="normal")
+        fam_movements_busy, youth_movements_busy = self.analyze_guest_movement(self.tivoli_g, reference_ride='Scooby Doo', day_type="busy")
+        fam_movements_quiet, youth_movements_quiet = self.analyze_guest_movement(self.tivoli_g, reference_ride='Scooby Doo', day_type="quiet")
+        movement_covid, _ = self.analyze_guest_movement(self.tivoli_g, day_type="covid")
+
+        # Normal Days
+        family_outflow = fam_movements.groupby('from')['count'].sum().sort_values(ascending=False)
+        print("Family Rides - Highest Outgoing Traffic:")
+        print(family_outflow)
+        print("\nFamily Rides - Most Frequent Transitions:")
+        print(fam_movements.sort_values(by='count', ascending=False))
+        self.markov_chain_analysis(fam_movements, "Family Rides")
+
+        youth_outflow = youth_movements.groupby('from')['count'].sum().sort_values(ascending=False)
+        print("\nYouth Rides - Highest Outgoing Traffic:")
+        print(youth_outflow)
+        print("\nYouth Rides - Most Frequent Transitions:")
+        print(youth_movements.sort_values(by='count', ascending=False))
+        self.markov_chain_analysis(youth_movements, "Youth Rides")
+
+        # Busy Days
+        family_outflow_busy = fam_movements_busy.groupby('from')['count'].sum().sort_values(ascending=False)
+        print("Family Rides during Busy Days - Highest Outgoing Traffic:")
+        print(family_outflow_busy)
+        print("\nFamily Rides during Busy Days - Most Frequent Transitions:")
+        print(fam_movements_busy.sort_values(by='count', ascending=False))
+        self.markov_chain_analysis(fam_movements_busy, "Family Rides during Busy Days")
+
+        youth_outflow_busy = youth_movements_busy.groupby('from')['count'].sum().sort_values(ascending=False)
+        print("\nYouth Rides during Busy Days - Highest Outgoing Traffic:")
+        print(youth_outflow_busy)
+        print("\nYouth Rides during Busy Days - Most Frequent Transitions:")
+        print(youth_movements_busy.sort_values(by='count', ascending=False))
+        self.markov_chain_analysis(youth_movements_busy, "Youth Rides during Busy Days")
+
+        # Quiet Days
+        family_outflow_quiet = fam_movements_quiet.groupby('from')['count'].sum().sort_values(ascending=False)
+        print("Family Rides during Quiet Days - Highest Outgoing Traffic:")
+        print(family_outflow_quiet)
+        print("\nFamily Rides during Quiet Days - Most Frequent Transitions:")
+        print(fam_movements_quiet.sort_values(by='count', ascending=False))
+        self.markov_chain_analysis(fam_movements_quiet, "Family Rides during Quiet Days")
+
+        youth_outflow_quiet = youth_movements_quiet.groupby('from')['count'].sum().sort_values(ascending=False)
+        print("\nYouth Rides during Quiet Days - Highest Outgoing Traffic:")
+        print(youth_outflow_quiet)
+        print("\nYouth Rides during Quiet Days - Most Frequent Transitions:")
+        print(youth_movements_quiet.sort_values(by='count', ascending=False))
+        self.markov_chain_analysis(youth_movements_quiet, "Youth Rides during Quiet Days")
+
+        # Covid Days
+        covid_outflow = movement_covid.groupby('from')['count'].sum().sort_values(ascending=False)
+        print("Rides during Covid Days - Highest Outgoing Traffic:")
+        print(covid_outflow)
+        print("\nRides during Covid Days - Most Frequent Transitions:")
+        print(movement_covid.sort_values(by='count', ascending=False))
+        self.markov_chain_analysis(movement_covid, "Rides during Covid Days")
+
+        # Identify top 3 rides
+        top_rides = self.tivoli_g['ATTRACTION'].value_counts().nlargest(3).index.tolist()
+        avg_wait_top3 = self.guest_avg_wait_top_rides(self.tivoli_g, top_rides)
+        outflow_top3 = self.calculate_outflow_for_top_rides(self.tivoli_g, top_rides)
+        self.plot_combined_wait_and_outflow(avg_wait_top3, outflow_top3)
+
+        self.plot_avg_wait_boxplot(avg_wait_top3)
+
+        guest_summary = self.generate_guest_summary(self.tivoli_g)
+
+        guest_summary['SEQ_ENTROPY'] = guest_summary['RIDE_SEQUENCE'].apply(self.compute_sequence_entropy)
+        guest_summary['SEQ_LEN'] = guest_summary['RIDE_SEQUENCE'].apply(len)
+
+        plt.figure(figsize=(8, 5))
+        sns.boxplot(data=guest_summary, x='EXPRESS_PASS', y='SEQ_LEN', palette='muted')
+        plt.title("Guest Journey Length (Express vs Non-Express)")
+        plt.xlabel("Express Pass Used")
+        plt.ylabel("Number of Rides in Journey")
+        plt.xticks([0, 1], ["No", "Yes"])
+        plt.tight_layout()
+        plt.show()
+
+        plt.figure(figsize=(8, 5))
+        sns.boxplot(data=guest_summary, x='EXPRESS_PASS', y='SEQ_ENTROPY', palette='Spectral')
+        plt.title("Ride Sequence Diversity (Entropy) - Express vs Non-Express")
+        plt.xlabel("Express Pass Used")
+        plt.ylabel("Entropy of Ride Sequence")
+        plt.xticks([0, 1], ["No", "Yes"])
+        plt.tight_layout()
+        plt.show()
+
+        express_seqs = guest_summary[guest_summary['EXPRESS_PASS'] == True]['RIDE_SEQUENCE'].tolist()
+        nonexpress_seqs = guest_summary[guest_summary['EXPRESS_PASS'] == False]['RIDE_SEQUENCE'].tolist()
+        similarity_express = self.average_similarity(express_seqs)
+        similarity_nonexpress = self.average_similarity(nonexpress_seqs)
+        print(f"Avg similarity within Express journeys: {similarity_express:.3f}")
+        print(f"Avg similarity within Non-Express journeys: {similarity_nonexpress:.3f}")
+
+if __name__ == "__main__":
+    analysis = GuestJourneyAnalysis()
+    analysis.run_guestjourneyanalysis()
