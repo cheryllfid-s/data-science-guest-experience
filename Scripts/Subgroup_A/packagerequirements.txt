@@ -6,7 +6,6 @@ numpy
 scikit-learn 
 LabelEncoder
 StandardScaler
-sklearn.cluster
 KMeans
 silhouette_score
 emoji
