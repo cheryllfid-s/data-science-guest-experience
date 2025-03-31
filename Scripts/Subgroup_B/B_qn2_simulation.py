@@ -15,7 +15,7 @@ import os
 df_survey = pd.read_csv("../../data/survey.csv")
 df_weather = pd.read_csv("../../data/weather_data.csv")
 
-# --- Clean Survey Data ---
+#  Clean Survey Data 
 df_survey = df_survey.rename(columns={
     "On a scale of 1-5, how would you rate your overall experience at USS?": "Guest_Satisfaction_Score",
     "How long did you wait in line for rides on average during your visit?": "Wait_Time",
@@ -34,7 +34,7 @@ df_survey["Guest_Satisfaction_Score"] = pd.to_numeric(df_survey["Guest_Satisfact
 df_survey["Timestamp"] = pd.to_datetime(df_survey["Timestamp"]).dt.date
 df_survey["date"] = df_survey["Timestamp"]
 
-# --- Clean Weather Data ---
+#  Clean Weather Data 
 df_weather = df_weather.rename(columns={
     "date": "date",
     "temperature": "temperature",
@@ -43,23 +43,23 @@ df_weather = df_weather.rename(columns={
 })
 df_weather["date"] = pd.to_datetime(df_weather["date"]).dt.date
 
-# --- Merge Datasets ---
+#  Merge Datasets 
 df_merged = pd.merge(df_survey, df_weather, on="date", how="inner")
 df_merged = df_merged.dropna(subset=["Guest_Satisfaction_Score", "temperature", "rainfall", "humidity"])
 
-# --- Train Model ---
+# Train Model 
 X = df_merged[["temperature", "rainfall", "humidity"]]
 y = df_merged["Guest_Satisfaction_Score"]
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 model = RandomForestRegressor(n_estimators=100, random_state=42)
 model.fit(X_train, y_train)
 
-# --- Evaluate Model ---
+# Evaluate Model
 y_pred = model.predict(X_test)
 rmse = np.sqrt(mean_squared_error(y_test, y_pred))
 r2 = r2_score(y_test, y_pred)
 
-# --- Create 7-Day Forecast ---
+# Create 7-Day Forecast 
 future_dates = pd.date_range(start=datetime.now(), periods=7, freq="D").date
 forecast_weather = df_weather.tail(7).copy()
 forecast_weather = forecast_weather.reset_index(drop=True)
@@ -68,7 +68,7 @@ forecast_weather = forecast_weather[["date", "temperature", "rainfall", "humidit
 forecast_weather["predicted_satisfaction"] = model.predict(forecast_weather[["temperature", "rainfall", "humidity"]])
 forecast_weather.reset_index(drop=True, inplace=True)
 
-# --- Define Attraction Coordinates ---
+# Attraction coordinates
 attractions_map = {
     "Revenge of the Mummy": (3, 5),
     "Battlestar Galactica: CYLON": (5, 3),
@@ -77,7 +77,7 @@ attractions_map = {
     "Sesame Street Spaghetti Space Chase": (4, 2)
 }
 
-# --- Theme Park Simulation Class ---
+#  Theme Park OOP for simulation
 class ThemePark:
     def __init__(self, env, attractions, layout="single_queue", use_right_entrance=True):
         self.env = env
@@ -109,7 +109,7 @@ class ThemePark:
                 self.env.process(self.guest(self.env, f"Guest_{int(self.env.now)}", attractions_to_visit))
                 yield self.env.timeout(np.random.exponential(rate))
 
-# --- Run Simulation Function ---
+# Simulation function must be ran
 def run_simulation(num_guests, attractions, layout, use_right_entrance=True):
     env = simpy.Environment()
     park = ThemePark(env, attractions, layout, use_right_entrance)
@@ -123,7 +123,7 @@ def run_simulation(num_guests, attractions, layout, use_right_entrance=True):
     avg_wait_times = {name: np.mean(times) if times else 0 for name, times in park.wait_times.items()}
     return avg_wait_times, park.visit_counts, park.total_times
 
-# --- Compare Layouts ---
+# We will need to compare Layouts 
 def compare_layouts():
     attractions_map.update({
         "Revenge of the Mummy": (3, 5),
@@ -183,9 +183,9 @@ def compare_layouts():
     print("\nJustification for Modified Layout:")
     print("- Removed right entrance to reduce congestion at central attractions.")
     print("- Swapped Transformers and CYLON to rebalance flow.")
-    print("- Result: Lower wait times and better guest distribution.")
+    print("- Result: Lower wait times and better guest distribution most of the time (quite reliably, we did the best we can)")
 
-# --- Main Execution ---
+# Main
 if __name__ == "__main__":
     print("\n7-Day Forecast of Guest Satisfaction:")
     print(forecast_weather[["date", "temperature", "rainfall", "humidity", "predicted_satisfaction"]])
