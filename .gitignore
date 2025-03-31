@@ -10,8 +10,6 @@
 *.png
 *.jpg
 *.jpeg
-*.csv
-*.zip 
 *.tar.gz
 *.h5
 
