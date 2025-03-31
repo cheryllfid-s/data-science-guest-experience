@@ -78,6 +78,7 @@ def q4_handle_missing_values(df, drop=True, fill_value=None):
 
     return df
 
+
 def q4_remove_duplicates(df):
     # check if there are duplicated rows
     dup_count = df.duplicated().sum()
@@ -91,26 +92,28 @@ def q4_remove_duplicates(df):
         print("No duplicates found.")
     return df
 
+
 def q4_analyse_sentiment(df, text_column):
     df["polarity"] = df[text_column].apply(lambda text: TextBlob(text).sentiment.polarity)
     return df
-    
+
+
 def q4_prepare_reviews_data():
     # (1) Download and import universal_studio_branches.csv
     kaggle_download_path = kagglehub.dataset_download("dwiknrd/reviewuniversalstudio")
     print("Path to dataset files:", kaggle_download_path)
-    
+
     reviews_path = os.path.join(kaggle_download_path, "universal_studio_branches.csv")
     df_reviews = pd.read_csv(reviews_path)
 
     # (2) Check for missing values
-    df_reviews = handle_missing_values(df_reviews)
+    df_reviews = q4_handle_missing_values(df_reviews)
 
     # (3) Convert to datetime object
     df_reviews["written_date"] = pd.to_datetime(df_reviews["written_date"], errors='coerce')
 
     # (4) Remove duplicates
-    df_reviews = remove_duplicates(df_reviews)
+    df_reviews = q4_remove_duplicates(df_reviews)
 
     # (5) Combine the text columns
     df_reviews['combined_text'] = df_reviews['title'] + " " + df_reviews['review_text']
@@ -120,9 +123,10 @@ def q4_prepare_reviews_data():
     df_reviews["combined_text"] = df_reviews["combined_text"].apply(lambda text: demojize(text))
 
     # (7) Compute polarity scores
-    df_reviews = analyse_sentiment(df_reviews, 'combined_text')
+    df_reviews = q4_analyse_sentiment(df_reviews, 'combined_text')
 
     return df_reviews
+
 
 def q4_prepare_events_data():
     # (1) Import uss_promo_events.csv
@@ -131,7 +135,7 @@ def q4_prepare_events_data():
     df_events = pd.read_csv(events_path)
 
     # (2) Check for missing values
-    df_events = handle_missing_values(df_events)
+    df_events = q4_handle_missing_values(df_events)
 
     # (3) Convert to datetime object
     df_events["start"] = pd.to_datetime(df_events["start"], format='%b %d, %Y', errors='coerce')
@@ -139,7 +143,7 @@ def q4_prepare_events_data():
     df_events = df_events.sort_values("start")  # order events by start date
 
     # (4) Remove duplicates
-    df_events = remove_duplicates(df_events)
+    df_events = q4_remove_duplicates(df_events)
 
     # (5) Compute event duration
     df_events["duration"] = (df_events["end"] - df_events["start"]).dt.days
