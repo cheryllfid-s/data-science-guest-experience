@@ -10,15 +10,18 @@ This project aims to develop a data-driven system that maps and analyzes guest j
 
 ## Running the Docker
 ### 1. Clone the Repository
+Clone the GitHub repository and navigate into the project folder
 ```bash
 git clone https://github.com/darderrdur17/data-science-guest-experience.git
 cd data-science-guest-experience
 ```
 ### 2. Build and Start the Docker Container
+This command builds and starts the docker container
 ```bash
 docker-compose up --build
 ```
 ### 3. Stop the Docker Container
+Once you're done, you can stop and remove the container with the following command
 ```bash
 docker-compose down
 ```
