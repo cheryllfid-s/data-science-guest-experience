@@ -6,7 +6,20 @@ This project aims to develop a data-driven system that maps and analyzes guest j
 ## Prerequisites
 - Python 3.8 or higher
 - Git
-- [Docker](https://www.docker.com/get-started) & Docker Compose (instructions for non-Docker use has been provided below as well)
+- [Docker](https://www.docker.com/get-started) & Docker Compose
+
+Though instructions have been provided below for set up without Docker, its use is recommended.
+
+## Docker Instructions 
+### 1. Build and Start the Docker Container
+```bash
+docker-compose up --build
+```
+### 2. Stop the Docker Container
+```bash
+docker-compose down
+```
+
 
 ## Set Up Instructions (Without Docker)
 ### 1. Clone the Repository
@@ -24,12 +37,9 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## Docker Instructions
-### 1. Build and Start the Docker Container
+## Running the Project
+The entry point of this project is:
 ```bash
-docker-compose up --build
+Scripts/main.py
 ```
-### 2. Stop the Docker Container
-```bash
-docker-compose down
-```
+
