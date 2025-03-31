@@ -58,3 +58,74 @@ def prepare_tivoli_data():
     negative_att = attendance_df[attendance_df['attendance'] < 0]
 
     return tivoli_g, attendance_df, covid, negative_att
+
+
+# (4) analysis of past promotion events
+def handle_missing_values(df, drop=True, fill_value=None):
+    missing_counts = df.isnull().sum()
+    if missing_counts.sum() == 0:
+        print("No missing values found.")
+        return df
+    print("Missing values per column:\n", missing_counts)
+    if drop:
+        df = df.dropna()
+        print("Dropped rows with missing values.")
+    elif fill_value is not None:
+        df = df.fillna(fill_value)
+        print(f"Filled missing values with {fill_value}.")
+
+    return df
+
+def remove_duplicates(df):
+    # check if there are duplicated rows
+    dup_count = df.duplicated().sum()
+    print(f"Number of duplicate rows: {dup_count}")
+
+    # drop duplicates if any
+    if dup_count > 0:
+        df.drop_duplicates(inplace=True)
+        print("Duplicates removed.")
+    else:
+        print("No duplicates found.")
+    return df
+    
+def prepare_reviews_data():
+    # Download and import universal_studio_branches.csv
+    kaggle_download_path = kagglehub.dataset_download("dwiknrd/reviewuniversalstudio")
+    print("Path to dataset files:", kaggle_download_path)
+
+    reviews_path = os.path.join(kaggle_download_path, "universal_studio_branches.csv")
+    df_reviews = pd.read_csv(reviews_path)
+
+    # Check for missing values
+    df_reviews = handle_missing_values(df_reviews)
+
+    # Convert to datetime object
+    df_reviews["written_date"] = pd.to_datetime(df_reviews["written_date"], errors='coerce')
+
+    # Remove duplicates
+    df_reviews = remove_duplicates(df_reviews)
+
+    return df_reviews
+
+def prepare_events_data():
+    # Import uss_promo_events.csv
+    events_path = os.path.join("../../data/uss_promo_events.csv")
+    print(events_path)
+    df_events = pd.read_csv(events_path)
+
+    # Check for missing values
+    df_events = handle_missing_values(df_events)
+
+    # Convert to datetime object
+    df_events["start"] = pd.to_datetime(df_events["start"], format='%b %d, %Y', errors='coerce')
+    df_events["end"] = pd.to_datetime(df_events["end"], format='%b %d, %Y', errors='coerce')
+    df_events = df_events.sort_values("start")  # order events by start date
+
+    # Remove duplicates
+    df_events = remove_duplicates(df_events)
+
+    # Compute event duration
+    df_events["duration"] = (df_events["end"] - df_events["start"]).dt.days
+
+    return df_events
