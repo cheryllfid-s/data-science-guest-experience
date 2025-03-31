@@ -159,7 +159,7 @@ def q4_prepare_events_data():
 
 
 # (5) External factors
-def clean_data():
+def q5_clean_data():
 
     csv_path_reviews = Path("../../data/usstripadvisor.csv").resolve()
     print(f"Absolute CSV path: {csv_path_reviews}")
