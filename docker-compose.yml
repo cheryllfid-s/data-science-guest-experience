@@ -1,0 +1,12 @@
+version: "3.9" 
+
+services:
+  uss:
+    build: .
+    container_name: uss_backend
+    volumes:
+      - .:/app  
+    working_dir: /app
+    command: python Scripts/main.py  
+    environment:
+      - PYTHONUNBUFFERED=1
