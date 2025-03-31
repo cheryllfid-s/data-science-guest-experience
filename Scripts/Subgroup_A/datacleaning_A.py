@@ -100,13 +100,15 @@ def q4_analyse_sentiment(df, text_column):
 
 def q4_prepare_reviews_data():
     # (1) Download and import universal_studio_branches.csv
+    print("\nImporting reviews data...")
     kaggle_download_path = kagglehub.dataset_download("dwiknrd/reviewuniversalstudio")
-    print("Path to dataset files:", kaggle_download_path)
+    print("Path to dataset:", kaggle_download_path)
 
     reviews_path = os.path.join(kaggle_download_path, "universal_studio_branches.csv")
     df_reviews = pd.read_csv(reviews_path)
 
     # (2) Check for missing values
+    print("Cleaning reviews data...")
     df_reviews = q4_handle_missing_values(df_reviews)
 
     # (3) Convert to datetime object
@@ -123,18 +125,22 @@ def q4_prepare_reviews_data():
     df_reviews["combined_text"] = df_reviews["combined_text"].apply(lambda text: demojize(text))
 
     # (7) Compute polarity scores
+    print("Computing review polarity scores...")
     df_reviews = q4_analyse_sentiment(df_reviews, 'combined_text')
+    print("df_reviews is ready for analysis.\n")
 
     return df_reviews
 
 
 def q4_prepare_events_data():
     # (1) Import uss_promo_events.csv
+    print("Importing promo events data...")
     events_path = os.path.join("../../data/uss_promo_events.csv")
     print(events_path)
     df_events = pd.read_csv(events_path)
 
     # (2) Check for missing values
+    print("Cleaning events data...")
     df_events = q4_handle_missing_values(df_events)
 
     # (3) Convert to datetime object
@@ -147,6 +153,7 @@ def q4_prepare_events_data():
 
     # (5) Compute event duration
     df_events["duration"] = (df_events["end"] - df_events["start"]).dt.days
+    print("df_events is ready for analysis.\n")
 
     return df_events
 
