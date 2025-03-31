@@ -13,5 +13,8 @@ silhouette_score
 matplotlib.pyplot
 emoji
 scipy
+scipy.stats 
 textblob
 sklearn.feature_extraction.text
+difflib 
+itertools 
