@@ -28,16 +28,6 @@ class GuestJourneyAnalysis:  #Object to make it easier to put into main.py
         df['EXPRESS_PASS'] = df.apply(is_express, axis=1)
         return df
 
-    def get_ride_segments(self, df, reference_ride="Scooby Doo"): 
-        pivot = df.pivot(index='TIMESTAMP', columns='ATTRACTION', values='WAIT_TIME_MAX')
-        correlation_matrix = pivot.corr()
-        #Figuring out which rides go to family with children and which to youth using correlation between rides
-        reference_corr = correlation_matrix[reference_ride]
-
-        family_rides = [ride for ride, corr in reference_corr.items() if corr < 0.5]
-        youth_rides = [ride for ride, corr in reference_corr.items() if corr >= 0.5]
-        return family_rides, youth_rides
-
     #Dividing the day types
     def determine_day_types(self, attendance_df, covid, facility_name='Tivoli Gardens'):
         tivoli_attendance_df = attendance_df[attendance_df['FACILITY_NAME'] == facility_name]
