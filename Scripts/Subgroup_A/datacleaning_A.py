@@ -3,6 +3,7 @@ import pandas as pd
 import os
 from emoji import demojize
 from textblob import TextBlob
+from pathlib import Path
 
 # (Q3) data journey analysis 
 def prepare_tivoli_data():
