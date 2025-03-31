@@ -18,3 +18,5 @@ textblob
 sklearn.feature_extraction.text
 difflib 
 itertools 
+seaborn
+pathlib
