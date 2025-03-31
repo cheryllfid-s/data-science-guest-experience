@@ -3,10 +3,10 @@ from Subgroup_B.main_B import mainB
 
 def run_all():
     print("\nRunning Subgroup A Analysis")
-    main_A()
+    mainA()
 
     print("\nRunning Subgroup B Analysis")
-    main_B()
+    mainB()
 
 if __name__ == "__main__":
     run_all()
