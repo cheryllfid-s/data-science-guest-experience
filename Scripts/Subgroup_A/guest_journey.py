@@ -9,14 +9,16 @@ from difflib import SequenceMatcher
 from itertools import combinations
 from scipy.stats import entropy
 
-class GuestJourneyAnalysis: 
+class GuestJourneyAnalysis:  #Object to make it easier to put into main.py
     def __init__(self, tivoli_g, attendance_df, covid, negative_att):
         self.tivoli_g = tivoli_g
         self.attendance_df = attendance_df  
         self.covid = covid
         self.negative_att = negative_att
 
-    def label_express_pass_by_daytype(self, df, threshold=0.3):
+    def label_express_pass_by_daytype(self, df, threshold=0.3): 
+        #Dividing by day type, using the wait time max to see if there are people using express tickets for certain rides
+        #Since quiet, busy, covid, and normal days have different wait times 
         thresholds = df.groupby(['ATTRACTION', 'DAY_TYPE'])['WAIT_TIME_MAX'].quantile(threshold).to_dict()
         
         def is_express(row):
@@ -25,29 +27,18 @@ class GuestJourneyAnalysis:
         
         df['EXPRESS_PASS'] = df.apply(is_express, axis=1)
         return df
-    def get_ride_segments(self, df, reference_ride="Scooby Doo"):
+
+    def get_ride_segments(self, df, reference_ride="Scooby Doo"): 
         pivot = df.pivot(index='TIMESTAMP', columns='ATTRACTION', values='WAIT_TIME_MAX')
         correlation_matrix = pivot.corr()
+        #Figuring out which rides go to family with children and which to youth using correlation between rides
         reference_corr = correlation_matrix[reference_ride]
 
         family_rides = [ride for ride, corr in reference_corr.items() if corr < 0.5]
         youth_rides = [ride for ride, corr in reference_corr.items() if corr >= 0.5]
         return family_rides, youth_rides
 
-    def label_guest_by_ridetype(self, sequences, family_rides, youth_rides):
-        guest_types = {}
-        for guest_id, seq in sequences.items():
-            fam_count = sum(1 for ride in seq if ride in family_rides)
-            youth_count = sum(1 for ride in seq if ride in youth_rides)
-            if fam_count > youth_count:
-                guest_types[guest_id] = "Family"
-            elif youth_count > fam_count:
-                guest_types[guest_id] = "Youth"
-            else:
-                guest_types[guest_id] = "Mixed"
-        return pd.Series(guest_types)
-
-    #tagging the day types
+    #Dividing the day types
     def determine_day_types(self, attendance_df, covid, facility_name='Tivoli Gardens'):
         tivoli_attendance_df = attendance_df[attendance_df['FACILITY_NAME'] == facility_name]
         daily_attendance = tivoli_attendance_df.groupby(tivoli_attendance_df['USAGE_DATE'].dt.date)['attendance'].sum()
@@ -60,6 +51,7 @@ class GuestJourneyAnalysis:
         covid_dates = self.covid['USAGE_DATE'].drop_duplicates().dt.date
         return busy_days, quiet_days, covid_dates
 
+    #Tagging the day types
     def tag_day_type(self, df, covid_dates, busy_days, quiet_days):
         df['DAY_TYPE'] = 'normal'
         df.loc[df['WORK_DATE'].isin(covid_dates), 'DAY_TYPE'] = 'covid'
@@ -68,14 +60,13 @@ class GuestJourneyAnalysis:
         return df
 
 
-    #Getting the individual guest movements 
 
     def simulate_guest_sequences(self, df, time_gap_seconds=1800):
         df = df.sort_values(by='TIMESTAMP')
-        df['GAP'] = df['TIMESTAMP'].diff().dt.total_seconds().fillna(0)
-        df['GUEST_ID'] = (df['GAP'] > time_gap_seconds).cumsum()
-        guest_sequences = df.groupby('GUEST_ID')['ATTRACTION'].apply(list)
-        express_map = df.groupby('GUEST_ID')['EXPRESS_PASS'].mean().apply(lambda x: x > 0.5)
+        df['GAP'] = df['TIMESTAMP'].diff().dt.total_seconds().fillna(0) #Time gaps in seconds
+        df['GUEST_ID'] = (df['GAP'] > time_gap_seconds).cumsum() #If time gap > 30 mins, assign new guest ID
+        guest_sequences = df.groupby('GUEST_ID')['ATTRACTION'].apply(list) #Getting the ride sequence per guest
+        express_map = df.groupby('GUEST_ID')['EXPRESS_PASS'].mean().apply(lambda x: x > 0.6) #if >50% rides are fast, guest = express pass
         return guest_sequences, express_map
 
     def label_guest_sequences_as_express(self, df, guest_sequences, threshold=0.25):
@@ -96,27 +87,41 @@ class GuestJourneyAnalysis:
                     low_wait_count += 1
 
             express_ratio = low_wait_count / len(guest_df)
-            guest_labels[guest_id] = express_ratio > 0.6  # Adjustable threshold
+            guest_labels[guest_id] = express_ratio > 0.6  # Consider express if >60% rides were below wait threshold
         return pd.Series(guest_labels)
 
+    
+    def label_guest_by_ridetype(self, sequences, family_rides, youth_rides): 
+        guest_types = {}
+        for guest_id, seq in sequences.items():
+            fam_count = sum(1 for ride in seq if ride in family_rides)
+            youth_count = sum(1 for ride in seq if ride in youth_rides)
+            if fam_count > youth_count:
+                guest_types[guest_id] = "Family"
+            elif youth_count > fam_count:
+                guest_types[guest_id] = "Youth"
+            else:
+                guest_types[guest_id] = "Mixed"
+        return pd.Series(guest_types)
+    
 
     def generate_guest_summary(self, df, reference_ride="Scooby Doo", gap_seconds=1800):
-        # Step 1: Simulate guest sequences
+        #Simulate guest sequences
         sequences, _ = self.simulate_guest_sequences(df, time_gap_seconds=gap_seconds)
 
-        # Step 2: Assign GUEST_ID to main df
+        #Reassign guest ID on main df
         df = df.sort_values(by='TIMESTAMP')
         df['GAP'] = df['TIMESTAMP'].diff().dt.total_seconds().fillna(0)
         df['GUEST_ID'] = (df['GAP'] > gap_seconds).cumsum()
 
-        # Step 3: Label express pass guests
+        #Label express pass guests
         guest_express_labels = self.label_guest_sequences_as_express(df, sequences)
 
-        # Step 4: Segment ride types
-        family_rides, youth_rides = self.get_ride_segments(df, reference_ride)
+        #Segment ride types
+        family_rides, youth_rides = family_rides, youth_rides = self.analyze_ride_correlations(df, reference_ride=reference_ride, day_type=None)
         guest_ride_types = self.label_guest_by_ridetype(sequences, family_rides, youth_rides)
 
-        # Step 5: Build guest summary
+        #Build guest summary df
         guest_summary = pd.DataFrame({
             'GUEST_ID': sequences.index,
             'RIDE_SEQUENCE': sequences.values,
@@ -124,13 +129,14 @@ class GuestJourneyAnalysis:
             'RIDE_TYPE': guest_ride_types
         })
 
-        # Step 6: Add DAY_TYPE per guest
+        #Assign day type per guest
         guest_daytypes = df.groupby('GUEST_ID')['DAY_TYPE'].first()
         guest_summary['DAY_TYPE'] = guest_summary['GUEST_ID'].map(guest_daytypes)
 
         return guest_summary
 
-    def plot_median_wait_times(self, df, day_type=None, title_suffix=""):
+    def plot_median_wait_times(self, df, day_type=None, title_suffix=""): 
+        #plotting waiting times line chart
         if day_type:
             df = df[df['DAY_TYPE'] == day_type]
             title_suffix = f"({day_type.title()} Days)"
@@ -154,6 +160,7 @@ class GuestJourneyAnalysis:
         plt.show()
 
     def plot_ride_correlation_heatmap(self, df, day_type=None, title_suffix=""):
+        #plotting correlations between rides heatmap
         if day_type:
             df = df[df['DAY_TYPE'] == day_type]
             title_suffix = f"({day_type.title()} Days)"
@@ -167,7 +174,8 @@ class GuestJourneyAnalysis:
         plt.tight_layout()
         plt.show()
 
-    def analyze_ride_correlations(self, df, reference_ride="", day_type=None):
+    def analyze_ride_correlations(self, df, reference_ride="", day_type=""):
+        #ride correlations using the date type
         if day_type:
             df = df[df['DAY_TYPE'] == day_type]
 
@@ -244,7 +252,7 @@ class GuestJourneyAnalysis:
     def markov_chain_analysis(self, df, title):
         graph = nx.DiGraph()
         for _, row in df.iterrows():
-            graph.add_edge(row['from'], row['to'], weight=row['count'])
+            graph.add_edge(row['from'], row['to'], weight=row['count']) #transition edeges
 
         rides = list(graph.nodes())
         transition_matrix = np.zeros((len(rides), len(rides)))
@@ -256,6 +264,7 @@ class GuestJourneyAnalysis:
                     if graph.has_edge(from_ride, to_ride):
                         transition_matrix[i, j] = graph.get_edge_data(from_ride, to_ride)['weight'] / total_outflow
 
+        #Compute steady state distribution:
         eigenvalues, eigenvectors = np.linalg.eig(transition_matrix.T)
         steady_state = np.abs(eigenvectors[:, np.argmax(eigenvalues)])
         steady_state /= steady_state.sum()
@@ -266,10 +275,10 @@ class GuestJourneyAnalysis:
         print(steady_state_distribution)
 
     def guest_avg_wait_top_rides(self, df, target_rides):
-        df = df[df['ATTRACTION'].isin(target_rides)]
+        df = df[df['ATTRACTION'].isin(target_rides)] #Focus on top rides!
         df = df.sort_values(by='TIMESTAMP')
         df['GAP'] = df['TIMESTAMP'].diff().dt.total_seconds().fillna(0)
-        df['GUEST_ID'] = (df['GAP'] > 1800).cumsum()
+        df['GUEST_ID'] = (df['GAP'] > 1800).cumsum() #Segmenting guests by time gaps
         avg_wait = df.groupby(['GUEST_ID', 'DAY_TYPE'])['WAIT_TIME_MAX'].mean().reset_index()
         avg_wait = avg_wait.rename(columns={'WAIT_TIME_MAX': 'AVG_WAIT_TIME_TOP_3'})
         return avg_wait
@@ -279,6 +288,7 @@ class GuestJourneyAnalysis:
 
         for day_type in df['DAY_TYPE'].unique():
             if day_type == "covid":
+                #Depending on DAY_TYPE, since covid doesnt need a reference_ride for division of youth v family with children
                 movement_df, _ = self.analyze_guest_movement(df, day_type=day_type)
             else:
                 movement_df, _ = self.analyze_guest_movement(df, reference_ride=reference_ride, day_type=day_type)
@@ -300,12 +310,12 @@ class GuestJourneyAnalysis:
 
         fig, ax1 = plt.subplots(figsize=(10, 6))
 
-        # Wait time (line)
+        #Left Y-Axis = Average Wait Time (line)
         ax1.set_ylabel('Avg Wait Time (mins)', color='blue')
         sns.lineplot(data=combined, x='DAY_TYPE', y='AVG_WAIT_TIME_TOP_3', marker='o', ax=ax1, color='blue', label='Avg Wait Time')
         ax1.tick_params(axis='y', labelcolor='blue')
 
-        # Outflow (bar)
+        #Right y-axis = Guest Outflow (bar)
         ax2 = ax1.twinx()
         ax2.set_ylabel('Avg Guest Outflow (top 3 rides)', color='red')
         sns.barplot(data=combined, x='DAY_TYPE', y='AVG_OUTFLOW_TOP_3', ax=ax2, alpha=0.3, color='red')
@@ -328,16 +338,16 @@ class GuestJourneyAnalysis:
         plt.show()
 
     def sequence_similarity(self, seq1, seq2):
-        return SequenceMatcher(None, seq1, seq2).ratio()
+        return SequenceMatcher(None, seq1, seq2).ratio() #Similarity score between sequences
 
     def average_similarity(self, sequences):
-        combos = list(combinations(sequences, 2))
+        combos = list(combinations(sequences, 2)) #Pairwise combinations
         if not combos:
             return 0
-        return np.mean([self.sequence_similarity(a, b) for a, b in combos])
+        return np.mean([self.sequence_similarity(a, b) for a, b in combos]) #Average similarities across all pairs
 
     def compute_sequence_entropy(self, seq):
-        counts = pd.Series(seq).value_counts(normalize=True)
+        counts = pd.Series(seq).value_counts(normalize=True) #Frequency Distribution
         return entropy(counts)
 
 
@@ -347,6 +357,8 @@ class GuestJourneyAnalysis:
         self.tivoli_g = self.tag_day_type(self.tivoli_g, covid_dates, busy_days, quiet_days)
         self.tivoli_g = self.label_express_pass_by_daytype(self.tivoli_g)
 
+        
+        #Plotting line graphs and correlation heatmaps for each to view 
         self.plot_median_wait_times(self.tivoli_g, day_type="normal", title_suffix="Normal Days")
         self.plot_ride_correlation_heatmap(self.tivoli_g, day_type="normal", title_suffix="Normal Days")
         self.plot_median_wait_times(self.tivoli_g, day_type="busy", title_suffix="Busy Days")
@@ -360,6 +372,7 @@ class GuestJourneyAnalysis:
         family_rides_busy, youth_rides_busy = self.analyze_ride_correlations(self.tivoli_g, day_type='busy', reference_ride="Scooby Doo")
         family_rides_quiet, youth_rides_quiet = self.analyze_ride_correlations(self.tivoli_g, day_type='quiet', reference_ride="Scooby Doo")
 
+        #Potential movements from and to rides
         fam_movements, youth_movements = self.analyze_guest_movement(self.tivoli_g, reference_ride='Scooby Doo', day_type="normal")
         fam_movements_busy, youth_movements_busy = self.analyze_guest_movement(self.tivoli_g, reference_ride='Scooby Doo', day_type="busy")
         fam_movements_quiet, youth_movements_quiet = self.analyze_guest_movement(self.tivoli_g, reference_ride='Scooby Doo', day_type="quiet")
@@ -428,6 +441,8 @@ class GuestJourneyAnalysis:
 
         guest_summary = self.generate_guest_summary(self.tivoli_g)
 
+        #Sequence entropy to figure out how diverse a guest's ride path is depending on express v non express pass
+        #Sequence length to figure out how many rides they tend to go on depending on express v non express pass
         guest_summary['SEQ_ENTROPY'] = guest_summary['RIDE_SEQUENCE'].apply(self.compute_sequence_entropy)
         guest_summary['SEQ_LEN'] = guest_summary['RIDE_SEQUENCE'].apply(len)
 
@@ -449,6 +464,7 @@ class GuestJourneyAnalysis:
         plt.tight_layout()
         plt.show()
 
+        #quantifying the average similarities among express pass and non express pass users 
         express_seqs = guest_summary[guest_summary['EXPRESS_PASS'] == True]['RIDE_SEQUENCE'].tolist()
         nonexpress_seqs = guest_summary[guest_summary['EXPRESS_PASS'] == False]['RIDE_SEQUENCE'].tolist()
         similarity_express = self.average_similarity(express_seqs)
