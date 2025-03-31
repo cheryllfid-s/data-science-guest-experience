@@ -282,7 +282,6 @@ class USSPromoAnalysis:
          3. Performs statistical analysis to check significance.
          4. Visualizes the changes in review metrics.
 
-         The results will be printed and visualized.
          """
         print("Analysis of USS' past promotional events data to study changes in guest satisfaction:\n")
         # (1) Filter for reviews written before and during events
