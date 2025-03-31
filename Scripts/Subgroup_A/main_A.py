@@ -14,5 +14,9 @@ def mainA():
     print("Question 4: Impact of Marketing Strategies on Guest Behaviour")
     USSPromoAnalysis_obj.run_promo_events_analysis()
 
+    #run key factors contribution to guest satisfaction (QN 1)
+    satisfaction_analysis = GuestSatisfactionAnalysis()
+    satisfaction_analysis.run_analysis()
+
 if __name__ == "__main__":
     mainA()
