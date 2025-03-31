@@ -22,7 +22,7 @@ def mainA():
 
     print("Question 5: External Factors on Guest Satisfaction")
     q5_df_reviews = q5_clean_data()
-    analyse(q5_df_reviews)
+    q5analyse(q5_df_reviews)
 
 if __name__ == "__main__":
     mainA()
