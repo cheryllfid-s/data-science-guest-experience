@@ -1,5 +1,6 @@
 from datacleaning_A import *
 from guest_journey import GuestJourneyAnalysis
+from promo_events_analysis import USSPromoAnalysis
 
 def mainA():
     tivoli_g, attendance_df, covid, negative_att = prepare_tivoli_data()
@@ -7,8 +8,8 @@ def mainA():
     Print("Question 3: Guest Journey Patterns")
     GuestJourneyAnalysis_obj.run_guestjourneyanalysis()
 
-    q4_df_reviews = prepare_reviews_data()
-    q4_df_events = prepare_events_data()
+    q4_df_reviews = q4_prepare_reviews_data()
+    q4_df_events = q4_prepare_events_data()
     USSPromoAnalysis_obj = USSPromoAnalysis(q4_df_reviews, q4_df_events)
     print("Question 4: Impact of Marketing Strategies on Guest Behaviour")
     USSPromoAnalysis_obj.run_promo_events_analysis()
