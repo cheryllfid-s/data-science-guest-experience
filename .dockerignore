@@ -17,11 +17,8 @@ Thumbs.db
 *.png
 *.jpg
 *.jpeg
-*.csv
-*.zip 
 *.tar.gz
 *.h5
 outputs/
-data/ 
 figures/
 
