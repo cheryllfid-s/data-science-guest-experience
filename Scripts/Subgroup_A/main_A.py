@@ -1,4 +1,4 @@
-from datacleaning_A import prepare_tivoli_data
+from datacleaning_A import *
 from guest_journey import GuestJourneyAnalysis
 
 def mainA():
