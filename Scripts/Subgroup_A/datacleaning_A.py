@@ -149,3 +149,85 @@ def q4_prepare_events_data():
     df_events["duration"] = (df_events["end"] - df_events["start"]).dt.days
 
     return df_events
+
+
+# (5) External factors
+def clean_data():
+
+    csv_path_reviews = Path("../../data/usstripadvisor.csv").resolve()
+    print(f"Absolute CSV path: {csv_path_reviews}")
+    print(f"File exists? {csv_path_reviews.exists()}")
+    df_reviews = pd.read_csv(csv_path_reviews)
+    # Drop any rows with missing review text or title
+    df_reviews = df_reviews.dropna(subset=['title', 'review_text'])
+
+    # Remove unnecessary whitespaces in text columns
+    df_reviews['title'] = df_reviews['title'].str.strip()
+    df_reviews['review_text'] = df_reviews['review_text'].str.strip()
+
+    # Segment assignment function
+    def assign_segment(row):
+        # Combine title and review text into one string for analysis
+        full_text = f"{row['title']} {row['review_text']}".lower()
+
+        # Keywords for each category (define your own as necessary)
+        keywords = {
+            "youth": ["friends", "bros", "squad", "group", "hangout", "party", "social", "fun", "young", "teen", "college", "students"],
+            "family": ["family", "kids", "children", "parents", "mom", "dad", "toddler", "baby", "grandparents"],
+            "express_pass": ["express pass", "fast lane", "skip queue", "VIP", "no wait", "priority", "worth the money", "premium"],
+            "budget": ["expensive", "cost", "too pricey", "overpriced", "save money", "cheap", "budget"]
+        }
+
+        # Score each category based on keyword matches
+        scores = {category: sum(full_text.count(word) for word in words) for category, words in keywords.items()}
+
+        # Determine the segment based on dominant categories
+        age_group = "youth" if scores["youth"] > scores["family"] else "family"
+        spending_type = "express_pass" if scores["express_pass"] > scores["budget"] else "budget"
+
+        if age_group == "youth" and spending_type == "express_pass":
+            return 0  # Social-Driven Youths
+        elif age_group == "family" and spending_type == "budget":
+            return 1  # Value-Conscious Families
+        elif age_group == "youth" and spending_type == "budget":
+            return 2  # Budget-Conscious Youths
+        elif age_group == "family" and spending_type == "express_pass":
+            return 3  # Premium Spenders
+        else:
+            return -1  # Unclassified
+
+    # Apply the segmentation logic
+    df_reviews['segment'] = df_reviews.apply(assign_segment, axis=1)
+    # for rain
+    def label_rain_reviews(df):
+        weather_keywords = ["rain", "wet", "storm", "downpour", "drizzle", "thunder", "shower"]
+        df["mentions_rain"] = df["review_text"].str.contains("|".join(weather_keywords), case=False, na=False)
+        return df
+
+    # Apply the rain labeling function
+    df_reviews = label_rain_reviews(df_reviews)
+
+    #month
+    def categorize_by_month(df_reviews):
+        df_reviews['written_date'] = pd.to_datetime(df_reviews['written_date'], errors='coerce')
+        df_reviews['month'] = df_reviews['written_date'].dt.month_name()
+        return df_reviews
+    
+    df_reviews = categorize_by_month(df_reviews)
+
+    def categorize_season(month):
+        if month in [5, 6, 7]:
+            return 'Summer Holidays'
+        elif month in [11, 12, 1]:
+            return 'Winter Holidays'
+        elif month in [2, 3, 4]:
+            return 'Feb - Apr'
+        else:
+            return 'Aug - Oct'
+
+    # Apply season categories
+    df_reviews['season'] = df_reviews['written_date'].dt.month.apply(categorize_season)
+
+
+    # Return cleaned data with segments
+    return df_reviews
