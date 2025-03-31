@@ -137,7 +137,7 @@ def q4_prepare_events_data():
     # (1) Import uss_promo_events.csv
     print("Importing promo events data...")
     events_path = os.path.join("../../data/uss_promo_events.csv")
-    print(events_path)
+    print("Path to dataset:", events_path)
     df_events = pd.read_csv(events_path)
 
     # (2) Check for missing values

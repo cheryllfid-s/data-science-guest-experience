@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="d506c6e7-b1b2-43dc-8d4d-0814c615b4ea" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/Scripts/Subgroup_A/datacleaning_A.py" beforeDir="false" afterPath="$PROJECT_DIR$/Scripts/Subgroup_A/datacleaning_A.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Scripts/Subgroup_A/main_A.py" beforeDir="false" afterPath="$PROJECT_DIR$/Scripts/Subgroup_A/main_A.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Scripts/Subgroup_A/promo_events_analysis.py" beforeDir="false" afterPath="$PROJECT_DIR$/Scripts/Subgroup_A/promo_events_analysis.py" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="main" />
+      </map>
+    </option>
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;jolenelxr&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/darderrdur17/data-science-guest-experience.git&quot;,
+    &quot;accountId&quot;: &quot;eae6d7ac-f4c3-46c4-b9df-52c745b862b5&quot;
+  }
+}</component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 0
+}</component>
+  <component name="ProjectId" id="2uZIChrQdimaixUS3JUGQ237VXD" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Python.main_A.executor": "Run",
+    "Python.promo_events_analysis.executor": "Run",
+    "Python.test.executor": "Run",
+    "Python.test_cleaning.executor": "Run",
+    "Python.test_main.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "ToolWindow.Plots.ShowToolbar": "false",
+    "git-widget-placeholder": "subgroup__A",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/data" />
+    </key>
+  </component>
+  <component name="RunManager">
+    <configuration name="main_A" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
+      <module name="DSA3101 data-science-guest-experience" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="SDK_NAME" value="Python 3.12 (PythonProject)" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Scripts/Subgroup_A" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Scripts/Subgroup_A/main_A.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-js-predefined-d6986cc7102b-822845ee3bb5-JavaScript-PY-243.23654.177" />
+        <option value="bundled-python-sdk-91d3a02ef49d-43b77aa2d136-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-243.23654.177" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="d506c6e7-b1b2-43dc-8d4d-0814c615b4ea" name="Changes" comment="" />
+      <created>1742449543719</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1742449543719</updated>
+      <workItem from="1742449544822" duration="5909000" />
+      <workItem from="1742486067832" duration="657000" />
+      <workItem from="1742580592904" duration="1758000" />
+      <workItem from="1742617702495" duration="1344000" />
+      <workItem from="1742704130515" duration="38176000" />
+      <workItem from="1742807619606" duration="1464000" />
+      <workItem from="1742809091885" duration="5560000" />
+      <workItem from="1743141314305" duration="2374000" />
+      <workItem from="1743333433762" duration="1271000" />
+      <workItem from="1743347570278" duration="1679000" />
+      <workItem from="1743406818252" duration="23774000" />
+      <workItem from="1743437973898" duration="159000" />
+      <workItem from="1743438136965" duration="602000" />
+      <workItem from="1743438746778" duration="1289000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/data_science_guest_experience$test.coverage" NAME="test Coverage Results" MODIFIED="1743408812803" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Scripts/Subgroup_A" />
+    <SUITE FILE_PATH="coverage/data_science_guest_experience$test_cleaning.coverage" NAME="test_cleaning Coverage Results" MODIFIED="1743411596191" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Scripts/Subgroup_A" />
+    <SUITE FILE_PATH="coverage/data_science_guest_experience$promo_events_analysis.coverage" NAME="promo_events_analysis Coverage Results" MODIFIED="1743414668183" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Scripts/Subgroup_A" />
+    <SUITE FILE_PATH="coverage/data_science_guest_experience$main_A.coverage" NAME="main_A Coverage Results" MODIFIED="1743440019404" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Scripts/Subgroup_A" />
+    <SUITE FILE_PATH="coverage/data_science_guest_experience$test_main.coverage" NAME="test_main Coverage Results" MODIFIED="1743415452059" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Scripts/Subgroup_A" />
+  </component>
+</project>

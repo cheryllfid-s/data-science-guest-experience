@@ -28,7 +28,7 @@ def compute_change_in_reviews(reviews_before_event, reviews_during_event):
     - 'review_volume_change': Change in the number of reviews
     """
     changes = {}
-    print("Computing changes in review polarity, ratings and volume before vs during event...")
+    print("Computing changes in review polarity, ratings and volume before vs during event...\n")
 
     # Iterate through each event, get corresponding reviews before event
     for event, reviews_before in reviews_before_event.items():
@@ -52,9 +52,11 @@ def compute_change_in_reviews(reviews_before_event, reviews_during_event):
             # Store the computed changes for the current event in a dict
             changes[event] = change
 
-            
     # Convert dict into dataframe for easier analysis
-    return pd.DataFrame.from_dict(changes, orient='index')
+    changes_df = pd.DataFrame.from_dict(changes, orient='index')
+    print("Dataframe containing changes in review polarity, ratings and volume:")
+    print(changes_df)
+    return changes_df
 
 
 def visualize_review_changes(df_change_data):
@@ -146,11 +148,10 @@ def metrics_analysis(df_change_data):
         "Review Polarity Change": "review_polarity_change",
         "Review Volume Change": "review_volume_change"
     }
-
+    print("\nStatistical analysis of review metric changes:")
     # Loop through each metric and perform statistical tests
     for metric_name, col in metrics.items():
         changes = df_change_data[col]
-
         # (1) Check normality using Shapiro-Wilk test
         shapiro_stat, shapiro_p = stats.shapiro(changes)
         print(f"Shapiro-Wilk Test for {metric_name}: p-value = {shapiro_p:.4f}")
@@ -283,6 +284,7 @@ class USSPromoAnalysis:
 
          The results will be printed and visualized.
          """
+        print("Analysis of USS' past promotional events data to study changes in guest satisfaction:\n")
         # (1) Filter for reviews written before and during events
         reviews_during_event = self.filter_reviews_during_events()
         reviews_before_event = self.filter_reviews_before_events()
