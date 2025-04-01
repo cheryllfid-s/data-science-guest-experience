@@ -4,7 +4,7 @@ pyqt5
 pandas
 seaborn
 matplotlib 
-numpy
+numpy==2.1.3
 scikit-learn 
 emoji
 scipy
@@ -18,4 +18,4 @@ requests
 simpy
 faker
 xgboost
-sdv==1.4.0
+sdv
