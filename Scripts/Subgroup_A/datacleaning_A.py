@@ -219,7 +219,7 @@ def q4_prepare_reviews_data():
 def q4_prepare_events_data():
     # (1) Import uss_promo_events.csv
     print("Importing promo events data...")
-    events_path = os.path.join("../../data/uss_promo_events.csv")
+    events_path = os.path.join("../../Data/Raw Data/uss_promo_events.csv")
     print("Path to dataset:", events_path)
     df_events = pd.read_csv(events_path)
 
