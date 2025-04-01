@@ -127,6 +127,11 @@ def evaluate(y_true, y_pred, target_name):
 
 evaluate(y_staff_test, y_pred, "Staff Count")
 
+# Save the trained model
+with open("staff_count_model.pkl", "wb") as model_file:
+    pickle.dump(model, model_file)
+print("Model saved as 'staff_count_model.pkl'.")
+
 # Visualization of actual vs predicted staff count
 # plt.figure(figsize=(10, 5))
 # sns.scatterplot(x=y_staff_test, y=y_pred)
