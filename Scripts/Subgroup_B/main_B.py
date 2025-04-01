@@ -84,14 +84,14 @@ def mainB():
 
     # Print: Current Layout
     print("\nQuestion 2: Optimization of Attraction Layout and Schedules")
-    print("\nCurrent USS Layout (Two Entrances) - Multi Queue:")
+    print("\nCurrent USS Layout (Two Entrances):")
     for attraction, time in comp["avg_wait_times_1_multi"].items():
         print(f"{attraction}: {time:.2f} min")
     print(f"Average Wait Time per Guest: {comp['avg_wait_per_guest_1']:.2f} min")
     
 
     # Print: Modified Layout
-    print("\nModified USS Layout (Left Entrance Only, Swapped Transformers and CYLON) - Multi Queue:")
+    print("\nModified USS Layout (Swapped Transformers and CYLON, we want to use only the left entrance):")
     for attraction, time in comp["avg_wait_times_2_multi"].items():
         print(f"{attraction}: {time:.2f} min")
     print(f"Average Wait Time per Guest: {comp['avg_wait_per_guest_2']:.2f} min")
