@@ -4,8 +4,11 @@ from modeling.q2_guest_segmentation_model import guest_segmentation_model
 from analysis.q3_guest_journey_analysis import GuestJourneyAnalysis
 from analysis.q4_promo_events_analysis import USSPromoAnalysis
 from analysis.q5_external_factors_analysis import q5_analyse
+import warnings
 
 def mainA():
+    warnings.filterwarnings("ignore")
+    
     satisfaction_analysis = GuestSatisfactionAnalysis()
     print("Question 1: Key Factors Influencing Guest Satisfaction")
     satisfaction_analysis.run_analysis()
