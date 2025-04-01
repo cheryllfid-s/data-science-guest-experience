@@ -143,7 +143,7 @@ class GuestJourneyAnalysis:  #Object to make it easier to put into main.py
 
         plt.xlabel('Time of Day')
         plt.ylabel('Median Waiting Time (minutes)')
-        plt.title(f'Median Waiting Time Throughout the Day {title_suffix} - Tivoli Gardens')
+        plt.title(f'Median Waiting Time Throughout the Day {title_suffix}')
         plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.xticks(median_wait_times.index[::4], rotation=45)
         plt.grid(False)
