@@ -170,7 +170,9 @@ class guest_segmentation_model:
         optimal_k = self.determine_optimal_clusters(self.df_combined)
         k_labels = self.compare_models(self.pca)
         summary, df_labeled = self.summarize_clusters(self.df_labeled, k_labels)
+        self.df_labeled = df_labeled
         self.visualize_clusters(df_labeled, self.scaled, k_labels)
+        self.run_marketing_analysis()
         return summary, df_labeled
 
     # --- For Business Question 4: Impact of Marketing Strategies on Guest Behaviour --- #
