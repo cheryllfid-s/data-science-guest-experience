@@ -1,11 +1,13 @@
 import pickle
 import pandas as pd
 import numpy as np
+import torch
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 from sklearn.preprocessing import LabelEncoder
 import os
 from sklearn.preprocessing import OneHotEncoder
-
+from subgroupbq4_March_31th import load_bert_model
+import torch.nn.functional as F
 # new_directory = r"C:\Users\parma\data-science-guest-experience\data-science-guest-experience\Scripts\Subgroup_B" 
 # os.chdir(new_directory)
 
@@ -39,6 +41,8 @@ def load_model(model_path):
     except FileNotFoundError:
         print(f"Error: Model file not found at {model_path}")
         return None
+    
+
 
 def mainB():
     # load model and data for Question 1
@@ -156,6 +160,73 @@ def mainB():
     print(f" Evaluation Metrics - RMSE: {rmse_3:.4f}, MAE: {mae_3:.4f}")
     print("\n🔹 Sample Predictions:")
     print(df_iot[['Date', 'Attraction', 'Average_Queue_Time', 'Predicted_Avg_Wait_Time']].head(10))
+
+
+    ##### QUESTION 4 #####
+    # Load the BERT model
+    model, tokenizer = load_bert_model()
+    def predict_complaint_severity(text, model, tokenizer):
+        try:
+            # Tokenize the text
+            encoding = tokenizer(text, return_tensors="pt", padding=True, truncation=True)
+            # predict
+            model.eval()
+            with torch.no_grad():
+                outputs = model(input_ids=encoding['input_ids'],
+                            attention_mask=encoding['attention_mask'])
+                probs = F.softmax(outputs.logits, dim=1)
+                prediction = torch.argmax(probs, dim=1).item()
+                
+            return prediction, probs[0][1].item()
+        except Exception as e:
+            print(f"Error predicting complaint severity: {str(e)}")
+            return None, None
+
+    print("\nQuestion 4: Customer Complaint Severity Prediction")
     
+    # Example complaint texts
+    sample_complaints = [
+        "I waited two hours, but the ride suddenly closed",
+        "The staff was very friendly and helped me solve the problem",
+        "The food was too expensive and not tasty"
+    ]
+    
+    # Predict the severity of each complaint
+    for i, complaint in enumerate(sample_complaints):
+        severity, prob = predict_complaint_severity(complaint, model, tokenizer)
+        if severity is not None:
+            severity_level = "Severe" if severity == 1 else "Moderate"
+            print(f"Complaint {i+1}: {complaint}")
+            print(f"Predicted Severity: {severity_level}, Severity Probability: {prob:.4f}")
+            print()
+    
+    # If there is actual complaint data, load and predict
+    try:
+        # Load the complaint data (example)
+        complaints_df = pd.read_csv("../../data/processed/customer_complaints.csv")
+        print("Customer Complaint Data Analysis:")
+        
+        # Add prediction results to the dataframe
+        complaints_df['severity_pred'] = None
+        complaints_df['severity_prob'] = None
+        
+        for idx, row in complaints_df.head(10).iterrows():  # Process only the first 10 as an example
+            severity, prob = predict_complaint_severity(row['complaint_text'], model, tokenizer)
+            complaints_df.at[idx, 'severity_pred'] = severity
+            complaints_df.at[idx, 'severity_prob'] = prob
+        
+        # Display results
+        print(complaints_df[['complaint_text', 'severity_pred', 'severity_prob']].head(10))
+        
+        # Calculate the ratio of severe complaints
+        severe_ratio = (complaints_df['severity_pred'] == 1).mean()
+        print(f"Severe Complaint Ratio: {severe_ratio:.2%}")
+        
+    except FileNotFoundError:
+        print("No complaint data file found, only using example data")
+    except Exception as e:
+        print(f"Error processing complaint data: {str(e)}")
+
+
 if __name__ == "__main__":
     mainB()
