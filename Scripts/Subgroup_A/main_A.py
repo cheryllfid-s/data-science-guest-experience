@@ -11,8 +11,12 @@ def mainA():
     satisfaction_analysis.run_analysis()
 
     print("Question 2: Guest Segmentation Model")
-    segmentation_analysis = guest_segmentation_model()
-    segmentation_analysis.run_pipeline()
+    df_combined, df_labeled, scaled, pca = cleaning_q2()
+    segmentation_analysis = guest_segmentation_model(df_combined, df_labeled, scaled, pca)
+    summary, _ = segmentation_analysis.run_pipeline()
+    print("\n===== SILHOUETTE SCORES BY MODEL (Q2) =====")
+    print("\n===== CLUSTER SUMMARY (Q2) =====")
+    print(summary)
     
     tivoli_g, attendance_df, covid, negative_att = prepare_tivoli_data()
     GuestJourneyAnalysis_obj = GuestJourneyAnalysis(tivoli_g, attendance_df, covid, negative_att)
