@@ -125,6 +125,8 @@ def evaluate(y_true, y_pred, target_name):
     print(f"MSE: {mean_squared_error(y_true, y_pred):.2f}")
     print(f"R² Score: {r2_score(y_true, y_pred):.2f}")
 
+evaluate(y_staff_test, y_pred, "Staff Count")
+
 # Visualization of actual vs predicted staff count
 # plt.figure(figsize=(10, 5))
 # sns.scatterplot(x=y_staff_test, y=y_pred)
