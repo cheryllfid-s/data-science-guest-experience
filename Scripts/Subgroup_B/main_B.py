@@ -222,7 +222,11 @@ def mainB():
         # Calculate the ratio of severe complaints
         severe_ratio = (complaints_df['severity_pred'] == 1).mean()
         print(f"Severe Complaint Ratio: {severe_ratio:.2%}")
-
+    except FileNotFoundError:
+        print("No complaint data file found, only using example data")
+    except Exception as e:
+        print(f"Error processing complaint data: {str(e)}")
+        
     ##### QUESTION 5 #####
     # Demand prediction model that predicts average wait time based on IoT data
     # Load dataset
@@ -257,11 +261,6 @@ def mainB():
     print(f" Evaluation Metrics - RMSE: {rmse_3:.4f}, MAE: {mae_3:.4f}")
     print("\n Sample Predictions:")
     print(df_iot[['Date', 'Attraction', 'Average_Queue_Time', 'Predicted_Avg_Wait_Time']].head(10))
-        
-    except FileNotFoundError:
-        print("No complaint data file found, only using example data")
-    except Exception as e:
-        print(f"Error processing complaint data: {str(e)}")
 
 
 if __name__ == "__main__":
