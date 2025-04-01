@@ -3,11 +3,16 @@ from guest_satisfaction import GuestSatisfactionAnalysis
 from guest_journey import GuestJourneyAnalysis
 from promo_events_analysis import USSPromoAnalysis
 from extfactors import q5_analyse
+from guest_segmentation_model import guest_segmentation_model
 
 def mainA():
     satisfaction_analysis = GuestSatisfactionAnalysis()
     print("Question 1: Key Factors Influencing Guest Satisfaction")
     satisfaction_analysis.run_analysis()
+
+    print("Question 2: Guest Segmentation Model")
+    segmentation_analysis = guest_segmentation_model()
+    segmentation_analysis.run_pipeline()
     
     tivoli_g, attendance_df, covid, negative_att = prepare_tivoli_data()
     GuestJourneyAnalysis_obj = GuestJourneyAnalysis(tivoli_g, attendance_df, covid, negative_att)
