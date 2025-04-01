@@ -76,54 +76,6 @@ def mainB():
     print("\nEvaluation Metrics:")
     print(f"RMSE: {rmse:.4f}")
     print(f"MAE: {mae:.4f}")
-    
-    print("\nQuestion 3: Resource Allocation")
-    model_path = "../../models/q3_resource_allocation.pkl"
-    data_path = "../../data/processed/q3_resource_allocation.csv"
-    # Load the trained model
-    model = load_model(model_path)
-    # Load new data
-    try:
-        new_data = pd.read_csv(data_path)
-    except FileNotFoundError:
-        print(f"Error: Data file not found at {data_path}")
-        return
-    # Preprocess new data
-    new_data_processed = preprocess_new_data(new_data)
-    if new_data_processed is None:
-        return
-    # Make predictions
-    predicted_staff = predict_staff_count(model, new_data_processed)
-    if predicted_staff is not None:
-        print("Predicted Staff Count for New Data:")
-        print(predicted_staff)
-    
-    # Load and display layout optimization results
-    try:
-        with open(optimization_model_path, "rb") as f:
-            comp = pickle.load(f)
-    except FileNotFoundError:
-        print(f"Error: Optimization model file not found at {optimization_model_path}")
-        return
-    
-    # Call q2 model simulation results
-    with open("../../models/q2_optimization_layout.pkl", "rb") as f:
-        comp = pickle.load(f)
-
-    # Print: Current Layout
-    print("\nQuestion 3: Optimization of Attraction Layout and Schedules")
-    print("\nCurrent USS Layout (Two Entrances) - Multi Queue:")
-    for attraction, time in comp["avg_wait_times_1_multi"].items():
-        print(f"{attraction}: {time:.2f} min")
-    print(f"Average Wait Time per Guest: {comp['avg_wait_per_guest_1']:.2f} min")
-    
-
-    # Print: Modified Layout
-    print("\nModified USS Layout (Left Entrance Only, Swapped Transformers and CYLON) - Multi Queue:")
-    for attraction, time in comp["avg_wait_times_2_multi"].items():
-        print(f"{attraction}: {time:.2f} min")
-    print(f"Average Wait Time per Guest: {comp['avg_wait_per_guest_2']:.2f} min")
-    
 
     # Demand prediction model that predicts average wait time based on IoT data
     # Load dataset
@@ -158,6 +110,57 @@ def mainB():
     print(f" Evaluation Metrics - RMSE: {rmse_3:.4f}, MAE: {mae_3:.4f}")
     print("\n🔹 Sample Predictions:")
     print(df_iot[['Date', 'Attraction', 'Average_Queue_Time', 'Predicted_Avg_Wait_Time']].head(10))
+    
+    # Load and display layout optimization results
+    try:
+        with open(optimization_model_path, "rb") as f:
+            comp = pickle.load(f)
+    except FileNotFoundError:
+        print(f"Error: Optimization model file not found at {optimization_model_path}")
+        return
+    
+    # Call q2 model simulation results
+    with open("../../models/q2_optimization_layout.pkl", "rb") as f:
+        comp = pickle.load(f)
+
+    # Print: Current Layout
+    print("\nQuestion 3: Optimization of Attraction Layout and Schedules")
+    print("\nCurrent USS Layout (Two Entrances) - Multi Queue:")
+    for attraction, time in comp["avg_wait_times_1_multi"].items():
+        print(f"{attraction}: {time:.2f} min")
+    print(f"Average Wait Time per Guest: {comp['avg_wait_per_guest_1']:.2f} min")
+    
+
+    # Print: Modified Layout
+    print("\nModified USS Layout (Left Entrance Only, Swapped Transformers and CYLON) - Multi Queue:")
+    for attraction, time in comp["avg_wait_times_2_multi"].items():
+        print(f"{attraction}: {time:.2f} min")
+    print(f"Average Wait Time per Guest: {comp['avg_wait_per_guest_2']:.2f} min")
+    
+    print("\nQuestion 3: Resource Allocation")
+    model_path = "../../models/q3_resource_allocation.pkl"
+    data_path = "../../data/processed/q3_resource_allocation.csv"
+    # Load the trained model
+    model = load_model(model_path)
+    # Load new data
+    try:
+        new_data = pd.read_csv(data_path)
+    except FileNotFoundError:
+        print(f"Error: Data file not found at {data_path}")
+        return
+    # Preprocess new data
+    new_data_processed = preprocess_new_data(new_data)
+    if new_data_processed is None:
+        return
+    # Make predictions
+    predicted_staff = predict_staff_count(model, new_data_processed)
+    if predicted_staff is not None:
+        # Add predicted staff count to the original data
+        new_data["Predicted_Staff_Count"] = predicted_staff
+        
+        # Print the dataset with the predicted staff count
+        print("Dataset with Predicted Staff Count:")
+        print(new_data.head())  # Print the first few rows of the dataset with predictions
     
     
 if __name__ == "__main__":
