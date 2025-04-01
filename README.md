@@ -7,7 +7,7 @@ This project aims to develop a data-driven system that maps and analyzes guest j
 - Python 3.10 or higher
 - Git
 - [Docker](https://www.docker.com/get-started) and Docker Compose
-- bert.pt downloaded from [OneDrive link](https://nusu-my.sharepoint.com/personal/e0929810_u_nus_edu/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Fe0929810%5Fu%5Fnus%5Fedu%2FDocuments%2Fbert%5Fmodel%2Ept&parent=%2Fpersonal%2Fe0929810%5Fu%5Fnus%5Fedu%2FDocuments&ga=1) 
+- bert.pt downloaded from [OneDrive](https://nusu-my.sharepoint.com/personal/e0929810_u_nus_edu/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Fe0929810%5Fu%5Fnus%5Fedu%2FDocuments%2Fbert%5Fmodel%2Ept&parent=%2Fpersonal%2Fe0929810%5Fu%5Fnus%5Fedu%2FDocuments&ga=1) 
 
 Once you have downloaded bert.pt, move the file into the model/ directory. The following visual has been provided:
 ```bash
