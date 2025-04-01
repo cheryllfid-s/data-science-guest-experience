@@ -26,9 +26,9 @@ class GuestSatisfactionAnalysis:
         
     def load_survey_data(self):
         """Load survey data from CSV file"""
-        script_dir = Path(__file__).parent
-        project_root = script_dir.parent.parent
-        csv_path = project_root / "data" / "processed data" / "survey.csv"
+        script_dir = Path(__file__).parent.parent
+        project_root = script_dir.parent.parent.parent
+        csv_path = project_root / "data" / "raw data" / "survey.csv"
         
         print(f"Absolute CSV path: {csv_path}")
         print(f"File exists? {csv_path.exists()}")
