@@ -254,10 +254,10 @@ def train_bert_model(train_texts, train_labels, val_texts, val_labels, num_epoch
     best_model.to('cpu')
 
     # save model state dictionary
-    torch.save(best_model.state_dict(), 'models/bert_model.pt')
+    torch.save(best_model.state_dict(), '../../models/bert_model.pt')
 
     # save tokenizer
-    with open('models/bert_tokenizer.pkl', 'wb') as f:
+    with open('../../models/bert_tokenizer.pkl', 'wb') as f:
         pickle.dump(tokenizer, f)
 
     print("model and tokenizer saved to models directory")
@@ -695,7 +695,7 @@ except Exception as e:
 print("\ndone.")
 
 # add load model function
-def load_bert_model(model_path='models/bert_model.pt', tokenizer_path='models/bert_tokenizer.pkl'):
+def load_bert_model(model_path='../../models/bert_model.pt', tokenizer_path='../../models/bert_tokenizer.pkl'):
     """
     load saved BERT model and tokenizer
 
