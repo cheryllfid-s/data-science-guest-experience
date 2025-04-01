@@ -36,7 +36,7 @@ def predict_staff_count(model, new_data):
 def main():
     # load model and data for Question 1
     # load model and data for demand prediction model that takes in survey and weather data
-    with open("models/demand_model_survey_weather.pkl", "rb") as model_file:
+    with open("../../models/demand_model_survey_weather.pkl", "rb") as model_file:
         model_1 = pickle.load(model_file)
 
     # load the preprocessed survey & weather dataset
@@ -120,7 +120,7 @@ def main():
     target = 'Average_Queue_Time'
 
     # Load model
-    with open("models/demand_model_iot.pkl", "rb") as model_file:
+    with open("../../models/demand_model_iot.pkl", "rb") as model_file:
         model_3 = pickle.load(model_file)
 
     # Prepare the input data
@@ -130,7 +130,6 @@ def main():
     # Make and store predictions
     y_pred_3 = model_3.predict(X_model_3)
     df_iot["Predicted_Avg_Wait_Time"] = y_pred_3
-    df_iot["Attraction"] = label_encoders['Attraction'].inverse_transform(df_iot["Attraction"]) # inverse transform Attraction column back to original names
 
     # Evaluate model
     rmse_3 = np.sqrt(mean_squared_error(y_true_3, y_pred_3))
