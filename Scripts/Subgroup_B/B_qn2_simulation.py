@@ -128,8 +128,8 @@ def run_simulation(num_guests, attractions, layout, use_right_entrance=True):
 def compare_layouts():
     attractions_map.update({
         "Revenge of the Mummy": (3, 5),
-        "Battlestar Galactica: CYLON": (5, 3),
-        "Transformers: The Ride": (6, 4),
+        "Battlestar Galactica: CYLON": (5, 4),
+        "Transformers: The Ride": (6, 3),
         "Puss In Boots' Giant Journey": (2, 6),
         "Sesame Street Spaghetti Space Chase": (4, 2)
     })
@@ -150,8 +150,8 @@ def compare_layouts():
     avg_wait_per_guest_1 = total_wait_time_1 / total_visits_1 if total_visits_1 else 0
 
     # Modified Layout: Swap CYLON and Transformers, single left entrance
-    attractions_map["Transformers: The Ride"] = (5, 3)
-    attractions_map["Battlestar Galactica: CYLON"] = (6, 4)
+    attractions_map["Transformers: The Ride"] = (5, 4)
+    attractions_map["Battlestar Galactica: CYLON"] = (6, 3)
 
     env2_multi = simpy.Environment()
     park2_multi = ThemePark(env2_multi, attractions_map, layout="multi_queue", use_right_entrance=False)
