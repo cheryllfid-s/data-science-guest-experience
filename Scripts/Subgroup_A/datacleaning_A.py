@@ -4,6 +4,89 @@ import os
 from emoji import demojize
 from textblob import TextBlob
 from pathlib import Path
+import numpy as np
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.decomposition import PCA
+
+
+(#Q2) Guest Segment Data
+def cleaning_q2():
+    script_dir = Path(__file__).parent
+    project_root = script_dir.parent.parent
+    csv_path = project_root / "data" / "survey.csv"
+
+    survey = pd.read_csv(csv_path)
+    survey = survey.rename(columns={
+        'Which age group do you belong to?': 'age_group',
+        'What is your employment status?': 'employment',
+        'Who did you visit USS with?': 'group_type',
+        'What was the main purpose of your visit?': 'visit_purpose',
+        'On a scale of 1-5, how would you rate your overall experience at USS?': 'experience_rating',
+        'Did you purchase the Express Pass?': 'express_pass',
+        'How long did you wait in line for rides on average during your visit?': 'avg_wait_time',
+        'Would you choose to revisit USS?': 'revisit',
+        'Would you recommend USS to others?': 'recommend',
+        'How did you first hear about Universal Studios Singapore?': 'awareness',
+        'Have you seen any recent advertisements or promotions for USS?': 'response_to_ads',
+        'What type of promotions or discounts would encourage you to visit USS?': 'preferred_promotion'
+    })
+
+    selected_cols = [
+        'age_group', 'group_type', 'visit_purpose', 'express_pass', 'experience_rating',
+        'awareness', 'response_to_ads', 'preferred_promotion'
+    ]
+    survey_clean = survey[selected_cols].dropna().reset_index(drop=True)
+
+    # ==== SYNTHETIC DATA GENERATION ====
+    np.random.seed(42)
+    n_samples = 400
+    group_type_syn = np.random.choice(['Friends', 'Family (including children)'], size=n_samples, p=[0.5, 0.5])
+
+    age_group_syn = ['18 - 24 years old' if gt == 'Friends' else '25 - 34 years old' for gt in group_type_syn]
+    visit_purpose_syn = ['Social gathering' if gt == 'Friends' else 'Family outing' for gt in group_type_syn]
+    express_pass_syn = [
+        np.random.choice(['Yes', 'No'], p=[0.25, 0.75]) if gt == 'Friends' else
+        np.random.choice(['Yes', 'No'], p=[0.6, 0.4])
+        for gt in group_type_syn
+    ]
+    experience_rating_syn = [
+        round(np.random.normal(4.2, 0.3), 1) if ep == 'Yes' else round(np.random.normal(3.5, 0.5), 1)
+        for ep in express_pass_syn
+    ]
+    awareness_syn = [np.random.choice(
+        ['Word of mouth', 'Social media', 'Online ads', 'Travel agencies/tour packages', 'News'],
+        p=[0.6, 0.3, 0.05, 0.025, 0.025]) for _ in range(n_samples)]
+    response_to_ads_syn = [np.random.choice(
+        ['Yes, but they did not influence my decision', 'Yes and they influenced my decision', "No, I haven't seen any ads"],
+        p=[0.7, 0.1, 0.2]) if gt == 'Friends' else np.random.choice(
+        ["No, I haven't seen any ads", 'Yes, but they did not influence my decision', 'Yes and they influenced my decision'],
+        p=[0.7, 0.2, 0.1]) for gt in group_type_syn]
+    preferred_promotion_syn = [np.random.choice(
+        ['Discounted tickets', 'Family/group discounts', 'Seasonal event promotions', 'Bundle deals (hotel + ticket packages)'],
+        p=[0.5, 0.25, 0.15, 0.1]) for _ in range(n_samples)]
+
+    synthetic = pd.DataFrame({
+        'age_group': age_group_syn,
+        'group_type': group_type_syn,
+        'visit_purpose': visit_purpose_syn,
+        'express_pass': express_pass_syn,
+        'experience_rating': experience_rating_syn,
+        'awareness': awareness_syn,
+        'response_to_ads': response_to_ads_syn,
+        'preferred_promotion': preferred_promotion_syn
+    })
+
+    df_combined = pd.concat([survey_clean, synthetic], ignore_index=True)
+    df_labeled = df_combined.copy()
+
+    for col in df_combined.select_dtypes(include='object').columns:
+        df_combined[col] = LabelEncoder().fit_transform(df_combined[col])
+
+    scaled = StandardScaler().fit_transform(df_combined)
+    pca = PCA(n_components=2).fit_transform(scaled)
+
+    return df_combined, df_labeled, scaled, pca
+
 
 # (Q3) data journey analysis 
 def prepare_tivoli_data():
