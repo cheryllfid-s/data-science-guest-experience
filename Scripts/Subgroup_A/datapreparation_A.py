@@ -134,6 +134,7 @@ def prepare_tivoli_data():
 
     # Filter for Tivoli Gardens
     tivoli_g = merged_df[merged_df['PARK'] == 'Tivoli Gardens']
+    tivoli_g = tivoli_g.copy() 
     tivoli_g['WORK_DATE'] = pd.to_datetime(tivoli_g['WORK_DATE'])
     tivoli_g['TIMESTAMP'] = pd.to_datetime(tivoli_g['WORK_DATE'].astype(str) + ' ' + tivoli_g['DEB_TIME'])
 
