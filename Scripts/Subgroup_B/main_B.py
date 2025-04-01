@@ -72,17 +72,13 @@ def mainB():
 
     """Main function to load the model, preprocess data, and make predictions."""
     # Load the trained model
-    model = load_model("staff_count_model.pkl")
-    
-    # Load sample new data (replace with actual new data)
-    new_data = pd.read_csv("new_data.csv")  # Ensure this file exists with correct format
-    
+    model = load_model("../../models/q3_resource_allocation.pkl")
+    # Load sample new data 
+    new_data = pd.read_csv("../../data/processed/q3_resource_allocation.csv") 
     # Preprocess the new data
     new_data_processed = preprocess_new_data(new_data, "encoder.pkl")
-    
     # Make predictions
     predicted_staff = predict_staff_count(model, new_data_processed)
-    
     # Display results
     print("Predicted Staff Count for New Data:")
     print(predicted_staff)
