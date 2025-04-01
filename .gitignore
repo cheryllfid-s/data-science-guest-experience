@@ -6,16 +6,6 @@ __pycache__
 
 .DS_Store
 
-*.ipynb
 .ipynb_checkpoints/
-
-*.log
-*.png
-*.jpg
-*.jpeg
-*.tar.gz
-*.h5
-*.xml
-*.patch
 
 
