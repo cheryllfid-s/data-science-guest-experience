@@ -174,7 +174,7 @@ def compare_layouts():
     print(f"Average Wait Time per Guest: {avg_wait_per_guest_1:.2f} min")
     print("Visit Counts:", visit_counts_1_multi)
 
-    print("\nModified USS Layout (Left Entrance Only, Swapped Transformers and CYLON) - Multi Queue:")
+    print("\nModified USS Layout (Swapped Transformers and CYLON) - Multi Queue:")
     for attraction, time in avg_wait_times_2_multi.items():
         print(f"{attraction}: {time:.2f} min")
     print(f"Average Wait Time per Guest: {avg_wait_per_guest_2:.2f} min")
@@ -182,8 +182,8 @@ def compare_layouts():
 
 
     print("\nJustification for Modified Layout:")
-    print("We removed right entrance to reduce congestion at congested attractions CYLON and Transformers.")
-    print("Swapped Transformers and CYLON to rebalance flow.")
+    print("We want to remove right entrance to reduce congestion at congested attractions CYLON and Transformers.")
+    print("We swapped Transformers and CYLON in simulation to rebalance flow.")
     print("Result: Lower wait times and better guest distribution most of the time (quite reliably, we did the best we can)")
 
     comparison_results = {
