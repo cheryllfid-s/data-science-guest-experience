@@ -1,9 +1,9 @@
 from datacleaning_A import *
-from Analysis.guest_satisfaction import GuestSatisfactionAnalysis
-from Modeling.guest_segmentation_model import guest_segmentation_model
-from Analysis.guest_journey import GuestJourneyAnalysis
-from Analysis.promo_events_analysis import USSPromoAnalysis
-from Analysis.extfactors import q5_analyse
+from Analysis.q1_guest_satisfaction_analysis import GuestSatisfactionAnalysis
+from Modeling.q2_guest_segmentation_model import guest_segmentation_model
+from Analysis.q3_guest_journey_analysis import GuestJourneyAnalysis
+from Analysis.q4_promo_events_analysis import USSPromoAnalysis
+from Analysis.q5_external_factors_analysis import q5_analyse
 
 def mainA():
     satisfaction_analysis = GuestSatisfactionAnalysis()
