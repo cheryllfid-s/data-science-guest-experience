@@ -1,12 +1,32 @@
-version: "3.9" 
+version: "3.9"
 
 services:
-  uss:
+  main:
     build: .
-    container_name: uss_backend
+    container_name: uss_main
     volumes:
-      - .:/app  
+      - .:/app
     working_dir: /app
-    command: python Scripts/main.py  
+    command: python Scripts/main.py
+    environment:
+      - PYTHONUNBUFFERED=1
+
+  subgroup_a:
+    build: .
+    container_name: uss_a
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: python Scripts/Subgroup_A/main_A.py
+    environment:
+      - PYTHONUNBUFFERED=1
+
+  subgroup_b:
+    build: .
+    container_name: uss_b
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: python Scripts/Subgroup_B/main_B.py
     environment:
       - PYTHONUNBUFFERED=1
