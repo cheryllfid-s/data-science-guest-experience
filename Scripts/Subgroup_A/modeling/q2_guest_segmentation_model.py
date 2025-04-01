@@ -158,10 +158,15 @@ class guest_segmentation_model:
         plt.tight_layout()
         plt.show()
 
-        sns.countplot(x='cluster', hue='age_group', data=df_labeled)
+        ax = sns.countplot(x='cluster', hue='age_group', data=df_labeled)
+        handles, labels = ax.get_legend_handles_labels()
+        filtered = [(h, l) for h, l in zip(handles, labels) if l != 'Option 2']
+        filtered_handles, filtered_labels = zip(*filtered)
+        ax.legend(filtered_handles, filtered_labels, title='age_group')
         plt.title("Age Group by Cluster")
         plt.tight_layout()
         plt.show()
+
 
     def run_pipeline(self):
         """
