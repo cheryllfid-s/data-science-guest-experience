@@ -167,7 +167,7 @@ def mainB():
 
 
     ##### QUESTION 4 #####
-    def load_bert_model(model_path='bert_model.pt', tokenizer_path='bert_tokenizer.pkl'):
+    def load_bert_model(model_path='bert_model.pt', tokenizer_path='../../models/bert_tokenizer.pkl'):
         """
         load saved BERT model and tokenizer
 
