@@ -13,7 +13,7 @@ from sklearn.decomposition import PCA
 def cleaning_q2():
     script_dir = Path(__file__).parent
     project_root = script_dir.parent.parent
-    csv_path = project_root / "data" / "survey.csv"
+    csv_path = project_root / "data" / "raw data" /"survey.csv"
 
     survey = pd.read_csv(csv_path)
     survey = survey.rename(columns={
