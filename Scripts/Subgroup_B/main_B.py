@@ -20,7 +20,7 @@ def preprocess_new_data(new_data):
     new_data = new_data.drop(columns=[col for col in target_vars if col in new_data.columns], errors='ignore')
     
     # Apply one-hot encoding
-    encoder = OneHotEncoder(drop="first", sparse=False)
+    encoder = OneHotEncoder(drop="first", sparse_output=False)
     encoded_cats = encoder.fit_transform(new_data[["ATTRACTION", "PARK"]])
     new_data = new_data.drop(columns=["ATTRACTION", "PARK"]).join(pd.DataFrame(encoded_cats, 
                                                          columns=encoder.get_feature_names_out()))
@@ -162,7 +162,7 @@ def mainB():
 
     print("\n Question 3: Demand prediction using only IoT data")
     print(f" Evaluation Metrics - RMSE: {rmse_3:.4f}, MAE: {mae_3:.4f}")
-    print("\n🔹 Sample Predictions:")
+    print("\n Sample Predictions:")
     print(df_iot[['Date', 'Attraction', 'Average_Queue_Time', 'Predicted_Avg_Wait_Time']].head(10))
 
 
