@@ -1,4 +1,6 @@
 kagglehub
+networkx
+pyqt5
 pandas
 seaborn
 matplotlib 
@@ -7,7 +9,6 @@ scikit-learn
 emoji
 scipy
 textblob
-seaborn
 torch
 transformers
 nltk
@@ -15,7 +16,6 @@ tqdm
 shap
 requests
 simpy
-kagglehub
 faker
 xgboost
-sdv
+sdv==1.4.0
