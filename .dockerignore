@@ -1,7 +1,6 @@
 __pycache__
 *.py[cod]
 
-*.ipynb
 .ipynb_checkpoints
 
 .DS_Store
@@ -13,12 +12,5 @@ Thumbs.db
 .git
 .gitignore
 
-*.log
-*.png
-*.jpg
-*.jpeg
-*.tar.gz
-*.h5
-*.xml
 *.patch
 
