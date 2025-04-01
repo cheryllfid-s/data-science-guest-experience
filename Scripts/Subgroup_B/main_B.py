@@ -6,7 +6,8 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error
 from sklearn.preprocessing import LabelEncoder
 import os
 from sklearn.preprocessing import OneHotEncoder
-from Modeling.q4_predicting_guest_complaints import load_bert_model
+# from Modeling.q4_predicting_guest_complaints import load_bert_model
+from transformers import BertForSequenceClassification
 import torch.nn.functional as F
 # new_directory = r"C:\Users\parma\data-science-guest-experience\data-science-guest-experience\Scripts\Subgroup_B" 
 # os.chdir(new_directory)
@@ -166,6 +167,38 @@ def mainB():
 
 
     ##### QUESTION 4 #####
+    def load_bert_model(model_path='bert_model.pt', tokenizer_path='bert_tokenizer.pkl'):
+        """
+        load saved BERT model and tokenizer
+
+        Args:
+            model_path: path to model state dictionary
+            tokenizer_path: path to tokenizer pickle file
+
+        Returns:
+            model: loaded BERT model
+            tokenizer: loaded tokenizer
+        """
+        try:
+            # load tokenizer
+            with open(tokenizer_path, 'rb') as f:
+                tokenizer = pickle.load(f)
+
+            # initialize model
+            model = BertForSequenceClassification.from_pretrained('bert-base-uncased', num_labels=2)
+
+            # load model state
+            model.load_state_dict(torch.load(model_path))
+
+            # set to evaluation mode
+            model.eval()
+
+            print("successfully loaded model and tokenizer")
+            return model, tokenizer
+
+        except Exception as e:
+            print(f"error loading model: {str(e)}")
+            return None, None
     # Load the BERT model
     model, tokenizer = load_bert_model()
     def predict_complaint_severity(text, model, tokenizer):
