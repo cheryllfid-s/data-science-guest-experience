@@ -6,8 +6,8 @@ from sklearn.preprocessing import LabelEncoder
 import os
 from sklearn.preprocessing import OneHotEncoder
 
-new_directory = r"C:\Users\parma\data-science-guest-experience\data-science-guest-experience\Scripts\Subgroup_B" 
-os.chdir(new_directory)
+# new_directory = r"C:\Users\parma\data-science-guest-experience\data-science-guest-experience\Scripts\Subgroup_B" 
+# os.chdir(new_directory)
 
 
 def load_model(model_path):
@@ -33,7 +33,7 @@ def predict_staff_count(model, new_data):
     predictions = model.predict(new_data)
     return predictions
 
-def main():
+def mainB():
     # load model and data for Question 1
     # load model and data for demand prediction model that takes in survey and weather data
     with open("../../models/demand_model_survey_weather.pkl", "rb") as model_file:
@@ -87,8 +87,8 @@ def main():
     print("Predicted Staff Count for New Data:")
     print(predicted_staff)
     
-    # Load the comparison results saved earlier
-    with open("b_qn2_comparison.pkl", "rb") as f:
+    # Call q2 model simulation results
+    with open("../../models/q2_optimization_layout.pkl", "rb") as f:
         comp = pickle.load(f)
 
     # Print: Current Layout
@@ -97,14 +97,14 @@ def main():
     for attraction, time in comp["avg_wait_times_1_multi"].items():
         print(f"{attraction}: {time:.2f} min")
     print(f"Average Wait Time per Guest: {comp['avg_wait_per_guest_1']:.2f} min")
-    print("Visit Counts:", comp["visit_counts_1_multi"])
+    
 
     # Print: Modified Layout
     print("\nModified USS Layout (Left Entrance Only, Swapped Transformers and CYLON) - Multi Queue:")
     for attraction, time in comp["avg_wait_times_2_multi"].items():
         print(f"{attraction}: {time:.2f} min")
     print(f"Average Wait Time per Guest: {comp['avg_wait_per_guest_2']:.2f} min")
-    print("Visit Counts:", comp["visit_counts_2_multi"])
+    
 
     # Demand prediction model that predicts average wait time based on IoT data
     # Load dataset
@@ -142,4 +142,4 @@ def main():
     
     
 if __name__ == "__main__":
-    main()
+    mainB()

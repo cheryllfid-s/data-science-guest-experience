@@ -12,68 +12,68 @@ import os
 import pickle
 
 
-# Load the datasets
-df_survey = pd.read_csv("../../data/survey.csv")
-df_weather = pd.read_csv("../../data/weather_data.csv")
+# # Load the datasets
+# df_survey = pd.read_csv("../../data/survey.csv")
+# df_weather = pd.read_csv("../../data/weather_data.csv")
 
-#  Clean survey data
-df_survey = df_survey.rename(columns={
-    "On a scale of 1-5, how would you rate your overall experience at USS?": "Guest_Satisfaction_Score",
-    "How long did you wait in line for rides on average during your visit?": "Wait_Time",
-    "Timestamp": "Timestamp"
-})
+# #  Clean survey data
+# df_survey = df_survey.rename(columns={
+#     "On a scale of 1-5, how would you rate your overall experience at USS?": "Guest_Satisfaction_Score",
+#     "How long did you wait in line for rides on average during your visit?": "Wait_Time",
+#     "Timestamp": "Timestamp"
+# })
 
-wait_time_mapping = {
-    "Less than 15 mins": 10,
-    "15-30 mins": 22.5,
-    "30-45 mins": 37.5,
-    "45 mins - 1 hr": 52.5,
-    "More than 1 hr": 75
-}
-df_survey["Wait_Time"] = df_survey["Wait_Time"].map(wait_time_mapping).fillna(37.5)
-df_survey["Guest_Satisfaction_Score"] = pd.to_numeric(df_survey["Guest_Satisfaction_Score"], errors="coerce")
-df_survey["Timestamp"] = pd.to_datetime(df_survey["Timestamp"]).dt.date
-df_survey["date"] = df_survey["Timestamp"]
+# wait_time_mapping = {
+#     "Less than 15 mins": 10,
+#     "15-30 mins": 22.5,
+#     "30-45 mins": 37.5,
+#     "45 mins - 1 hr": 52.5,
+#     "More than 1 hr": 75
+# }
+# df_survey["Wait_Time"] = df_survey["Wait_Time"].map(wait_time_mapping).fillna(37.5)
+# df_survey["Guest_Satisfaction_Score"] = pd.to_numeric(df_survey["Guest_Satisfaction_Score"], errors="coerce")
+# df_survey["Timestamp"] = pd.to_datetime(df_survey["Timestamp"]).dt.date
+# df_survey["date"] = df_survey["Timestamp"]
 
-#  Clean weather_data
-df_weather = df_weather.rename(columns={
-    "date": "date",
-    "temperature": "temperature",
-    "rainfall": "rainfall",
-    "humidity": "humidity"
-})
-df_weather["date"] = pd.to_datetime(df_weather["date"]).dt.date
+# #  Clean weather_data
+# df_weather = df_weather.rename(columns={
+#     "date": "date",
+#     "temperature": "temperature",
+#     "rainfall": "rainfall",
+#     "humidity": "humidity"
+# })
+# df_weather["date"] = pd.to_datetime(df_weather["date"]).dt.date
 
-#  Merge datasets
-df_merged = pd.merge(df_survey, df_weather, on="date", how="inner")
-df_merged = df_merged.dropna(subset=["Guest_Satisfaction_Score", "temperature", "rainfall", "humidity"])
+# #  Merge datasets
+# df_merged = pd.merge(df_survey, df_weather, on="date", how="inner")
+# df_merged = df_merged.dropna(subset=["Guest_Satisfaction_Score", "temperature", "rainfall", "humidity"])
 
-# We train the model 
-X = df_merged[["temperature", "rainfall", "humidity"]]
-y = df_merged["Guest_Satisfaction_Score"]
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-model = RandomForestRegressor(n_estimators=100, random_state=42)
-model.fit(X_train, y_train)
+# # We train the model 
+# X = df_merged[["temperature", "rainfall", "humidity"]]
+# y = df_merged["Guest_Satisfaction_Score"]
+# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+# model = RandomForestRegressor(n_estimators=100, random_state=42)
+# model.fit(X_train, y_train)
 
-# then we evaluate model
-y_pred = model.predict(X_test)
-rmse = np.sqrt(mean_squared_error(y_test, y_pred))
-r2 = r2_score(y_test, y_pred)
+# # then we evaluate model
+# y_pred = model.predict(X_test)
+# rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+# r2 = r2_score(y_test, y_pred)
 
-# Create 7-Day Forecast for use in simulation
-future_dates = pd.date_range(start=datetime.now(), periods=7, freq="D").date
-forecast_weather = df_weather.tail(7).copy()
-forecast_weather = forecast_weather.reset_index(drop=True)
-forecast_weather["date"] = future_dates
-forecast_weather = forecast_weather[["date", "temperature", "rainfall", "humidity"]]
-forecast_weather["predicted_satisfaction"] = model.predict(forecast_weather[["temperature", "rainfall", "humidity"]])
-forecast_weather.reset_index(drop=True, inplace=True)
+# # Create 7-Day Forecast for use in simulation
+# future_dates = pd.date_range(start=datetime.now(), periods=7, freq="D").date
+# forecast_weather = df_weather.tail(7).copy()
+# forecast_weather = forecast_weather.reset_index(drop=True)
+# forecast_weather["date"] = future_dates
+# forecast_weather = forecast_weather[["date", "temperature", "rainfall", "humidity"]]
+# forecast_weather["predicted_satisfaction"] = model.predict(forecast_weather[["temperature", "rainfall", "humidity"]])
+# forecast_weather.reset_index(drop=True, inplace=True)
 
 # Attraction coordinates
 attractions_map = {
     "Revenge of the Mummy": (3, 5),
-    "Battlestar Galactica: CYLON": (5, 3),
-    "Transformers: The Ride": (6, 4),
+    "Battlestar Galactica: CYLON": (5, 4),
+    "Transformers: The Ride": (6, 3),
     "Puss In Boots' Giant Journey": (2, 6),
     "Sesame Street Spaghetti Space Chase": (4, 2)
 }
@@ -172,13 +172,13 @@ def compare_layouts():
     for attraction, time in avg_wait_times_1_multi.items():
         print(f"{attraction}: {time:.2f} min")
     print(f"Average Wait Time per Guest: {avg_wait_per_guest_1:.2f} min")
-    print("Visit Counts:", visit_counts_1_multi)
+    # print("Visit Counts:", visit_counts_1_multi)
 
     print("\nModified USS Layout (Swapped Transformers and CYLON) - Multi Queue:")
     for attraction, time in avg_wait_times_2_multi.items():
         print(f"{attraction}: {time:.2f} min")
     print(f"Average Wait Time per Guest: {avg_wait_per_guest_2:.2f} min")
-    print("Visit Counts:", visit_counts_2_multi)
+    # print("Visit Counts:", visit_counts_2_multi)
 
 
     print("\nJustification for Modified Layout:")
@@ -202,8 +202,8 @@ def compare_layouts():
 
 # Main
 if __name__ == "__main__":
-    print("\n7-Day Forecast of Guest Satisfaction:")
-    print(forecast_weather[["date", "temperature", "rainfall", "humidity", "predicted_satisfaction"]])
+    # print("\n7-Day Forecast of Guest Satisfaction:")
+    # print(forecast_weather[["date", "temperature", "rainfall", "humidity", "predicted_satisfaction"]])
 
     single_queue_wait_times, single_queue_visits, _ = run_simulation(13000, attractions_map, "single_queue", use_right_entrance=True)
     multi_queue_wait_times, multi_queue_visits, _ = run_simulation(13000, attractions_map, "multi_queue", use_right_entrance=True)
