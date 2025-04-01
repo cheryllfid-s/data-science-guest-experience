@@ -46,8 +46,8 @@ def load_model(model_path):
         return None
     
 
-
 def mainB():
+    ##### QUESTION 1 #####
     # load model and data for Question 1
     # load model and data for demand prediction model that takes in survey and weather data
     with open("../../models/demand_model_survey_weather.pkl", "rb") as model_file:
@@ -84,7 +84,7 @@ def mainB():
     print(f"RMSE: {rmse:.4f}")
     print(f"MAE: {mae:.4f}")
 
- 
+    ##### QUESTION 2 #####
     # Call q2 model simulation results
     with open("../../models/q2_optimization_layout.pkl", "rb") as f:
         comp = pickle.load(f)
@@ -105,7 +105,7 @@ def mainB():
 
     
     
-    
+    ##### QUESTION 3 #####
     print("\nQuestion 3: Resource Allocation")
     model_path = "../../models/q3_resource_allocation.pkl"
     data_path = "../../data/processed/q3_resource_allocation.csv"
@@ -131,43 +131,6 @@ def mainB():
         print("Dataset with Predicted Staff Count:")
         print(new_data.head())  # Print the first few rows of the dataset with predictions
     
-
-##################q
-    # Demand prediction model that predicts average wait time based on IoT data
-    # Load dataset
-    df_iot = pd.read_pickle("../../data/processed/iot_data.pkl")
-
-    # Define feature columns
-    features_model_3 = [
-        'Visitor_ID', 'Loyalty_Member', 'Age', 'Gender',
-        'Theme_Zone_Visited', 'Attraction', 'Check_In', 'Queue_Time', 'Check_Out', 'Restaurant_Spending',
-        'Merchandise_Spending', 'Total_Spending', 'Day_of_Week', 'Is_Weekend', 'Is_Popular_Attraction'
-    ]
-
-    target = 'Average_Queue_Time'
-
-    # Load model
-    with open("../../models/demand_model_iot.pkl", "rb") as model_file:
-        model_3 = pickle.load(model_file)
-
-    # Prepare the input data
-    X_model_3 = df_iot[features_model_3]
-    y_true_3 = df_iot[target]
-
-    # Make and store predictions
-    y_pred_3 = model_3.predict(X_model_3)
-    df_iot["Predicted_Avg_Wait_Time"] = y_pred_3
-
-    # Evaluate model
-    rmse_3 = np.sqrt(mean_squared_error(y_true_3, y_pred_3))
-    mae_3 = mean_absolute_error(y_true_3, y_pred_3)
-
-    print("\n Question 3: Demand prediction using only IoT data")
-    print(f" Evaluation Metrics - RMSE: {rmse_3:.4f}, MAE: {mae_3:.4f}")
-    print("\n Sample Predictions:")
-    print(df_iot[['Date', 'Attraction', 'Average_Queue_Time', 'Predicted_Avg_Wait_Time']].head(10))
-
-
     ##### QUESTION 4 #####
     def load_bert_model(model_path='bert_model.pt', tokenizer_path='../../models/bert_tokenizer.pkl'):
         """
@@ -259,6 +222,41 @@ def mainB():
         # Calculate the ratio of severe complaints
         severe_ratio = (complaints_df['severity_pred'] == 1).mean()
         print(f"Severe Complaint Ratio: {severe_ratio:.2%}")
+
+    ##### QUESTION 5 #####
+    # Demand prediction model that predicts average wait time based on IoT data
+    # Load dataset
+    df_iot = pd.read_pickle("../../data/processed/iot_data.pkl")
+
+    # Define feature columns
+    features_model_3 = [
+        'Visitor_ID', 'Loyalty_Member', 'Age', 'Gender',
+        'Theme_Zone_Visited', 'Attraction', 'Check_In', 'Queue_Time', 'Check_Out', 'Restaurant_Spending',
+        'Merchandise_Spending', 'Total_Spending', 'Day_of_Week', 'Is_Weekend', 'Is_Popular_Attraction'
+    ]
+
+    target = 'Average_Queue_Time'
+
+    # Load model
+    with open("../../models/demand_model_iot.pkl", "rb") as model_file:
+        model_3 = pickle.load(model_file)
+
+    # Prepare the input data
+    X_model_3 = df_iot[features_model_3]
+    y_true_3 = df_iot[target]
+
+    # Make and store predictions
+    y_pred_3 = model_3.predict(X_model_3)
+    df_iot["Predicted_Avg_Wait_Time"] = y_pred_3
+
+    # Evaluate model
+    rmse_3 = np.sqrt(mean_squared_error(y_true_3, y_pred_3))
+    mae_3 = mean_absolute_error(y_true_3, y_pred_3)
+
+    print("\n Question 5: Demand prediction using only IoT data")
+    print(f" Evaluation Metrics - RMSE: {rmse_3:.4f}, MAE: {mae_3:.4f}")
+    print("\n Sample Predictions:")
+    print(df_iot[['Date', 'Attraction', 'Average_Queue_Time', 'Predicted_Avg_Wait_Time']].head(10))
         
     except FileNotFoundError:
         print("No complaint data file found, only using example data")
