@@ -9,6 +9,7 @@ from sklearn.preprocessing import OneHotEncoder
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 # Load the first dataset (Staff Data)
+# This dataset contains total number of visitors, staff, and sales
 file_path = "../../data/hv15401j.xls"  
 staff = pd.read_excel(file_path, header=6, sheet_name='月・実数')
 staff = staff.drop(index=0).drop(staff.columns[-1], axis=1)
@@ -117,9 +118,9 @@ with open('staff_count_model.pkl', 'rb') as model_file:
 y_pred_loaded = loaded_model.predict(X_test)
 
 # Visualization
-plt.figure(figsize=(10, 5))
-sns.scatterplot(x=y_staff_test, y=y_pred)
-plt.xlabel("Actual Staff Count")
-plt.ylabel("Predicted Staff Count")
-plt.title("Actual vs Predicted Staff Count")
-plt.show()
+# plt.figure(figsize=(10, 5))
+# sns.scatterplot(x=y_staff_test, y=y_pred)
+# plt.xlabel("Actual Staff Count")
+# plt.ylabel("Predicted Staff Count")
+# plt.title("Actual vs Predicted Staff Count")
+# plt.show()
