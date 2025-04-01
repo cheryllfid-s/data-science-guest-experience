@@ -10,28 +10,35 @@ from sklearn.preprocessing import OneHotEncoder
 # os.chdir(new_directory)
 
 
-def load_model(model_path):
-    """Load the trained model from a pickle file."""
-    with open(model_path, 'rb') as model_file:
-        model = pickle.load(model_file)
-    return model
-
-def preprocess_new_data(new_data, encoder_path):
-    """Preprocess new input data for prediction."""
-    # Load the one-hot encoder
-    with open(encoder_path, 'rb') as enc_file:
-        encoder = pickle.load(enc_file)
+def preprocess_new_data(new_data):
+    """Preprocess new input data by encoding categorical variables."""
+    # Remove target variables if they exist
+    target_vars = ["staff_count", "reg_worker", "part_worker"]
+    new_data = new_data.drop(columns=[col for col in target_vars if col in new_data.columns], errors='ignore')
     
-    # Apply one-hot encoding to categorical features
-    encoded_cats = encoder.transform(new_data[["ATTRACTION", "PARK"]])
+    # Apply one-hot encoding
+    encoder = OneHotEncoder(drop="first", sparse=False)
+    encoded_cats = encoder.fit_transform(new_data[["ATTRACTION", "PARK"]])
     new_data = new_data.drop(columns=["ATTRACTION", "PARK"]).join(pd.DataFrame(encoded_cats, 
-                                                     columns=encoder.get_feature_names_out()))
+                                                         columns=encoder.get_feature_names_out()))
     return new_data
 
 def predict_staff_count(model, new_data):
-    """Predict staff count using the trained model."""
-    predictions = model.predict(new_data)
-    return predictions
+    """Predict staff count using the trained model and round up the predictions."""
+    if model is None or new_data is None:
+        print("Error: Model or preprocessed data is missing. Cannot make predictions.")
+        return None
+    return np.ceil(model.predict(new_data))
+
+def load_model(model_path):
+    """Load the trained model from a pickle file."""
+    try:
+        with open(model_path, 'rb') as model_file:
+            model = pickle.load(model_file)
+        return model
+    except FileNotFoundError:
+        print(f"Error: Model file not found at {model_path}")
+        return None
 
 def mainB():
     # load model and data for Question 1
@@ -69,19 +76,35 @@ def mainB():
     print("\nEvaluation Metrics:")
     print(f"RMSE: {rmse:.4f}")
     print(f"MAE: {mae:.4f}")
-
-    """Main function to load the model, preprocess data, and make predictions."""
+    
+    print("\nQuestion 3: Resource Allocation")
+    model_path = "../../models/q3_resource_allocation.pkl"
+    data_path = "../../data/processed/q3_resource_allocation.csv"
     # Load the trained model
-    model = load_model("../../models/q3_resource_allocation.pkl")
-    # Load sample new data 
-    new_data = pd.read_csv("../../data/processed/q3_resource_allocation.csv") 
-    # Preprocess the new data
-    new_data_processed = preprocess_new_data(new_data, "encoder.pkl")
+    model = load_model(model_path)
+    # Load new data
+    try:
+        new_data = pd.read_csv(data_path)
+    except FileNotFoundError:
+        print(f"Error: Data file not found at {data_path}")
+        return
+    # Preprocess new data
+    new_data_processed = preprocess_new_data(new_data)
+    if new_data_processed is None:
+        return
     # Make predictions
     predicted_staff = predict_staff_count(model, new_data_processed)
-    # Display results
-    print("Predicted Staff Count for New Data:")
-    print(predicted_staff)
+    if predicted_staff is not None:
+        print("Predicted Staff Count for New Data:")
+        print(predicted_staff)
+    
+    # Load and display layout optimization results
+    try:
+        with open(optimization_model_path, "rb") as f:
+            comp = pickle.load(f)
+    except FileNotFoundError:
+        print(f"Error: Optimization model file not found at {optimization_model_path}")
+        return
     
     # Call q2 model simulation results
     with open("../../models/q2_optimization_layout.pkl", "rb") as f:
