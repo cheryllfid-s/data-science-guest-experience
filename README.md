@@ -7,6 +7,12 @@ This project aims to develop a data-driven system that maps and analyzes guest j
 - Python 3.10 or higher
 - Git
 - [Docker](https://www.docker.com/get-started) and Docker Compose
+- bert.pt downloaded from [OneDrive link](https://nusu-my.sharepoint.com/personal/e0929810_u_nus_edu/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Fe0929810%5Fu%5Fnus%5Fedu%2FDocuments%2Fbert%5Fmodel%2Ept&parent=%2Fpersonal%2Fe0929810%5Fu%5Fnus%5Fedu%2FDocuments&ga=1) 
+Move the downloaded bert.pt file into the Scripts/Subgroup_B/ directory, the same directory where main_B.py is located.
+```bash
+models/
+└── bertmodel.pt
+```
 
 ## Running the Docker
 ### 1. Clone the Repository
@@ -31,11 +37,4 @@ The entry point of this project is:
 ```bash
 Scripts/main.py
 ```
-Do note that running main.py requires you to have bert.pt downloaded from [OneDrive link](https://nusu-my.sharepoint.com/personal/e0929810_u_nus_edu/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Fe0929810%5Fu%5Fnus%5Fedu%2FDocuments%2Fbert%5Fmodel%2Ept&parent=%2Fpersonal%2Fe0929810%5Fu%5Fnus%5Fedu%2FDocuments&ga=1) as we are running a LLM for sentiment analysis.
-Next, move the downloaded bert.pt file into the Scripts/Subgroup_B/ directory, the same directory where main_B.py is located.
-```bash
-Scripts/
-└── Subgroup_B/
-    ├── main_B.py
-    └── bert_model.pt
-```
+
