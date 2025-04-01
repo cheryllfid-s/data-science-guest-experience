@@ -77,54 +77,13 @@ def mainB():
     print(f"RMSE: {rmse:.4f}")
     print(f"MAE: {mae:.4f}")
 
-    # Demand prediction model that predicts average wait time based on IoT data
-    # Load dataset
-    df_iot = pd.read_pickle("../../data/processed/iot_data.pkl")
-
-    # Define feature columns
-    features_model_3 = [
-        'Visitor_ID', 'Loyalty_Member', 'Age', 'Gender',
-        'Theme_Zone_Visited', 'Attraction', 'Check_In', 'Queue_Time', 'Check_Out', 'Restaurant_Spending',
-        'Merchandise_Spending', 'Total_Spending', 'Day_of_Week', 'Is_Weekend', 'Is_Popular_Attraction'
-    ]
-
-    target = 'Average_Queue_Time'
-
-    # Load model
-    with open("../../models/demand_model_iot.pkl", "rb") as model_file:
-        model_3 = pickle.load(model_file)
-
-    # Prepare the input data
-    X_model_3 = df_iot[features_model_3]
-    y_true_3 = df_iot[target]
-
-    # Make and store predictions
-    y_pred_3 = model_3.predict(X_model_3)
-    df_iot["Predicted_Avg_Wait_Time"] = y_pred_3
-
-    # Evaluate model
-    rmse_3 = np.sqrt(mean_squared_error(y_true_3, y_pred_3))
-    mae_3 = mean_absolute_error(y_true_3, y_pred_3)
-
-    print("\n Question 3: Demand prediction using only IoT data")
-    print(f" Evaluation Metrics - RMSE: {rmse_3:.4f}, MAE: {mae_3:.4f}")
-    print("\n🔹 Sample Predictions:")
-    print(df_iot[['Date', 'Attraction', 'Average_Queue_Time', 'Predicted_Avg_Wait_Time']].head(10))
-    
-    # Load and display layout optimization results
-    try:
-        with open(optimization_model_path, "rb") as f:
-            comp = pickle.load(f)
-    except FileNotFoundError:
-        print(f"Error: Optimization model file not found at {optimization_model_path}")
-        return
-    
+ 
     # Call q2 model simulation results
     with open("../../models/q2_optimization_layout.pkl", "rb") as f:
         comp = pickle.load(f)
 
     # Print: Current Layout
-    print("\nQuestion 3: Optimization of Attraction Layout and Schedules")
+    print("\nQuestion 2: Optimization of Attraction Layout and Schedules")
     print("\nCurrent USS Layout (Two Entrances) - Multi Queue:")
     for attraction, time in comp["avg_wait_times_1_multi"].items():
         print(f"{attraction}: {time:.2f} min")
@@ -162,6 +121,41 @@ def mainB():
         print("Dataset with Predicted Staff Count:")
         print(new_data.head())  # Print the first few rows of the dataset with predictions
     
+
+##################
+    # Demand prediction model that predicts average wait time based on IoT data
+    # Load dataset
+    df_iot = pd.read_pickle("../../data/processed/iot_data.pkl")
+
+    # Define feature columns
+    features_model_3 = [
+        'Visitor_ID', 'Loyalty_Member', 'Age', 'Gender',
+        'Theme_Zone_Visited', 'Attraction', 'Check_In', 'Queue_Time', 'Check_Out', 'Restaurant_Spending',
+        'Merchandise_Spending', 'Total_Spending', 'Day_of_Week', 'Is_Weekend', 'Is_Popular_Attraction'
+    ]
+
+    target = 'Average_Queue_Time'
+
+    # Load model
+    with open("../../models/demand_model_iot.pkl", "rb") as model_file:
+        model_3 = pickle.load(model_file)
+
+    # Prepare the input data
+    X_model_3 = df_iot[features_model_3]
+    y_true_3 = df_iot[target]
+
+    # Make and store predictions
+    y_pred_3 = model_3.predict(X_model_3)
+    df_iot["Predicted_Avg_Wait_Time"] = y_pred_3
+
+    # Evaluate model
+    rmse_3 = np.sqrt(mean_squared_error(y_true_3, y_pred_3))
+    mae_3 = mean_absolute_error(y_true_3, y_pred_3)
+
+    print("\n Question 3: Demand prediction using only IoT data")
+    print(f" Evaluation Metrics - RMSE: {rmse_3:.4f}, MAE: {mae_3:.4f}")
+    print("\n🔹 Sample Predictions:")
+    print(df_iot[['Date', 'Attraction', 'Average_Queue_Time', 'Predicted_Avg_Wait_Time']].head(10))
     
 if __name__ == "__main__":
     mainB()
