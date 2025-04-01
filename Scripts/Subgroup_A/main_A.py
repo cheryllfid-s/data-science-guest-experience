@@ -1,4 +1,4 @@
-from datacleaning_A import *
+from datapreparation_A import *
 from Analysis.q1_guest_satisfaction_analysis import GuestSatisfactionAnalysis
 from Modeling.q2_guest_segmentation_model import guest_segmentation_model
 from Analysis.q3_guest_journey_analysis import GuestJourneyAnalysis
