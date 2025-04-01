@@ -9,6 +9,8 @@ from sklearn.preprocessing import OneHotEncoder
 # from Modeling.q4_predicting_guest_complaints import load_bert_model
 from transformers import BertForSequenceClassification
 import torch.nn.functional as F
+import warnings
+warnings.filterwarnings("ignore")
 # new_directory = r"C:\Users\parma\data-science-guest-experience\data-science-guest-experience\Scripts\Subgroup_B" 
 # os.chdir(new_directory)
 
