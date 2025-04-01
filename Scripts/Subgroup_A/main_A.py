@@ -1,9 +1,9 @@
 from datapreparation_A import *
-from Analysis.q1_guest_satisfaction_analysis import GuestSatisfactionAnalysis
-from Modeling.q2_guest_segmentation_model import guest_segmentation_model
-from Analysis.q3_guest_journey_analysis import GuestJourneyAnalysis
-from Analysis.q4_promo_events_analysis import USSPromoAnalysis
-from Analysis.q5_external_factors_analysis import q5_analyse
+from analysis.q1_guest_satisfaction_analysis import GuestSatisfactionAnalysis
+from modeling.q2_guest_segmentation_model import guest_segmentation_model
+from analysis.q3_guest_journey_analysis import GuestJourneyAnalysis
+from analysis.q4_promo_events_analysis import USSPromoAnalysis
+from analysis.q5_external_factors_analysis import q5_analyse
 
 def mainA():
     satisfaction_analysis = GuestSatisfactionAnalysis()
