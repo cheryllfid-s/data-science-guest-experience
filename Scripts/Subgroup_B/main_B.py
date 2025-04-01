@@ -6,7 +6,7 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error
 from sklearn.preprocessing import LabelEncoder
 import os
 from sklearn.preprocessing import OneHotEncoder
-from subgroupbq4_March_31th import load_bert_model
+from q4_predicting_guest_complaints import load_bert_model
 import torch.nn.functional as F
 # new_directory = r"C:\Users\parma\data-science-guest-experience\data-science-guest-experience\Scripts\Subgroup_B" 
 # os.chdir(new_directory)
