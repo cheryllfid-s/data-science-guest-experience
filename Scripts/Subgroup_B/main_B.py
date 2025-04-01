@@ -6,7 +6,7 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error
 from sklearn.preprocessing import LabelEncoder
 import os
 from sklearn.preprocessing import OneHotEncoder
-from q4_predicting_guest_complaints import load_bert_model
+from Modeling.q4_predicting_guest_complaints import load_bert_model
 import torch.nn.functional as F
 # new_directory = r"C:\Users\parma\data-science-guest-experience\data-science-guest-experience\Scripts\Subgroup_B" 
 # os.chdir(new_directory)
@@ -99,6 +99,9 @@ def mainB():
     for attraction, time in comp["avg_wait_times_2_multi"].items():
         print(f"{attraction}: {time:.2f} min")
     print(f"Average Wait Time per Guest: {comp['avg_wait_per_guest_2']:.2f} min")
+
+    
+    
     
     print("\nQuestion 3: Resource Allocation")
     model_path = "../../models/q3_resource_allocation.pkl"
@@ -126,7 +129,7 @@ def mainB():
         print(new_data.head())  # Print the first few rows of the dataset with predictions
     
 
-##################
+##################q
     # Demand prediction model that predicts average wait time based on IoT data
     # Load dataset
     df_iot = pd.read_pickle("../../data/processed/iot_data.pkl")
