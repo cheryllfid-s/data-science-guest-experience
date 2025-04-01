@@ -43,12 +43,13 @@ class GuestJourneyAnalysis:  #Object to make it easier to put into main.py
 
     #Tagging the day types
     def tag_day_type(self, df, covid_dates, busy_days, quiet_days):
-        df['DAY_TYPE'] = 'normal'
+        df = df.copy()
+        df.loc[:, 'DAY_TYPE'] = 'normal'
+        df.loc[df['WORK_DATE'].isin(covid_dates), 'DAY_TYPE'] = 'covid'
         df.loc[df['WORK_DATE'].isin(covid_dates), 'DAY_TYPE'] = 'covid'
         df.loc[df['WORK_DATE'].isin(busy_days), 'DAY_TYPE'] = 'busy'
         df.loc[df['WORK_DATE'].isin(quiet_days), 'DAY_TYPE'] = 'quiet'
         return df
-
 
 
     def simulate_guest_sequences(self, df, time_gap_seconds=1800):
