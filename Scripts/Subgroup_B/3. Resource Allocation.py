@@ -10,7 +10,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 # Load the first dataset (Staff Data)
 # This dataset contains information on visitor counts, staff numbers, and sales figures.
-file_path = "hv15401j.xls"  
+file_path = "../../data/hv15401j.xls"  
 staff = pd.read_excel(file_path, header=6, sheet_name='月・実数')
 
 # Clean the dataset by removing unnecessary rows and columns
