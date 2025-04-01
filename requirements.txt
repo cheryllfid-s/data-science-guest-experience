@@ -19,3 +19,4 @@ simpy
 faker
 xgboost
 sdv
+pyqt5
