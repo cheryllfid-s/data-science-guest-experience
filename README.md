@@ -11,7 +11,7 @@ This project aims to develop a data-driven system that maps and analyzes guest j
 Move the downloaded bert.pt file into the Scripts/Subgroup_B/ directory, the same directory where main_B.py is located.
 ```bash
 models/
-└── bertmodel.pt
+└── bert_model.pt
 ```
 
 ## Running the Docker
