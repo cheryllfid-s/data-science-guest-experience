@@ -1,9 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[ ]:
-
-
 import pandas as pd
 import numpy as np
 import warnings
@@ -22,6 +16,8 @@ import shap
 from sklearn.metrics import accuracy_score, classification_report, roc_auc_score
 from sklearn.feature_extraction.text import TfidfVectorizer
 import copy
+import pickle
+import os
 
 #Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -37,7 +33,7 @@ print(f"Using device: {device}")
 
 # Read data
 try:
-    disney_df = pd.read_csv('../../data/DisneylandReviews.csv', encoding='utf-8', encoding_errors='replace')
+    disney_df = pd.read_csv('data/DisneylandReviews.csv', encoding='utf-8', encoding_errors='replace')
     print(f"Successfully loaded Disney data, {len(disney_df)} rows")
 except FileNotFoundError:
     raise FileNotFoundError("DisneylandReviews.csv not found. Please ensure the file exists in the current directory.")
@@ -49,20 +45,20 @@ disney_df['Rating'] = pd.to_numeric(disney_df['Rating'], errors='coerce')
 disney_df['Review_Text'] = disney_df['Review_Text'].astype(str)
 
 try:
-    uss_df = pd.read_csv('../../data/universal_studio_branches.csv',
+    uss_df = pd.read_csv('data/universal_studio_branches.csv',
                          encoding='utf-8',
                          encoding_errors='replace',
                          engine='python',
                          on_bad_lines='skip')
 except:
     try:
-        uss_df = pd.read_csv('../../data/universal_studio_branches.csv',
+        uss_df = pd.read_csv('data/universal_studio_branches.csv',
                              encoding='utf-8',
                              encoding_errors='replace',
                              engine='python',
                              error_bad_lines=False)
     except:
-        uss_df = pd.read_csv('../../data/universal_studio_branches.csv',
+        uss_df = pd.read_csv('data/universal_studio_branches.csv',
                              encoding='utf-8',
                              encoding_errors='replace',
                              engine='python',
@@ -107,7 +103,7 @@ if 'reviewer_location' not in uss_renamed.columns:
     uss_renamed['reviewer_location'] = np.nan  # Add missing location column
 if 'reviewer_name' not in disney_renamed.columns:
     disney_renamed['reviewer_name'] = np.nan  # Add missing name column
-    
+
 disney_common = disney_renamed[common_columns]
 uss_common = uss_renamed[common_columns]
 combined_df = pd.concat([disney_common, uss_common], ignore_index=True)
@@ -138,10 +134,6 @@ combined_df['rating'] = pd.to_numeric(combined_df['rating'], errors='coerce')
 # Create negative experience label (rating <= 4 is negative)
 combined_df['bad_experience'] = (combined_df['rating'] <= 4).astype(int)
 
-
-# In[ ]:
-
-
 # Initialize sentiment analyzer
 sia = SentimentIntensityAnalyzer()
 
@@ -168,10 +160,6 @@ top_neg_words = [feature_names[i] for i in top_diff_indices]
 
 logging.info("\nTop 20 words most distinguishing in negative reviews:")
 logging.info(top_neg_words[:20])
-
-
-# In[ ]:
-
 
 # BERT model training and explanation
 def tokenize_function(texts, tokenizer, max_length=128):
@@ -257,6 +245,26 @@ def train_bert_model(train_texts, train_labels, val_texts, val_labels, num_epoch
         raise Exception(f"Error during training: {str(e)}")
 
     print(f"Best validation accuracy: {best_val_accuracy:.4f}")
+
+    # save model and tokenizer
+    # create models directory (if it doesn't exist)
+    os.makedirs('models', exist_ok=True)
+
+    # move model to CPU for saving
+    best_model.to('cpu')
+
+    # save model state dictionary
+    torch.save(best_model.state_dict(), 'models/bert_model.pt')
+
+    # save tokenizer
+    with open('models/bert_tokenizer.pkl', 'wb') as f:
+        pickle.dump(tokenizer, f)
+
+    print("model and tokenizer saved to models directory")
+
+    # move model back to original device
+    best_model.to(device)
+
     return best_model, tokenizer
 
 # Use SHAP to explain model predictions
@@ -686,7 +694,36 @@ except Exception as e:
 # done
 print("\ndone.")
 
+# add load model function
+def load_bert_model(model_path='models/bert_model.pt', tokenizer_path='models/bert_tokenizer.pkl'):
+    """
+    load saved BERT model and tokenizer
 
+    Args:
+        model_path: path to model state dictionary
+        tokenizer_path: path to tokenizer pickle file
 
+    Returns:
+        model: loaded BERT model
+        tokenizer: loaded tokenizer
+    """
+    try:
+        # load tokenizer
+        with open(tokenizer_path, 'rb') as f:
+            tokenizer = pickle.load(f)
 
+        # initialize model
+        model = BertForSequenceClassification.from_pretrained('bert-base-uncased', num_labels=2)
 
+        # load model state
+        model.load_state_dict(torch.load(model_path))
+
+        # set to evaluation mode
+        model.eval()
+
+        print("successfully loaded model and tokenizer")
+        return model, tokenizer
+
+    except Exception as e:
+        print(f"error loading model: {str(e)}")
+        return None, None
