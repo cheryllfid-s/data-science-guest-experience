@@ -8,7 +8,8 @@ This project aims to develop a data-driven system that maps and analyzes guest j
 - Git
 - [Docker](https://www.docker.com/get-started) and Docker Compose
 - bert.pt downloaded from [OneDrive link](https://nusu-my.sharepoint.com/personal/e0929810_u_nus_edu/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Fe0929810%5Fu%5Fnus%5Fedu%2FDocuments%2Fbert%5Fmodel%2Ept&parent=%2Fpersonal%2Fe0929810%5Fu%5Fnus%5Fedu%2FDocuments&ga=1) 
-Move the downloaded bert.pt file into the Scripts/Subgroup_B/ directory, the same directory where main_B.py is located.
+
+Once you have downloaded bert.pt, move the file into the model/ directory.
 ```bash
 models/
 └── bert_model.pt
