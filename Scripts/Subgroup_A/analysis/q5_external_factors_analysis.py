@@ -12,7 +12,7 @@ def q5_analyse(df_reviews_cleaned):
     # Bar plot of segment distribution
     def plotdistsegment(df_reviews_cleaned):
         plt.figure(figsize=(8, 5))
-        sns.countplot(x=df_reviews_cleaned["segment"], palette="coolwarm")
+        sns.countplot(x=df_reviews_cleaned["segment"])
         plt.xticks([0, 1, 2, 3], ["Social-Driven Youths", "Value-Conscious Families","Budget-Conscious Youths", "Premium Spenders" ], rotation=45, ha='right')
         plt.xlabel("Segment")
         plt.ylabel("Number of Reviews")
@@ -29,7 +29,7 @@ def q5_analyse(df_reviews_cleaned):
      # Boxplot of sentiment scores by segment
     def sentibyseg(df_reviews_cleaned):
         plt.figure(figsize=(8, 5))
-        sns.boxplot(x=df_reviews_cleaned["segment"], y=df_reviews_cleaned["sentiment"], palette="coolwarm")
+        sns.boxplot(x=df_reviews_cleaned["segment"], y=df_reviews_cleaned["sentiment"])
         plt.xticks([0, 1, 2, 3], ["Social-Driven Youths", "Value-Conscious Families","Budget-Conscious Youths", "Premium Spenders" ], rotation=45, ha='right')
         plt.xlabel("Segment")
         plt.ylabel("Sentiment Score")
@@ -79,7 +79,7 @@ def q5_analyse(df_reviews_cleaned):
     print(sentiment_diff)
     def sentimentdiffrain(sentiment_diff):
         plt.figure(figsize=(10, 6))
-        sns.barplot(x='segment', y='sentiment_diff', data=sentiment_diff, palette='coolwarm')
+        sns.barplot(x='segment', y='sentiment_diff', data=sentiment_diff)
 
         # Add labels and title
         plt.xticks([0, 1, 2, 3], ["Social-Driven Youths", "Value-Conscious Families","Budget-Conscious Youths", "Premium Spenders" ])
