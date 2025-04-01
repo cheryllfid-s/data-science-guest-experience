@@ -125,26 +125,6 @@ class guest_segmentation_model:
         cols = ['Segment'] + [col for col in summary.columns if col != 'Segment']
         return summary[cols], df_labeled
 
-    def analyze_marketing_strategies(self, df_labeled):
-        """
-        Identify top awareness source, ad response, and promotions for each segment.
-        """
-        cluster_name_map = {
-            0: 'Social-Driven Youths',
-            1: 'Value-Conscious Families',
-            2: 'Budget-Conscious Youths',
-            3: 'Premium Spenders'
-        }
-
-        def compute_top_response(df, cluster_col, response_col, cluster_map):
-            top = df.groupby(cluster_col)[response_col].agg(lambda x: x.value_counts().idxmax()).reset_index()
-            top[cluster_col] = top[cluster_col].map(cluster_map)
-            return top
-
-        print("--- Business Question 4: Recommend tailored marketing strategies for specific segments ---\n")
-        print("### Awareness ###\n", compute_top_response(df_labeled, 'cluster', 'awareness', cluster_name_map), "\n")
-        print("### Response to Ads ###\n", compute_top_response(df_labeled, 'cluster', 'response_to_ads', cluster_name_map), "\n")
-        print("### Preferred Promotion ###\n", compute_top_response(df_labeled, 'cluster', 'preferred_promotion', cluster_name_map))
 
     def visualize_clusters(self, df_labeled, scaled_features, k_labels):
         """
@@ -190,6 +170,43 @@ class guest_segmentation_model:
         optimal_k = self.determine_optimal_clusters(self.df_combined)
         k_labels = self.compare_models(self.pca)
         summary, df_labeled = self.summarize_clusters(self.df_labeled, k_labels)
-        self.analyze_marketing_strategies(df_labeled)
         self.visualize_clusters(df_labeled, self.scaled, k_labels)
         return summary, df_labeled
+
+    # --- For Business Question 4: Impact of Marketing Strategies on Guest Behaviour --- #
+    def analyze_marketing_strategies(self, df_labeled):
+        """
+        Identify top awareness source, ad response, and promotions for each segment.
+        """
+        cluster_name_map = {
+            0: 'Social-Driven Youths',
+            1: 'Value-Conscious Families',
+            2: 'Budget-Conscious Youths',
+            3: 'Premium Spenders'
+        }
+
+        def compute_top_response(df_labeled, cluster_col, response_col, cluster_map):
+            top = df_labeled.groupby(cluster_col)[response_col].agg(lambda x: x.value_counts().idxmax()).reset_index()
+            top[cluster_col] = top[cluster_col].map(cluster_map)
+            return top
+
+        print("---Business Question 4, Part II: Recommend tailored marketing strategies for specific segments ---")
+        # (1) Awareness: 'How did you first hear about Universal Studios Singapore?'
+        top_awareness = compute_top_response(self.df_labeled, 'cluster', 'awareness', cluster_name_map)
+        print("### Awareness: 'How did you first hear about Universal Studios Singapore?' ###")
+        print(top_awareness)
+        print("\n")
+
+        # (2) Response to ads: 'Have you seen any recent advertisements or promotions for USS?'
+        top_response_to_ads = compute_top_response(self.df_labeled, 'cluster', 'response_to_ads', cluster_name_map)
+        print("### Response to ads: 'Have you seen any recent advertisements or promotions for USS?' ###")
+        print(top_response_to_ads)
+        print("\n")
+
+        # (3) Preferred promotion: 'What type of promotions or discounts would encourage you to visit USS?'
+        top_preferred_promotion = compute_top_response(self.df_labeled, 'cluster', 'preferred_promotion', cluster_name_map)
+        print("### Preferred promotion: 'What type of promotions or discounts would encourage you to visit USS?' ###")
+        print(top_preferred_promotion)
+
+    def run_marketing_analysis(self):
+        self.analyze_marketing_strategies(self.df_labeled)

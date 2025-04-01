@@ -9,7 +9,7 @@ from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.decomposition import PCA
 
 
-(#Q2) Guest Segment Data
+# (Q2) Guest Segment Data
 def cleaning_q2():
     script_dir = Path(__file__).parent
     project_root = script_dir.parent.parent

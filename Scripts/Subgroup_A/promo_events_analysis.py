@@ -283,7 +283,7 @@ class USSPromoAnalysis:
          4. Visualizes the changes in review metrics.
 
          """
-        print("Analysis of USS' past promotional events data to study changes in guest satisfaction:\n")
+        print("--- Business Question 4, Part I: Analyze past campaign data to study changes in guest satisfaction ---")
         # (1) Filter for reviews written before and during events
         reviews_during_event = self.filter_reviews_during_events()
         reviews_before_event = self.filter_reviews_before_events()
