@@ -9,7 +9,7 @@ tqdm
 matplotlib
 seaborn
 shap
-skicit-learn
+scikit-learn
 copy
 pickle
 os
