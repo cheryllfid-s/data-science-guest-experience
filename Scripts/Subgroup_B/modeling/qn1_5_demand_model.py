@@ -201,17 +201,17 @@ def train_demand_model_2(df, target='Average_Queue_Time'):
 model_3, metrics_3 = train_demand_model_2(df_iot)
 
 # Save the model for survey and weather data only
-with open('../models/demand_model_survey_weather.pkl', 'wb') as model_file:
+with open('../../../models/demand_model_survey_weather.pkl', 'wb') as model_file:
     pickle.dump(model_1, model_file)
 
 print("Model saved successfully!")
 
-with open('../models/demand_model_survey_weather_iot.pkl', 'wb') as model_file:
+with open('../../../models/demand_model_survey_weather_iot.pkl', 'wb') as model_file:
     pickle.dump(model_2, model_file)
 
 print("Model saved successfully!")
 
-with open('../models/demand_model_iot.pkl', 'wb') as model_file:
+with open('../../../models/demand_model_iot.pkl', 'wb') as model_file:
     pickle.dump(model_3, model_file)
 
 print("Model saved successfully!")
