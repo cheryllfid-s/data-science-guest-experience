@@ -695,7 +695,7 @@ except Exception as e:
 print("\ndone.")
 
 # add load model function
-def load_bert_model(model_path='models/bert_model.pt', tokenizer_path='models/bert_tokenizer.pkl'):
+def load_bert_model(model_path='../../models/bert_model.pt', tokenizer_path='../../models/bert_tokenizer.pkl'):
     """
     load saved BERT model and tokenizer
 
