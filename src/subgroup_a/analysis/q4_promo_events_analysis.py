@@ -12,7 +12,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from scipy import stats
 
-
+## ----- Define functions ----- ##
 def compute_change_in_reviews(reviews_before_event, reviews_during_event):
     """
     Compute the difference in key review metrics before and during an event.
@@ -54,8 +54,9 @@ def compute_change_in_reviews(reviews_before_event, reviews_during_event):
 
     # Convert dict into dataframe for easier analysis
     changes_df = pd.DataFrame.from_dict(changes, orient='index')
-    print("Dataframe containing changes in review polarity, ratings and volume:")
+    print("(1) Change in review metrics before vs. during event (polarity, ratings and volume)")
     print(changes_df)
+    print("\n")
     return changes_df
 
 
@@ -83,6 +84,7 @@ def visualize_review_changes(df_change_data):
     sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', center=0, linewidths=1, fmt='.2f', cbar=True)
     plt.title('Correlation Matrix of Review Polarity Change, Rating Change, and Volume Change')
     plt.tight_layout()
+    print("(2) Correlation matrix of review metrics\n")
     plt.show()
 
     # (2) Function to create diverging bar plots for review changes
@@ -115,6 +117,7 @@ def visualize_review_changes(df_change_data):
     fig, ax = plt.subplots(figsize=(12, 8))
     plot_review_change(ax, df_change_data, "review_volume_change")
     plt.tight_layout()
+    print("(3) Plot of review_volume_change\n")
     plt.show()
 
     # (4) Side-by-side plots for review_rating_change and review_polarity_change
@@ -122,6 +125,7 @@ def visualize_review_changes(df_change_data):
     plot_review_change(axes[0], df_change_data, "review_rating_change")
     plot_review_change(axes[1], df_change_data, "review_polarity_change")
     plt.tight_layout()
+    print("(4) Side-by-side plots for review_rating_change and review_polarity_change\n")
     plt.show()
 
 
@@ -148,7 +152,7 @@ def metrics_analysis(df_change_data):
         "Review Polarity Change": "review_polarity_change",
         "Review Volume Change": "review_volume_change"
     }
-    print("\nStatistical analysis of review metric changes:")
+    print("(5) Statistical analysis of review metric changes")
     # Loop through each metric and perform statistical tests
     for metric_name, col in metrics.items():
         changes = df_change_data[col]
@@ -283,7 +287,7 @@ class USSPromoAnalysis:
          4. Visualizes the changes in review metrics.
 
          """
-        print("--- Business Question 4, Part I: Analyze past campaign data to study changes in guest satisfaction ---")
+    
         # (1) Filter for reviews written before and during events
         reviews_during_event = self.filter_reviews_during_events()
         reviews_before_event = self.filter_reviews_before_events()
@@ -291,11 +295,11 @@ class USSPromoAnalysis:
         # (2) Compute changes in review polarity, volume and ratings 
         df_change_data = compute_change_in_reviews(reviews_before_event, reviews_during_event)
 
-        # (3) Perform statistical analysis
-        metrics_analysis(df_change_data)
-
-        # (4) Visualize the changes in review polarity, volume and ratings
+        # (3) Visualize the changes in review polarity, volume and ratings
         visualize_review_changes(df_change_data)
+
+        # (4) Perform statistical analysis
+        metrics_analysis(df_change_data)
 
 
 if __name__ == "__main__":
