@@ -13,7 +13,7 @@ def mainA():
     print("Question 1: Key Factors Influencing Guest Satisfaction")
     satisfaction_analysis.run_analysis()
 
-    print("Question 2: Guest Segmentation Model")
+    print("\nQuestion 2: Guest Segmentation Model")
     df_combined, df_labeled, scaled, pca = cleaning_q2()
     segmentation_analysis = guest_segmentation_model(df_combined, df_labeled, scaled, pca)
     summary, _ = segmentation_analysis.run_pipeline()
@@ -21,12 +21,12 @@ def mainA():
     print("\n===== CLUSTER SUMMARY (Q2) =====")
     print(summary)
 
-    print("Question 3: Guest Journey Patterns")
+    print("\nQuestion 3: Guest Journey Patterns")
     tivoli_g, attendance_df, covid, negative_att = prepare_tivoli_data()
     GuestJourneyAnalysis_obj = GuestJourneyAnalysis(tivoli_g, attendance_df, covid, negative_att)
     GuestJourneyAnalysis_obj.run_guestjourneyanalysis()
 
-    print("Question 4: Impact of Marketing Strategies on Guest Behaviour")
+    print("\nQuestion 4: Impact of Marketing Strategies on Guest Behaviour")
     q4_df_reviews = q4_prepare_reviews_data()
     q4_df_events = q4_prepare_events_data()
     USSPromoAnalysis_obj = USSPromoAnalysis(q4_df_reviews, q4_df_events)
