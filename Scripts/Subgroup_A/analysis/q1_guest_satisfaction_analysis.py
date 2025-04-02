@@ -5,7 +5,18 @@ import seaborn as sns
 from sklearn.preprocessing import MinMaxScaler
 from matplotlib.ticker import PercentFormatter
 import matplotlib
-matplotlib.use('Qt5Agg')  
+# matplotlib.use('Qt5Agg')
+import time
+_original_show = plt.show
+
+# Define custom show behavior
+def auto_show_and_close(*args, **kwargs):
+    _original_show(*args, **kwargs)  # show the plot
+    time.sleep(3)                    # wait for 2 seconds
+    plt.close('all')                 # close all figures after showing
+
+# Override the default plt.show()
+plt.show = auto_show_and_close
 from pathlib import Path
 from textblob import TextBlob
 
@@ -73,7 +84,7 @@ class GuestSatisfactionAnalysis:
         plt.title('Ride Wait Times vs Overall Satisfaction')
         plt.xticks(rotation=45)
         plt.tight_layout()
-        plt.savefig('rides_wait_time_vs_satisfaction.png')
+        # plt.savefig('rides_wait_time_vs_satisfaction.png')
         plt.show()
 
         # Most popular rides
@@ -83,7 +94,7 @@ class GuestSatisfactionAnalysis:
         plt.title('Top 5 Most Popular Rides/Attractions')
         plt.xlabel('Number of Votes')
         plt.tight_layout()
-        plt.savefig('top_rides.png')
+        # plt.savefig('top_rides.png')
         plt.show()
     
     def analyze_food(self):
@@ -97,7 +108,7 @@ class GuestSatisfactionAnalysis:
         plt.ylabel('Percentage of Responses')
         plt.gca().yaxis.set_major_formatter(PercentFormatter(1))
         plt.tight_layout()
-        plt.savefig('food_quality_distribution.png')
+        #plt.savefig('food_quality_distribution.png')
         plt.show(block=True)
 
         # Food variety 
@@ -108,7 +119,7 @@ class GuestSatisfactionAnalysis:
             plt.title('Perception of Food Variety')
             plt.ylabel('')
             plt.tight_layout()
-            plt.savefig('food_variety.png')
+            #plt.savefig('food_variety.png')
             plt.show(block=True)
             plt.pause(0.1)
     
@@ -125,7 +136,7 @@ class GuestSatisfactionAnalysis:
         plt.ylabel('Percentage of Responses')
         plt.gca().yaxis.set_major_formatter(PercentFormatter(1))
         plt.tight_layout()
-        plt.savefig('staff_friendliness.png')
+        #plt.savefig('staff_friendliness.png')
         plt.show(block=True)
         plt.pause(0.1)
 
@@ -173,7 +184,7 @@ class GuestSatisfactionAnalysis:
         plt.xlabel('Sentiment Polarity (-1 to 1)')
         plt.xlim(-1, 1)
         plt.tight_layout()
-        plt.savefig('website_app_feedback_sentiment.png')
+        #plt.savefig('website_app_feedback_sentiment.png')
         plt.show()
 
         # Plot improvement suggestions
@@ -183,7 +194,7 @@ class GuestSatisfactionAnalysis:
         plt.xlabel('Sentiment Polarity (-1 to 1)')
         plt.xlim(-1, 1)
         plt.tight_layout()
-        plt.savefig('improvement_suggestions_sentiment.png')
+        # plt.savefig('improvement_suggestions_sentiment.png')
         plt.show()
 
         # Calculate correlation with overall experience
@@ -250,7 +261,7 @@ class GuestSatisfactionAnalysis:
         plt.xticks(rotation=45, ha='right')
         plt.yticks(rotation=0)
         plt.tight_layout()
-        plt.savefig('correlation_heatmap.png')
+        # plt.savefig('correlation_heatmap.png')
         plt.show()
     
     def analyze_post_visit(self):
@@ -264,7 +275,7 @@ class GuestSatisfactionAnalysis:
         plt.xticks(rotation=45)
         plt.gca().yaxis.set_major_formatter(PercentFormatter(1))
         plt.tight_layout()
-        plt.savefig('revisit_intention.png')
+        # plt.savefig('revisit_intention.png')
         plt.show()
 
         print(revisit_dist)
