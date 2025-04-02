@@ -27,6 +27,7 @@ def mainA():
     GuestJourneyAnalysis_obj.run_guestjourneyanalysis()
 
     print("\nQuestion 4: Impact of Marketing Strategies on Guest Behaviour")
+    print("--- Data Preparation ---")
     q4_df_reviews = q4_prepare_reviews_data()
     q4_df_events = q4_prepare_events_data()
     USSPromoAnalysis_obj = USSPromoAnalysis(q4_df_reviews, q4_df_events)
