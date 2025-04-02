@@ -1,10 +1,10 @@
 version: "3.9"
 
 services:
-  main:
+  uss_main:
     build: .
     image: themepark_analysis_main
-    container_name: uss_main
+    container_name: uss_main_container
     volumes:
       - .:/app
     working_dir: /app
@@ -13,10 +13,10 @@ services:
       - PYTHONUNBUFFERED=1
       - PYTHONPATH=/app/src
 
-  subgroup_a:
+  uss_a:
     build: .
     image: themepark_analysis_a
-    container_name: uss_a
+    container_name: uss_a_container
     volumes:
       - .:/app
     working_dir: /app
@@ -25,10 +25,10 @@ services:
       - PYTHONUNBUFFERED=1
       - PYTHONPATH=/app/src
 
-  subgroup_b:
+  uss_b:
     build: .
     image: themepark_analysis_b
-    container_name: uss_b
+    container_name: uss_b_container
     volumes:
       - .:/app
     working_dir: /app
