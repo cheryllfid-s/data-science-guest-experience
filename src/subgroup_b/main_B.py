@@ -109,27 +109,43 @@ def mainB():
     print("\nQuestion 3: Resource Allocation")
     model_path = "../../models/q3_resource_allocation.pkl"
     data_path = "../../data/processed data/q3_resource_allocation.csv"
+    
     # Load the trained model
     model = load_model(model_path)
+    
     # Load new data
     try:
         new_data = pd.read_csv(data_path)
     except FileNotFoundError:
         print(f"Error: Data file not found at {data_path}")
         return
+    
     # Preprocess new data
     new_data_processed = preprocess_new_data(new_data)
     if new_data_processed is None:
         return
+    
     # Make predictions
     predicted_staff = predict_staff_count(model, new_data_processed)
     if predicted_staff is not None:
         # Add predicted staff count to the original data
         new_data["Predicted_Staff_Count"] = predicted_staff
         
-        # Print the dataset with the predicted staff count
-        print("Dataset with Predicted Staff Count:")
-        print(new_data.head())  # Print the first few rows of the dataset with predictions
+        # Select relevant columns for display
+        columns_to_display = ["Date", "Attraction", "Park", "Predicted_Staff_Count"]
+        if "Actual_Staff_Count" in new_data.columns:
+            columns_to_display.append("Actual_Staff_Count")
+            new_data["Difference"] = new_data["Predicted_Staff_Count"] - new_data["Actual_Staff_Count"]
+            columns_to_display.append("Difference")
+            
+            # Compute MAE (Mean Absolute Error)
+            mae = np.mean(np.abs(new_data["Difference"]))
+            print(f"Mean Absolute Error (MAE): {mae:.2f}")
+        
+        # Print the dataset with selected columns
+        print("Dataset with Predicted vs Actual Staff Count:")
+        print(new_data[columns_to_display].head())
+
     
     ##### QUESTION 4 #####
     def load_bert_model(model_path='../../models/bert_model.pt', tokenizer_path='../../models/bert_tokenizer.pkl'):
