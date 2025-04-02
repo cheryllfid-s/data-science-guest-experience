@@ -132,7 +132,7 @@ def mainB():
         print(new_data.head())  # Print the first few rows of the dataset with predictions
     
     ##### QUESTION 4 #####
-    def load_bert_model(model_path='bert_model.pt', tokenizer_path='../../models/bert_tokenizer.pkl'):
+    def load_bert_model(model_path='../../models/bert_model.pt', tokenizer_path='../../models/bert_tokenizer.pkl'):
         """
         load saved BERT model and tokenizer
 
