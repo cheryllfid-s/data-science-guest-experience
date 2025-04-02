@@ -17,7 +17,6 @@ def mainA():
     df_combined, df_labeled, scaled, pca = cleaning_q2()
     segmentation_analysis = guest_segmentation_model(df_combined, df_labeled, scaled, pca)
     summary, _ = segmentation_analysis.run_pipeline()
-    print("\n===== SILHOUETTE SCORES BY MODEL (Q2) =====")
     print("\n===== CLUSTER SUMMARY (Q2) =====")
     print(summary)
 
