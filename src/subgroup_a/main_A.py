@@ -1,9 +1,9 @@
-from datapreparation_A import *
-from analysis.q1_guest_satisfaction_analysis import GuestSatisfactionAnalysis
-from modeling.q2_guest_segmentation_model import guest_segmentation_model
-from analysis.q3_guest_journey_analysis import GuestJourneyAnalysis
-from analysis.q4_promo_events_analysis import USSPromoAnalysis
-from analysis.q5_external_factors_analysis import q5_analyse
+from subgroup_a.datapreparation_A import *
+from subgroup_a.analysis.q1_guest_satisfaction_analysis import GuestSatisfactionAnalysis
+from subgroup_a.modeling.q2_guest_segmentation_model import guest_segmentation_model
+from subgroup_a.analysis.q3_guest_journey_analysis import GuestJourneyAnalysis
+from subgroup_a.analysis.q4_promo_events_analysis import USSPromoAnalysis
+from subgroup_a.analysis.q5_external_factors_analysis import q5_analyse
 import warnings
 
 def mainA():
