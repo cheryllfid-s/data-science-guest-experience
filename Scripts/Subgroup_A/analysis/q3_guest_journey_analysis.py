@@ -348,7 +348,7 @@ class GuestJourneyAnalysis:  #Object to make it easier to put into main.py
         self.tivoli_g = self.tag_day_type(self.tivoli_g, covid_dates, busy_days, quiet_days)
         self.tivoli_g = self.label_express_pass_by_daytype(self.tivoli_g)
 
-        
+        print(/n"Looking at Wait Time Trends and Using Ride Correlation to Segment Guests")
         #Plotting line graphs and correlation heatmaps for each to view 
         self.plot_median_wait_times(self.tivoli_g, day_type="normal", title_suffix="Normal Days")
         self.plot_ride_correlation_heatmap(self.tivoli_g, day_type="normal", title_suffix="Normal Days")
@@ -363,13 +363,15 @@ class GuestJourneyAnalysis:  #Object to make it easier to put into main.py
         family_rides_busy, youth_rides_busy = self.analyze_ride_correlations(self.tivoli_g, day_type='busy', reference_ride="Scooby Doo")
         family_rides_quiet, youth_rides_quiet = self.analyze_ride_correlations(self.tivoli_g, day_type='quiet', reference_ride="Scooby Doo")
 
+        print(/n"Potential Movements between Rides")
         #Potential movements from and to rides
         fam_movements, youth_movements = self.analyze_guest_movement(self.tivoli_g, reference_ride='Scooby Doo', day_type="normal")
         fam_movements_busy, youth_movements_busy = self.analyze_guest_movement(self.tivoli_g, reference_ride='Scooby Doo', day_type="busy")
         fam_movements_quiet, youth_movements_quiet = self.analyze_guest_movement(self.tivoli_g, reference_ride='Scooby Doo', day_type="quiet")
         movement_covid, _ = self.analyze_guest_movement(self.tivoli_g, day_type="covid")
 
-        # Normal Days
+        print(/n"3. Guest Flow and Ride Transition Analysis Across Day Types")
+        print(/n"Normal Days")
         family_outflow = fam_movements.groupby('from')['count'].sum().sort_values(ascending=False)
         print("Family Rides - Highest Outgoing Traffic:")
         print(family_outflow)
@@ -384,7 +386,7 @@ class GuestJourneyAnalysis:  #Object to make it easier to put into main.py
         print(youth_movements.sort_values(by='count', ascending=False))
         self.markov_chain_analysis(youth_movements, "Youth Rides")
 
-        # Busy Days
+        print(/n"Busy Days")
         family_outflow_busy = fam_movements_busy.groupby('from')['count'].sum().sort_values(ascending=False)
         print("Family Rides during Busy Days - Highest Outgoing Traffic:")
         print(family_outflow_busy)
@@ -399,7 +401,7 @@ class GuestJourneyAnalysis:  #Object to make it easier to put into main.py
         print(youth_movements_busy.sort_values(by='count', ascending=False))
         self.markov_chain_analysis(youth_movements_busy, "Youth Rides during Busy Days")
 
-        # Quiet Days
+        print(/n"Quiet Days")
         family_outflow_quiet = fam_movements_quiet.groupby('from')['count'].sum().sort_values(ascending=False)
         print("Family Rides during Quiet Days - Highest Outgoing Traffic:")
         print(family_outflow_quiet)
@@ -414,7 +416,7 @@ class GuestJourneyAnalysis:  #Object to make it easier to put into main.py
         print(youth_movements_quiet.sort_values(by='count', ascending=False))
         self.markov_chain_analysis(youth_movements_quiet, "Youth Rides during Quiet Days")
 
-        # Covid Days
+        print(/n"COVID-19 Days")
         covid_outflow = movement_covid.groupby('from')['count'].sum().sort_values(ascending=False)
         print("Rides during Covid Days - Highest Outgoing Traffic:")
         print(covid_outflow)
@@ -423,6 +425,7 @@ class GuestJourneyAnalysis:  #Object to make it easier to put into main.py
         self.markov_chain_analysis(movement_covid, "Rides during Covid Days")
 
         # Identify top 3 rides
+        print(/n"Analysing Waiting Time Tolerance Across Day Types")
         top_rides = self.tivoli_g['ATTRACTION'].value_counts().nlargest(3).index.tolist()
         avg_wait_top3 = self.guest_avg_wait_top_rides(self.tivoli_g, top_rides)
         outflow_top3 = self.calculate_outflow_for_top_rides(self.tivoli_g, top_rides)
@@ -434,6 +437,7 @@ class GuestJourneyAnalysis:  #Object to make it easier to put into main.py
 
         #Sequence entropy to figure out how diverse a guest's ride path is depending on express v non express pass
         #Sequence length to figure out how many rides they tend to go on depending on express v non express pass
+        print(/n"Analysing Express Pass and Non Express Pass Paths")
         guest_summary['SEQ_ENTROPY'] = guest_summary['RIDE_SEQUENCE'].apply(self.compute_sequence_entropy)
         guest_summary['SEQ_LEN'] = guest_summary['RIDE_SEQUENCE'].apply(len)
 
