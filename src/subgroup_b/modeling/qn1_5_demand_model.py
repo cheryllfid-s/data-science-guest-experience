@@ -10,13 +10,13 @@ from sklearn.preprocessing import LabelEncoder
 from xgboost import XGBRegressor
 
 # set proper working directory if not yet, and change new_directory to wherever your repo is locally
-new_directory = r"C:\Users\parma\data-science-guest-experience\data-science-guest-experience\Scripts\Subgroup_B\modeling" 
-os.chdir(new_directory)
+# new_directory = r"C:\Users\parma\data-science-guest-experience\data-science-guest-experience\Scripts\Subgroup_B\modeling" 
+# os.chdir(new_directory)
 
 # Define relative paths
-df_combined_path = "../../../data/processed/survey_and_weather_processed_data.pkl"
-df_all_combined_path = "../../../data/processed/survey_iot_weather_processed_data.pkl"
-df_iot_path = "../../../data/processed/iot_data.pkl"
+df_combined_path = "../../../data/processed data/survey_and_weather_processed_data.pkl"
+df_all_combined_path = "../../../data/processed data/survey_iot_weather_processed_data.pkl"
+df_iot_path = "../../../data/processed data/iot_data.pkl"
 
 # Load the DataFrames
 df_combined_processed = pd.read_pickle(df_combined_path)
