@@ -196,22 +196,22 @@ class guest_segmentation_model:
             top[cluster_col] = top[cluster_col].map(cluster_map)
             return top
 
-        print("---Business Question 4, Part II: Recommend tailored marketing strategies for specific segments ---")
+        print("--- Question 4, Part II: Recommend tailored marketing strategies for specific segments ---")
         # (1) Awareness: 'How did you first hear about Universal Studios Singapore?'
         top_awareness = compute_top_response(self.df_labeled, 'cluster', 'awareness', cluster_name_map)
-        print("### Awareness: 'How did you first hear about Universal Studios Singapore?' ###")
+        print("(1) Awareness: 'How did you first hear about Universal Studios Singapore?'")
         print(top_awareness)
         print("\n")
 
         # (2) Response to ads: 'Have you seen any recent advertisements or promotions for USS?'
         top_response_to_ads = compute_top_response(self.df_labeled, 'cluster', 'response_to_ads', cluster_name_map)
-        print("### Response to ads: 'Have you seen any recent advertisements or promotions for USS?' ###")
+        print("(2) Response to ads: 'Have you seen any recent advertisements or promotions for USS?'")
         print(top_response_to_ads)
         print("\n")
 
         # (3) Preferred promotion: 'What type of promotions or discounts would encourage you to visit USS?'
         top_preferred_promotion = compute_top_response(self.df_labeled, 'cluster', 'preferred_promotion', cluster_name_map)
-        print("### Preferred promotion: 'What type of promotions or discounts would encourage you to visit USS?' ###")
+        print("(3) Preferred promotion: 'What type of promotions or discounts would encourage you to visit USS?'")
         print(top_preferred_promotion)
 
     def run_marketing_analysis(self):
