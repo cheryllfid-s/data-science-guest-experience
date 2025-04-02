@@ -34,7 +34,7 @@ def mainA():
     USSPromoAnalysis_obj.run_promo_events_analysis()
     segmentation_analysis.run_marketing_analysis()
 
-    print("Question 5: External Factors on Guest Satisfaction")
+    print("\nQuestion 5: External Factors on Guest Satisfaction")
     q5_df_reviews = q5_clean_data()
     q5_analyse(q5_df_reviews)
 
