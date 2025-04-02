@@ -27,15 +27,32 @@ This command builds and starts the docker container
 ```bash
 docker-compose up --build
 ```
-### 3. Stop the Docker Container
+
+### 3. Run the Docker and Choose an Entry Point
+You can choose which analysis module to run using `docker-compose`.
+
+#### Available options:
+- `main.py`: Runs all components
+- `main_A.py`: Runs Guest Journey Analysis and Segmentation
+- `main_B.py`: Runs Experience Optimization and Predictive Modeling
+
+#### To run `main.py`:
+```bash
+docker-compose run main
+```
+
+#### To run `main_A.py`:
+```bash
+docker-compose run main_a
+```
+
+#### To run `main_B.py`:
+```bash
+docker-compose run main_b
+```
+
+### 4. Stop the Docker Container
 Once you're done, you can stop and remove the container with the following command
 ```bash
 docker-compose down
 ```
-
-## Running the Project
-The entry point of this project is:
-```bash
-Scripts/main.py
-```
-
