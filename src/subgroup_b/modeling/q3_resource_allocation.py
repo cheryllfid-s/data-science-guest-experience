@@ -84,7 +84,7 @@ dfa.drop(columns=["total_sales", "admission_sales", "restaurant_sales", "total_v
 df = dfa.drop(columns=["WORK_DATE"])
 
 # Save the cleaned dataset for further analysis.
-df.to_csv('q3_staff_allocation.csv', index=False)
+df.to_csv('../../../data/processed data/q3_staff_allocation.csv', index=False)
 
 # Encode categorical variables (ATTRACTION and PARK) using one-hot encoding.
 encoder = OneHotEncoder(drop="first", sparse_output=False)
