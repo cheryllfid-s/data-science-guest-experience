@@ -1,4 +1,4 @@
-from subgroup_a.datapreparation_A import *
+from datapreparation_A import *
 from analysis.q1_guest_satisfaction_analysis import GuestSatisfactionAnalysis
 from modeling.q2_guest_segmentation_model import guest_segmentation_model
 from analysis.q3_guest_journey_analysis import GuestJourneyAnalysis
