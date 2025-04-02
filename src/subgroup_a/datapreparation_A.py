@@ -185,7 +185,7 @@ def q4_analyse_sentiment(df, text_column):
 
 def q4_prepare_reviews_data():
     # (1) Download and import universal_studio_branches.csv
-    print("\nImporting reviews data...")
+    print("Importing reviews data...")
     kaggle_download_path = kagglehub.dataset_download("dwiknrd/reviewuniversalstudio")
     print("Path to dataset:", kaggle_download_path)
 
