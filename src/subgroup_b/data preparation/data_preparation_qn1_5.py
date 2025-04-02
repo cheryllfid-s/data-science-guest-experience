@@ -12,11 +12,9 @@ import pickle
 
 
 import os
-# Change working directory
-os.chdir(r"C:\Users\parma\data-science-guest-experience\data-science-guest-experience\Scripts\Subgroup_B\data preparation")
-
-# Verify the current working directory
-print("Current Working Directory:", os.getcwd())
+# Change working directory accordingly if not yet done 
+# os.chdir(r"C:\Users\parma\data-science-guest-experience\data-science-guest-experience\Scripts\Subgroup_B\data preparation")
+# print("Current Working Directory:", os.getcwd())
 
 # Loading datasets
 ## Load survey data
@@ -32,7 +30,7 @@ Purpose:
 # Returns:
 # pd.DataFrame: A cleaned and processed DataFrame ready for further analysis or modeling. The resulting DataFrame includes columns like Favorite_Attraction, Avg_Wait_Time, Satisfaction_Score, Age_Group, Employment_Status, Visit_Quarter, and others, with appropriate transformations applied.
 """
-def load_survey_data(file_path="../../../data/raw/survey.csv"):
+def load_survey_data(file_path="../../../data/raw data/survey.csv"):
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"{file_path} not found. Please provide the survey dataset.")
     
@@ -131,7 +129,7 @@ The function handles the following preprocessing steps:
 - Expands the "Attraction_Times" data into individual records for each attraction visited.
 
 Arguments:
-file_path (str): Path to the synthetic IoT CSV file. Default is "../../../data/raw/synthetic_iot_data_v3.csv".
+file_path (str): Path to the synthetic IoT CSV file. Default is "../../../data/raw data/synthetic_iot_data_v3.csv".
 
 Returns:
 pd.DataFrame: A cleaned and enriched DataFrame that includes detailed information about the visitor's attractions, like:
@@ -152,7 +150,7 @@ pd.DataFrame: A cleaned and enriched DataFrame that includes detailed informatio
 - Is_Popular_Attraction: Flag indicating whether the visited attraction is considered "popular." 
 """
 
-def load_iot_data(file_path="../../../data/raw/synthetic_iot_data_v3.csv"):
+def load_iot_data(file_path="../../../data/raw data/synthetic_iot_data_v3.csv"):
     if not os.path.exists(file_path):
         print(f"Warning: IoT data file {file_path} not found. Skipping IoT data integration.")
         return None
@@ -248,7 +246,7 @@ def encode_iot_data(df_iot):
 df_iot_encoded = encode_iot_data(df_iot)
 
 # Save the data to load the model in the main file later
-save_path = "../../../data/processed/iot_data.pkl"
+save_path = "../../../data/processed data/iot_data.pkl"
 os.makedirs(os.path.dirname(save_path), exist_ok=True)
 
 # Save dataframe as a pickle file
@@ -267,7 +265,7 @@ Purpose:
 - Outputs a clean dataset with average weather values per season.
 """
 
-def fetch_weather_data(file_path="../../../data/raw/singapore_seasonal_weather.csv"):
+def fetch_weather_data(file_path="../../../data/raw data/singapore_seasonal_weather.csv"):
     if os.path.exists(file_path):
         print(f"Loaded existing weather data from: {file_path}")
         return pd.read_csv(file_path)
@@ -338,7 +336,7 @@ def fetch_weather_data(file_path="../../../data/raw/singapore_seasonal_weather.c
     return df_seasonal
 
 # Retrieve weather data
-df_weather = fetch_weather_data("../../../data/raw/singapore_seasonal_weather.csv")
+df_weather = fetch_weather_data("../../../data/raw data/singapore_seasonal_weather.csv")
 print(df_weather.head())
 
 # Merging datasets
@@ -488,8 +486,8 @@ df_combined_processed, encoders_2 = process_data_for_model(df_combined, iot_data
 print(df_combined_processed.head())
 
 # Saving data using pickle to use for loading model in main file later
-survey_weather_path = "../../../data/processed/survey_and_weather_processed_data.pkl"
-survey_iot_weather_path = "../../../data/processed/survey_iot_weather_processed_data.pkl"
+survey_weather_path = "../../../data/processed data/survey_and_weather_processed_data.pkl"
+survey_iot_weather_path = "../../../data/processed data/survey_iot_weather_processed_data.pkl"
 
 # Save dataframes as pickle files
 df_combined_processed.to_pickle(survey_weather_path)
