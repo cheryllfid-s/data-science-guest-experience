@@ -38,17 +38,17 @@ You can choose which analysis module to run using `docker-compose`.
 
 #### To run `main.py`:
 ```bash
-docker-compose run main
+docker-compose run uss_main
 ```
 
 #### To run `main_A.py`:
 ```bash
-docker-compose run main_a
+docker-compose run uss_a
 ```
 
 #### To run `main_B.py`:
 ```bash
-docker-compose run main_b
+docker-compose run uss_b
 ```
 
 ### 4. Stop the Docker Container
