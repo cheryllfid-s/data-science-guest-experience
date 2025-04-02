@@ -1,6 +1,5 @@
 kagglehub
 networkx
-pyqt5
 pandas
 seaborn
 matplotlib 
