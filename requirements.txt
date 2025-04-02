@@ -10,6 +10,7 @@ scipy
 textblob
 torch
 transformers
+huggingface_hub[hf_xet]
 nltk
 tqdm
 shap
