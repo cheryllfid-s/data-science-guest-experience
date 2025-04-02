@@ -33,7 +33,7 @@ def predict_staff_count(model, new_data):
     if model is None or new_data is None:
         print("Error: Model or preprocessed data is missing. Cannot make predictions.")
         return None
-    return np.ceil(model.predict(new_data))
+    return np.ceil(model.predict(new_data)).astype(int)
 
 def load_model(model_path):
     """Load the trained model from a pickle file."""
@@ -132,18 +132,9 @@ def mainB():
         new_data["Predicted_Staff_Count"] = predicted_staff
         
         # Select relevant columns for display
-        columns_to_display = ["Date", "Attraction", "Park", "Predicted_Staff_Count"]
-        if "Actual_Staff_Count" in new_data.columns:
-            columns_to_display.append("Actual_Staff_Count")
-            new_data["Difference"] = new_data["Predicted_Staff_Count"] - new_data["Actual_Staff_Count"]
-            columns_to_display.append("Difference")
-            
-            # Compute MAE (Mean Absolute Error)
-            mae = np.mean(np.abs(new_data["Difference"]))
-            print(f"Mean Absolute Error (MAE): {mae:.2f}")
-        
+        columns_to_display = ["year", "month", "ATTRACTION", "PARK", "Predicted_Staff_Count"]
         # Print the dataset with selected columns
-        print("Dataset with Predicted vs Actual Staff Count:")
+        print("Dataset with Predicted Staff Count:")
         print(new_data[columns_to_display].head())
 
     
