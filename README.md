@@ -22,10 +22,10 @@ Clone the GitHub repository and navigate into the project folder
 git clone https://github.com/darderrdur17/data-science-guest-experience.git
 cd data-science-guest-experience
 ```
-### 2. Build and Start the Docker Container
+### 2. Build the Docker Container
 This command builds and starts the docker container
 ```bash
-docker-compose up --build
+docker-compose build
 ```
 
 ### 3. Run the Docker and Choose an Entry Point
@@ -38,17 +38,17 @@ You can choose which analysis module to run using `docker-compose`.
 
 #### To run `main.py`:
 ```bash
-docker-compose run uss_main
+docker-compose up uss_main
 ```
 
 #### To run `main_A.py`:
 ```bash
-docker-compose run uss_a
+docker-compose up uss_a
 ```
 
 #### To run `main_B.py`:
 ```bash
-docker-compose run uss_b
+docker-compose up uss_b
 ```
 
 ### 4. Stop the Docker Container
