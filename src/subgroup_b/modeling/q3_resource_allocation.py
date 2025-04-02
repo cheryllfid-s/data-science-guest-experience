@@ -1,3 +1,14 @@
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.preprocessing import OneHotEncoder
+import pickle
+import matplotlib.pyplot as plt
+import seaborn as sns
+import kagglehub
+
 # Load and preprocess the staff dataset, which includes visitor counts, staff numbers, and sales data.
 file_path = '../../../data/raw data/Staff.xls'
 staff = pd.read_excel(file_path, header=6, sheet_name='月・実数')
