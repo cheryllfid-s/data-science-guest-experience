@@ -20,10 +20,10 @@ def mainA():
     print("\n===== SILHOUETTE SCORES BY MODEL (Q2) =====")
     print("\n===== CLUSTER SUMMARY (Q2) =====")
     print(summary)
-    
+
+    print("Question 3: Guest Journey Patterns")
     tivoli_g, attendance_df, covid, negative_att = prepare_tivoli_data()
     GuestJourneyAnalysis_obj = GuestJourneyAnalysis(tivoli_g, attendance_df, covid, negative_att)
-    print("Question 3: Guest Journey Patterns")
     GuestJourneyAnalysis_obj.run_guestjourneyanalysis()
 
     print("Question 4: Impact of Marketing Strategies on Guest Behaviour")
