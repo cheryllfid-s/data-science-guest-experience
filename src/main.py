@@ -1,5 +1,5 @@
-from Subgroup_A.main_A import mainA
-from Subgroup_B.main_B import mainB
+from subgroup_a.main_A import mainA
+from subgroup_b.main_B import mainB
 
 def run_all():
     print("\nRunning Subgroup A Analysis")
