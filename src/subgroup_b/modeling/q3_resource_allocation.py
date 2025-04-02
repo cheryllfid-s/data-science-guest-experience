@@ -121,7 +121,7 @@ def evaluate(y_true, y_pred, target_name):
 evaluate(y_staff_test, y_pred, "Staff Count")
 
 # Save the trained model for future use.
-with open("q3_resource_allocation.pkl", "wb") as model_file:
+with open("../../../models/q3_resource_allocation.pkl", "wb") as model_file:
     pickle.dump(model, model_file)
 print("Model saved.")
 
