@@ -136,6 +136,7 @@ def mainB():
         # Print the dataset with selected columns
         print("Dataset with Predicted Staff Count:")
         print(new_data[columns_to_display].head())
+        print("")
 
     
     ##### QUESTION 4 #####
