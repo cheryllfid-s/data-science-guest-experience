@@ -179,7 +179,7 @@ def metrics_analysis(df_change_data):
         else:
             print(f"No significant change in {metric_name} before vs. during the event.\n")
 
-
+## ----- Define class to run in main ----- ##
 class USSPromoAnalysis:
     """
     Analyzes the impact of promotional events on guest satisfaction at **Universal Studios Singapore (USS)**
@@ -217,7 +217,7 @@ class USSPromoAnalysis:
         self.df_reviews = df_reviews
         self.df_events = df_events
 
-    # --- Filter for reviews written during event period --- #
+    
     def filter_reviews_during_events(self, branch='Universal Studios Singapore'):
         """
         Filters reviews written DURING each event period at the specified branch.
@@ -245,7 +245,7 @@ class USSPromoAnalysis:
             event_reviews_dict[event_key] = filtered_reviews
         return event_reviews_dict
 
-    # --- Filter for reviews written before event period --- #
+
     def filter_reviews_before_events(self, branch='Universal Studios Singapore'):
         """
         Filters reviews written BEFORE each event period at the specified branch.
@@ -287,7 +287,7 @@ class USSPromoAnalysis:
          4. Visualizes the changes in review metrics.
 
          """
-    
+        print("--- Question 4, Part I: Analyze past campaign data to study changes in guest satisfaction ---")
         # (1) Filter for reviews written before and during events
         reviews_during_event = self.filter_reviews_during_events()
         reviews_before_event = self.filter_reviews_before_events()
