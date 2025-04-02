@@ -3,6 +3,7 @@ version: "3.9"
 services:
   main:
     build: .
+    image: themepark_analysis_main
     container_name: uss_main
     volumes:
       - .:/app
@@ -13,6 +14,7 @@ services:
 
   subgroup_a:
     build: .
+    image: themepark_analysis_a
     container_name: uss_a
     volumes:
       - .:/app
@@ -23,6 +25,7 @@ services:
 
   subgroup_b:
     build: .
+    image: themepark_analysis_b
     container_name: uss_b
     volumes:
       - .:/app
