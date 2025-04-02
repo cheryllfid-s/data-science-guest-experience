@@ -54,7 +54,7 @@ def mainB():
         model_1 = pickle.load(model_file)
 
     # load the preprocessed survey & weather dataset
-    df_combined_processed = pd.read_pickle("../../data/processed/survey_and_weather_processed_data.pkl")
+    df_combined_processed = pd.read_pickle("../../data/processed data/survey_and_weather_processed_data.pkl")
 
     # define feature columns
     features = [
@@ -108,7 +108,7 @@ def mainB():
     ##### QUESTION 3 #####
     print("\nQuestion 3: Resource Allocation")
     model_path = "../../models/q3_resource_allocation.pkl"
-    data_path = "../../data/processed/q3_resource_allocation.csv"
+    data_path = "../../data/processed data/q3_resource_allocation.csv"
     # Load the trained model
     model = load_model(model_path)
     # Load new data
@@ -204,7 +204,7 @@ def mainB():
     # If there is actual complaint data, load and predict
     try:
         # Load the complaint data (example)
-        complaints_df = pd.read_csv("../../data/processed/customer_complaints.csv")
+        complaints_df = pd.read_csv("../../data/processed data/customer_complaints.csv")
         print("Customer Complaint Data Analysis:")
         
         # Add prediction results to the dataframe
@@ -230,7 +230,7 @@ def mainB():
     ##### QUESTION 5 #####
     # Demand prediction model that predicts average wait time based on IoT data
     # Load dataset
-    df_iot = pd.read_pickle("../../data/processed/iot_data.pkl")
+    df_iot = pd.read_pickle("../../data/processed data/iot_data.pkl")
 
     # Define feature columns
     features_model_3 = [
