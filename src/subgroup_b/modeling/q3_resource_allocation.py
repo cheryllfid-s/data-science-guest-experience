@@ -1,5 +1,5 @@
 # Load and preprocess the staff dataset, which includes visitor counts, staff numbers, and sales data.
-file_path = '"../../data/raw/Staff.xls'
+file_path = '../../../data/raw data/Staff.xls'
 staff = pd.read_excel(file_path, header=6, sheet_name='月・実数')
 
 # Remove unnecessary rows and columns to clean the dataset.
@@ -87,7 +87,7 @@ df = dfa.drop(columns=["WORK_DATE"])
 df.to_csv('q3_staff_allocation.csv', index=False)
 
 # Encode categorical variables (ATTRACTION and PARK) using one-hot encoding.
-encoder = OneHotEncoder(drop="first", sparse=False)
+encoder = OneHotEncoder(drop="first", sparse_output=False)
 encoded_cats = encoder.fit_transform(df[["ATTRACTION", "PARK"]])
 df = df.drop(columns=["ATTRACTION", "PARK"]).join(pd.DataFrame(encoded_cats, columns=encoder.get_feature_names_out()))
 
@@ -123,7 +123,7 @@ evaluate(y_staff_test, y_pred, "Staff Count")
 # Save the trained model for future use.
 with open("q3_resource_allocation.pkl", "wb") as model_file:
     pickle.dump(model, model_file)
-print("Model saved as 'staff_count_model.pkl'.")
+print("Model saved.")
 
 # Visualization: Uncomment to plot actual vs predicted staff count.
 # plt.figure(figsize=(10, 5))
