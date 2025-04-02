@@ -370,7 +370,7 @@ class GuestJourneyAnalysis:  #Object to make it easier to put into main.py
         fam_movements_quiet, youth_movements_quiet = self.analyze_guest_movement(self.tivoli_g, reference_ride='Scooby Doo', day_type="quiet")
         movement_covid, _ = self.analyze_guest_movement(self.tivoli_g, day_type="covid")
 
-        print(/n"3. Guest Flow and Ride Transition Analysis Across Day Types")
+        print(/n"Guest Flow and Ride Transition Analysis Across Day Types")
         print(/n"Normal Days")
         family_outflow = fam_movements.groupby('from')['count'].sum().sort_values(ascending=False)
         print("Family Rides - Highest Outgoing Traffic:")
