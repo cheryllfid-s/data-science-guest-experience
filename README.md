@@ -56,3 +56,60 @@ Once you're done, you can stop and remove the container with the following comma
 ```bash
 docker-compose down
 ```
+
+## Running the API
+Swagger UI: http://127.0.0.1:8000/docs
+
+API Endpoints
+1. /models - Get Available Models
+Method: GET
+Description: Returns a list of available models and their expected features.
+
+2. /predict/{model_name} - Make Prediction with a Model
+Method: POST
+Path Parameter:
+- model_name: The name of the model to use for prediction (e.g., demand_model_iot.pkl or demand_model_survey_weather.pkl).
+Request Body:
+- The input should be a JSON object with feature names and values based on the selected model.
+Response:
+- A JSON response with the prediction result.
+
+Error Handling
+400 - Bad Request: The provided features do not match the expected format or are of incorrect types.
+404 - Not Found: The specified model was not found in the system.
+500 - Internal Server Error: An error occurred while processing the prediction.
+
+Sample inputs for various models:
+1. demand_model_iot.pkl: 
+{
+  "Visitor_ID": 12345,
+  "Loyalty_Member": 1,
+  "Age": 25,
+  "Gender": 1,
+  "Theme_Zone_Visited": 2,
+  "Attraction": 4,
+  "Check_In": 10.5,
+  "Queue_Time": 5.0,
+  "Check_Out": 15.0,
+  "Restaurant_Spending": 20.5,
+  "Merchandise_Spending": 30.0,
+  "Total_Spending": 50.5,
+  "Day_of_Week": 2,
+  "Is_Weekend": false,
+  "Is_Popular_Attraction": true
+}
+2. demand_model_survey_weather.pkl:
+{
+  "Favorite_Attraction": 3,
+  "Satisfaction_Score": 4.5,
+  "Age_Group": 2,
+  "Employment_Status": 1,
+  "Visit_Quarter": 1,
+  "Event": 0,
+  "Attraction_Reason": 1,
+  "Season": 3,
+  "rainfall": 0.0,
+  "air_temperature": 25.0,
+  "relative_humidity": 60.0,
+  "wind_speed": 5.0
+}
