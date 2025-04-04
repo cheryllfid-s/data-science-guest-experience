@@ -22,3 +22,6 @@ sdv
 fastapi
 uvicorn
 pydantic
+streamlit
+plotly-express
+altair
