@@ -58,6 +58,9 @@ docker-compose down
 ```
 
 ## Running the API
+Set up virtual environment by typing python3 -m venv venv into cmd.
+Install dependencies: pip install -r requirements.txt
+Set working directory to src folder, and run uvicorn api:app --reload 
 Swagger UI: http://127.0.0.1:8000/docs
 
 API Endpoints
