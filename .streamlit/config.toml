@@ -1,9 +1,9 @@
 [theme]
 primaryColor = 
-backgroundColor = 
-secondaryBackgroundColor = 
-textColor = 
-font = "proxia nova"
+backgroundColor = "#fcf9f9" #neutral bg -- might change later
+secondaryBackgroundColor = "#cc4949" #red-ish ? themepark vibes
+textColor = "#181818" #dark DARK grey 
+font = "proxima nova" #not sure if they'll have this font but let's see
 
 [server]
 enableStaticServing = true
