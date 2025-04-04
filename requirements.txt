@@ -19,3 +19,6 @@ simpy
 faker
 xgboost
 sdv
+fastapi
+uvicorn
+pydantic
