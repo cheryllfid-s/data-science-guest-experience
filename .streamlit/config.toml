@@ -1,0 +1,9 @@
+[theme]
+primaryColor = 
+backgroundColor = 
+secondaryBackgroundColor = 
+textColor = 
+font = "proxia nova"
+
+[server]
+enableStaticServing = true
