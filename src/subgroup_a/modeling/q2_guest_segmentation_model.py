@@ -196,14 +196,37 @@ class guest_segmentation_model:
             top[cluster_col] = top[cluster_col].map(cluster_map)
             return top
 
+        def plot_responses(df_labeled, cluster_col, response_col, cluster_map, title, legend):
+            grouped = df_labeled.groupby([cluster_col, response_col]).size().reset_index(name='count')
+            grouped['Segment'] = grouped[cluster_col].map(cluster_name_map)
+
+            plt.figure(figsize=(10, 6))
+            sns.barplot(data=grouped, x='Segment', y='count', hue=response_col, palette='Set2')
+
+            plt.title(title)
+            plt.ylabel('Number of Mentions')
+            plt.xticks(rotation=15)
+            plt.legend(title=legend, bbox_to_anchor=(1.05, 1), loc='upper left')
+            plt.tight_layout()
+            plt.show()
+
         print("--- Question 4, Part II: Recommend tailored marketing strategies for specific segments ---")
         # (1) Awareness: 'How did you first hear about Universal Studios Singapore?'
+        df_labeled['awareness'] = df_labeled['awareness'].replace('Local Singapore news', 'News')
+        plot_responses(df_labeled, 'cluster', 'awareness',
+                       cluster_name_map, 'Awareness Source by Guest Segment',
+                       'Awareness Source')
         top_awareness = compute_top_response(self.df_labeled, 'cluster', 'awareness', cluster_name_map)
         print("(1) Awareness: 'How did you first hear about Universal Studios Singapore?'")
         print(top_awareness)
         print("\n")
 
         # (2) Response to ads: 'Have you seen any recent advertisements or promotions for USS?'
+        df_labeled['response_to_ads'] = df_labeled['response_to_ads'].replace('Yes and they influenced my decision',
+                                                                              'Yes and they influenced my decision to visit')
+        plot_responses(df_labeled, 'cluster', 'response_to_ads',
+                       cluster_name_map, 'Response to Ads by Guest Segment',
+                       'Response to Ads')
         top_response_to_ads = compute_top_response(self.df_labeled, 'cluster', 'response_to_ads', cluster_name_map)
         print("(2) Response to ads: 'Have you seen any recent advertisements or promotions for USS?'")
         print(top_response_to_ads)
