@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import PlainTextResponse
 import pickle
 import numpy as np
 import os
@@ -182,3 +183,38 @@ def segment_guest(data: dict):
         raise HTTPException(status_code=500, detail=f"Error during guest segmentation: {e}")
     
     return {"segment_summary": result[0].to_dict(), "updated_data": result[1].to_dict()}
+
+@app.get("/q2_layout_results", response_class=PlainTextResponse)
+def get_q2_layout_results():
+    model_name = "q2_optimization_layout.pkl"
+    
+    if model_name not in models:
+        raise HTTPException(status_code=404, detail=f"Model '{model_name}' not loaded")
+
+    results = models[model_name]
+
+    try:
+        def format_section(title, avg_waits, total_wait):
+            lines = [f"{title}"]
+            for ride, wait in avg_waits.items():
+                lines.append(f"{ride}: {wait:.2f} min")
+            lines.append(f"Average Wait Time per Guest: {total_wait:.2f} min")
+            return "\n".join(lines)
+
+        section1 = format_section(
+            "Current USS Layout (Two Entrances):",
+            results["avg_wait_times_1_multi"],
+            results["avg_wait_per_guest_1"]
+        )
+
+        section2 = format_section(
+            "Modified USS Layout (Swapped Transformers and CYLON, we want to use only the left entrance):",
+            results["avg_wait_times_2_multi"],
+            results["avg_wait_per_guest_2"]
+        )
+
+        full_output = f"{section1}\n\n{section2}"
+        return full_output
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to format layout results: {e}")
