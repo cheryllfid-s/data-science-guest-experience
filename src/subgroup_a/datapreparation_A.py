@@ -184,13 +184,11 @@ def q4_analyse_sentiment(df, text_column):
 
 
 def q4_prepare_reviews_data():
-    # (1) Download and import universal_studio_branches.csv
+    # (1) Import universal_studio_branches.csv
     print("Importing reviews data...")
-    kaggle_download_path = kagglehub.dataset_download("dwiknrd/reviewuniversalstudio")
-    print("Path to dataset:", kaggle_download_path)
-
-    reviews_path = os.path.join(kaggle_download_path, "universal_studio_branches.csv")
-    df_reviews = pd.read_csv(reviews_path)
+    script_dir = Path(__file__).resolve().parent.parent    
+    csv_path = script_dir.parent / 'data' / 'raw data' / 'universal_studio_branches.csv'
+    df_reviews = pd.read_csv(csv_path)
 
     # (2) Check for missing values
     print("Cleaning reviews data...")
@@ -220,9 +218,9 @@ def q4_prepare_reviews_data():
 def q4_prepare_events_data():
     # (1) Import uss_promo_events.csv
     print("Importing promo events data...")
-    events_path = os.path.join("../../data/raw data/uss_promo_events.csv")
-    print("Path to dataset:", events_path)
-    df_events = pd.read_csv(events_path)
+    script_dir = Path(__file__).resolve().parent.parent    
+    csv_path = script_dir.parent / 'data' / 'raw data' / 'uss_promo_events.csv'
+    df_events = pd.read_csv(csv_path)
 
     # (2) Check for missing values
     print("Cleaning events data...")
