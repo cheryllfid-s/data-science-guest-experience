@@ -10,7 +10,7 @@ from subgroup_a.datapreparation_A import *
 from subgroup_a.analysis.q1_guest_satisfaction_analysis import *
 from subgroup_a.analysis.q3_guest_journey_analysis import GuestJourneyAnalysis
 from subgroup_a.analysis.q4_promo_events_analysis import *
-from subgroup_a.analysis.q5_external_factors_analysis import q5_analyse
+from subgroup_a.analysis.q5_external_factors_analysis import *
 from subgroup_a.modeling.q2_guest_segmentation_model import *
 import warnings
 warnings.filterwarnings('ignore')
