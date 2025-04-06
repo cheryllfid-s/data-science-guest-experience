@@ -206,7 +206,7 @@ class guest_segmentation_model:
             3: 'Premium Spenders'
         }
 
-        def plot_responses(df_labeled, cluster_col, response_col, cluster_map, legend):
+        def plot_responses(df_labeled, cluster_col, response_col, cluster_map, plt_title, legend):
             grouped = df_labeled.groupby([cluster_col, response_col]).size().reset_index(name='count')
             grouped['Segment'] = grouped[cluster_col].map(cluster_map)
 
@@ -217,6 +217,7 @@ class guest_segmentation_model:
                 xOffset=alt.XOffset(f'{response_col}:N'),
                 tooltip=['Segment', response_col, 'count']
             ).properties(
+                title = plt_title,
                 width=600,
                 height=400
             ).configure_axisX(
@@ -225,23 +226,26 @@ class guest_segmentation_model:
             )
             return chart
 
+        st.subheader("Key Marketing Insights by Guest Segments")
+        col1, col2 = st.columns(2)
+
         # (1) Plot awareness sources by guest segment
-        st.subheader("Awareness Source by Guest Segment")
-        df_labeled['awareness'] = df_labeled['awareness'].replace({'Local Singapore news': 'News',
-                                                                   'Travel agencies/tour packages': 'Tour packages'})  # Shorten/refactor names
-        awareness_chart = plot_responses(self.df_labeled, 'cluster', 'awareness',
-                                         cluster_name_map, 'Awareness Source')
-        st.altair_chart(awareness_chart, use_container_width=True)
+        with col1:
+            df_labeled['awareness'] = df_labeled['awareness'].replace({'Local Singapore news': 'News',
+                                                                       'Travel agencies/tour packages': 'Tour packages'})  # Shorten/refactor names
+            awareness_chart = plot_responses(self.df_labeled, 'cluster', 'awareness',
+                                             cluster_name_map, 'Source of Awareness', 'Source')
+            st.altair_chart(awareness_chart, use_container_width=True)
 
         # (2) Plot response to ads by guest segment
-        st.subheader("Response to Ads by Guest Segment")
-        df_labeled['response_to_ads'] = df_labeled['response_to_ads'].replace({
-            'Yes and they influenced my decision': 'Yes, influenced my decision',
-            'Yes and they influenced my decision to visit': 'Yes, influenced my decision',
-            'Yes, but they did not influence my decision': 'Yes, but no influence'})  # Shorten/refactor names
-        ads_chart = plot_responses(self.df_labeled, 'cluster', 'response_to_ads',
-                                   cluster_name_map, 'Response to Ads')
-        st.altair_chart(ads_chart, use_container_width=True)
+        with col2:
+            df_labeled['response_to_ads'] = df_labeled['response_to_ads'].replace({
+                'Yes and they influenced my decision': 'Yes, influenced my decision',
+                'Yes and they influenced my decision to visit': 'Yes, influenced my decision',
+                'Yes, but they did not influence my decision': 'Yes, but no influence'})  # Shorten/refactor names
+            ads_chart = plot_responses(self.df_labeled, 'cluster', 'response_to_ads',
+                                       cluster_name_map, 'Response to Ads', 'Response to Ads')
+            st.altair_chart(ads_chart, use_container_width=True)
         
     def analyze_marketing_strategies(self, df_labeled):
         """
@@ -259,37 +263,14 @@ class guest_segmentation_model:
             top[cluster_col] = top[cluster_col].map(cluster_map)
             return top
 
-        def plot_responses(df_labeled, cluster_col, response_col, cluster_map, title, legend):
-            grouped = df_labeled.groupby([cluster_col, response_col]).size().reset_index(name='count')
-            grouped['Segment'] = grouped[cluster_col].map(cluster_name_map)
-
-            plt.figure(figsize=(10, 6))
-            sns.barplot(data=grouped, x='Segment', y='count', hue=response_col, palette='Set2')
-
-            plt.title(title)
-            plt.ylabel('Number of Mentions')
-            plt.xticks(rotation=15)
-            plt.legend(title=legend, bbox_to_anchor=(1.05, 1), loc='upper left')
-            plt.tight_layout()
-            plt.show()
-
         print("--- Question 4, Part II: Recommend tailored marketing strategies for specific segments ---")
         # (1) Awareness: 'How did you first hear about Universal Studios Singapore?'
-        df_labeled['awareness'] = df_labeled['awareness'].replace('Local Singapore news', 'News')
-        plot_responses(df_labeled, 'cluster', 'awareness',
-                       cluster_name_map, 'Awareness Source by Guest Segment',
-                       'Awareness Source')
         top_awareness = compute_top_response(self.df_labeled, 'cluster', 'awareness', cluster_name_map)
         print("(1) Awareness: 'How did you first hear about Universal Studios Singapore?'")
         print(top_awareness)
         print("\n")
 
         # (2) Response to ads: 'Have you seen any recent advertisements or promotions for USS?'
-        df_labeled['response_to_ads'] = df_labeled['response_to_ads'].replace('Yes and they influenced my decision',
-                                                                              'Yes and they influenced my decision to visit')
-        plot_responses(df_labeled, 'cluster', 'response_to_ads',
-                       cluster_name_map, 'Response to Ads by Guest Segment',
-                       'Response to Ads')
         top_response_to_ads = compute_top_response(self.df_labeled, 'cluster', 'response_to_ads', cluster_name_map)
         print("(2) Response to ads: 'Have you seen any recent advertisements or promotions for USS?'")
         print(top_response_to_ads)
