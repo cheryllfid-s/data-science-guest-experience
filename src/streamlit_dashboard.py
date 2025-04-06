@@ -210,7 +210,12 @@ def render_guest_journey_analysis():
 render_guest_journey_analysis()
 
 # QUESTION 4 ###########
+# Load data
+df_combined, df_labeled, scaled, pca = cleaning_q2()
 
+# Run segmentation model and visualize data
+segmentation_analysis = guest_segmentation_model(df_combined, df_labeled, scaled, pca)
+segmentation_analysis.visualize_marketing_analysis()
 
 
 # QUESTION 5 ###########
