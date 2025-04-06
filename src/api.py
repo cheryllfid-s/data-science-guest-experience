@@ -141,6 +141,16 @@ class ResourceAllocationRequest(BaseModel):
     adm_sale: float
     rest_sale: float
 
+class GuestSegmentationRequest(BaseModel):
+    age_group: str
+    group_type: str
+    visit_purpose: str
+    express_pass: str
+    experience_rating: float
+    awareness: str
+    response_to_ads: str
+    preferred_promotion: str
+
 class ComplaintTextRequest(BaseModel):
     complaint_text: str = Field(..., description="customer complaint text")
 
@@ -215,20 +225,44 @@ def predict(model_name: str, features_request: dict):
     return {"model": model_name, "prediction": prediction.tolist()}
 
 @app.post("/segment")
-def segment_guest(data: dict):
-    """Perform guest segmentation."""
-    
-    # Ensure guest segmentation model is initialized
-    if segmentation_model.df_combined is None:
-        raise HTTPException(status_code=500, detail="Guest segmentation model is not initialized with data")
-    
+def segment_guest(data: GuestSegmentationRequest):
+    """Perform guest segmentation using user input features."""
+    if segmentation_model.df_labeled is None:
+        raise HTTPException(status_code=500, detail="Guest segmentation model is not initialized with base data")
+
     try:
-        result = segmentation_model.run_pipeline()
-        print("Guest segmentation pipeline result:", result)
+        user_df = pd.DataFrame([data.dict()])
+        combined_df = pd.concat([segmentation_model.df_labeled.copy(), user_df], ignore_index=True)
+        encoded_df = combined_df.copy()
+        for col in encoded_df.select_dtypes(include='object').columns:
+            encoded_df[col] = LabelEncoder().fit_transform(encoded_df[col])
+
+        
+        scaled = StandardScaler().fit_transform(encoded_df)
+        pca = PCA(n_components=2).fit_transform(scaled)
+
+        # Rerun the model pipeline with updated data
+        updated_model = guest_segmentation_model(
+            df_combined=encoded_df,
+            df_labeled=combined_df,
+            scaled=scaled,
+            pca=pca
+        )
+
+        summary, df_labeled = updated_model.run_pipeline()
+
+        
+        predicted_cluster = int(df_labeled.iloc[-1]["cluster"])
+        segment_name = summary.loc[predicted_cluster, "Segment"]
+
+        return {
+            "your_cluster": predicted_cluster,
+            "your_segment": segment_name,
+            "segment_summary": summary.to_dict(orient="records")
+        }
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error during guest segmentation: {e}")
-    
-    return {"segment_summary": result[0].to_dict(), "updated_data": result[1].to_dict()}
 
 @app.get("/q2_layout_results", response_class=PlainTextResponse)
 def get_q2_layout_results():
