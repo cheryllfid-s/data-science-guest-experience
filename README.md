@@ -116,3 +116,15 @@ Sample inputs for various models:
   "relative_humidity": 60.0,
   "wind_speed": 5.0
 }
+
+## Running the Dashboard
+Assuming the GitHub repository has been cloned, here are the steps to run the dashboard.
+
+### 1. Check Your Directory
+Make sure you are at .../data-science-guest-experience/src
+
+### 2. Run the Dashboard on your Terminal
+This command builds and runs the dashboard.
+```bash
+streamlit run streamlit_dashboard.py
+```
