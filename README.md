@@ -124,7 +124,7 @@ Assuming the GitHub repository has been cloned, here are the steps to run the da
 Make sure you are at .../data-science-guest-experience/src
 
 ### 2. Run the Dashboard on your Terminal
-This command builds and runs the dashboard.
+Enter the following command to your terminal to build and run the dashboard:
 ```bash
 streamlit run streamlit_dashboard.py
 ```
