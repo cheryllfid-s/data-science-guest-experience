@@ -21,8 +21,10 @@ def mainA():
     print(summary)
 
     print("\nQuestion 3: Guest Journey Patterns")
-    tivoli_g, attendance_df, covid, negative_att = prepare_tivoli_data()
-    GuestJourneyAnalysis_obj = GuestJourneyAnalysis(tivoli_g, attendance_df, covid, negative_att)
+    script_dir = Path(__file__).resolve().parent.parent
+    csv_path = script_dir.parent / 'data' / 'processed data' / 'tivoli_g.csv'
+    tivoli_g = pd.read_csv(csv_path)
+    GuestJourneyAnalysis_obj = GuestJourneyAnalysis(tivoli_g)
     GuestJourneyAnalysis_obj.run_guestjourneyanalysis()
 
     print("\nQuestion 4: Impact of Marketing Strategies on Guest Behaviour")
