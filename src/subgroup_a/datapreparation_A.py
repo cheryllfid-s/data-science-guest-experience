@@ -220,7 +220,9 @@ def q4_prepare_reviews_data():
 def q4_prepare_events_data():
     # (1) Import uss_promo_events.csv
     print("Importing promo events data...")
-    events_path = os.path.join("../../data/raw data/uss_promo_events.csv")
+    script_dir = Path(__file__).parent
+    project_root = script_dir.parent.parent
+    events_path = project_root / "data" / "raw data" / "uss_promo_events.csv"
     print("Path to dataset:", events_path)
     df_events = pd.read_csv(events_path)
 
