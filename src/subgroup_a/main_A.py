@@ -4,7 +4,7 @@ from subgroup_a.modeling.q2_guest_segmentation_model import guest_segmentation_m
 from subgroup_a.analysis.q3_guest_journey_analysis import GuestJourneyAnalysis
 from subgroup_a.analysis.q4_promo_events_analysis import USSPromoAnalysis
 from subgroup_a.analysis.q5_external_factors_analysis import q5_analyse
-import pathlib as Path
+from pathlib import Path 
 import warnings
 
 def mainA():
