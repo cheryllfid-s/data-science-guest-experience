@@ -6,6 +6,8 @@ from sklearn.cluster import KMeans, DBSCAN, AgglomerativeClustering
 from sklearn.metrics import silhouette_score
 import matplotlib.pyplot as plt
 import seaborn as sns
+import streamlit as st
+import altair as alt
 
 class guest_segmentation_model:
     """
@@ -29,7 +31,7 @@ class guest_segmentation_model:
         self.scaled = scaled
         self.pca = pca
 
-    def determine_optimal_clusters(self, df_combined):
+    def determine_optimal_clusters(self, df_combined, plot=True):
         """
         Use the Elbow Method to determine the optimal number of clusters based on SSE.
         """
@@ -49,18 +51,19 @@ class guest_segmentation_model:
             sse.append(kmeans.inertia_)
 
         # Plot SSE to visualize the elbow
-        plt.figure(figsize=(8, 4))
-        plt.plot(range(2, 11), sse, marker='o')
-        plt.title("Elbow Method: Choosing Optimal Number of Clusters (k)")
-        plt.xlabel("Number of Clusters (k)")
-        plt.ylabel("Sum of Squared Errors (SSE)")
-        plt.grid(True)
-        plt.tight_layout()
-        plt.show()
+        if plot:
+            plt.figure(figsize=(8, 4))
+            plt.plot(range(2, 11), sse, marker='o')
+            plt.title("Elbow Method: Choosing Optimal Number of Clusters (k)")
+            plt.xlabel("Number of Clusters (k)")
+            plt.ylabel("Sum of Squared Errors (SSE)")
+            plt.grid(True)
+            plt.tight_layout()
+            plt.show()
 
         return 4  # manually chosen from elbow curve
 
-    def compare_models(self, pca):
+    def compare_models(self, pca, verbose=True):
         """
         Compare KMeans, Hierarchical, and DBSCAN clustering using silhouette scores.
         """
@@ -180,6 +183,64 @@ class guest_segmentation_model:
         return summary, df_labeled
 
     # --- For Business Question 4: Impact of Marketing Strategies on Guest Behaviour --- #
+    def assign_clusters(self):
+        """
+        Assign clusters based on segmentation model
+        """
+        if 'cluster' not in self.df_labeled.columns:
+            optimal_k = self.determine_optimal_clusters(self.df_combined, plot=False)
+            k_labels = self.compare_models(self.pca, verbose=False)
+            _, df_labeled = self.summarize_clusters(self.df_labeled, k_labels)
+            self.df_labeled = df_labeled
+
+    def visualize_responses(self, df_labeled):
+        """
+        Visualize top awareness source and ad response
+        """
+        cluster_name_map = {
+            0: 'Social-Driven Youths',
+            1: 'Value-Conscious Families',
+            2: 'Budget-Conscious Youths',
+            3: 'Premium Spenders'
+        }
+
+        def plot_responses(df_labeled, cluster_col, response_col, cluster_map, legend):
+            grouped = df_labeled.groupby([cluster_col, response_col]).size().reset_index(name='count')
+            grouped['Segment'] = grouped[cluster_col].map(cluster_map)
+
+            chart = alt.Chart(grouped).mark_bar().encode(
+                x=alt.X('Segment:N', sort=list(cluster_map.values()), title='Guest Segment'),
+                y=alt.Y('count:Q', title='Count'),
+                color=alt.Color(f'{response_col}:N', title=legend),
+                xOffset=alt.XOffset(f'{response_col}:N'),
+                tooltip=['Segment', response_col, 'count']
+            ).properties(
+                width=600,
+                height=400
+            ).configure_axisX(
+                labelAngle=0,
+                labelFontSize=9
+            )
+            return chart
+
+        # (1) Plot awareness sources by guest segment
+        st.subheader("Awareness Source by Guest Segment")
+        df_labeled['awareness'] = df_labeled['awareness'].replace({'Local Singapore news': 'News',
+                                                                   'Travel agencies/tour packages': 'Tour packages'})  # Shorten/refactor names
+        awareness_chart = plot_responses(self.df_labeled, 'cluster', 'awareness',
+                                         cluster_name_map, 'Awareness Source')
+        st.altair_chart(awareness_chart, use_container_width=True)
+
+        # (2) Plot response to ads by guest segment
+        st.subheader("Response to Ads by Guest Segment")
+        df_labeled['response_to_ads'] = df_labeled['response_to_ads'].replace({
+            'Yes and they influenced my decision': 'Yes, influenced my decision',
+            'Yes and they influenced my decision to visit': 'Yes, influenced my decision',
+            'Yes, but they did not influence my decision': 'Yes, but no influence'})  # Shorten/refactor names
+        ads_chart = plot_responses(self.df_labeled, 'cluster', 'response_to_ads',
+                                   cluster_name_map, 'Response to Ads')
+        st.altair_chart(ads_chart, use_container_width=True)
+        
     def analyze_marketing_strategies(self, df_labeled):
         """
         Identify top awareness source, ad response, and promotions for each segment.
@@ -239,3 +300,7 @@ class guest_segmentation_model:
 
     def run_marketing_analysis(self):
         self.analyze_marketing_strategies(self.df_labeled)
+        
+    def visualize_marketing_analysis(self):
+        self.assign_clusters()
+        self.visualize_responses(self.df_labeled)
