@@ -66,7 +66,7 @@ top_rides = tivoli_g['ATTRACTION'].value_counts().nlargest(3).index.tolist()
 wait_df = analysis.guest_avg_wait_top_rides(tivoli_g, top_rides)
 
 
-st.subheader("🎢 Guest Wait Time Tolerance for Top 3 Rides")
+st.subheader("Guest Wait Time Tolerance for Top 3 Rides")
 box = alt.Chart(wait_df).mark_boxplot(extent='min-max', size=50).encode(
     x=alt.X('DAY_TYPE:N', title='Day Type', axis=alt.Axis(labelAngle=0)),
     y=alt.Y('AVG_WAIT_TIME_TOP_3:Q', title='Average Wait Time (mins)'),
