@@ -5,6 +5,9 @@ import pickle
 import numpy as np
 import os
 from subgroup_a.modeling.q2_guest_segmentation_model import guest_segmentation_model
+import torch
+from transformers import BertForSequenceClassification
+import torch.nn.functional as F
 
 app = FastAPI()
 
@@ -65,6 +68,27 @@ segmentation_model = guest_segmentation_model(
     df_combined=None, df_labeled=None, scaled=None, pca=None
 )
 
+# load BERT model
+try:
+    # load tokenizer
+    with open(os.path.join(MODELS_DIR, "bert_tokenizer.pkl"), 'rb') as f:
+        bert_tokenizer = pickle.load(f)
+    
+    # initialize model
+    bert_model = BertForSequenceClassification.from_pretrained('bert-base-uncased', num_labels=2)
+    
+    # load model state
+    bert_model.load_state_dict(torch.load(os.path.join(MODELS_DIR, "bert_model.pt")))
+    
+    # set to evaluation mode
+    bert_model.eval()
+    
+    print("Successfully loaded BERT model and tokenizer")
+except Exception as e:
+    print(f"Error loading BERT model: {e}")
+    bert_model = None
+    bert_tokenizer = None
+
 # Pydantic models to accept the features for each model
 
 class IOTFeaturesRequest(BaseModel):
@@ -116,6 +140,9 @@ class ResourceAllocationRequest(BaseModel):
     sale: float
     adm_sale: float
     rest_sale: float
+
+class ComplaintTextRequest(BaseModel):
+    complaint_text: str = Field(..., description="customer complaint text")
 
 @app.get("/")
 def home():
@@ -270,4 +297,79 @@ def predict_resource_allocation(data: ResourceAllocationRequest):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Prediction error: {str(e)}")
+
+@app.post("/predict/complaint_severity")
+def predict_complaint_severity(data: ComplaintTextRequest):
+    """predict customer complaint severity"""
+    
+    if bert_model is None or bert_tokenizer is None:
+        raise HTTPException(status_code=500, detail="BERT model or tokenizer not loaded")
+    
+    try:
+        # tokenize text
+        encoding = bert_tokenizer(data.complaint_text, return_tensors="pt", padding=True, truncation=True)
+        
+        # predict
+        with torch.no_grad():
+            outputs = bert_model(input_ids=encoding['input_ids'],
+                        attention_mask=encoding['attention_mask'])
+            probs = F.softmax(outputs.logits, dim=1)
+            prediction = torch.argmax(probs, dim=1).item()
+            severity_prob = probs[0][1].item()
+        
+        severity_level = "severe" if prediction == 1 else "general"
+        
+        return {
+            "complaint_text": data.complaint_text,
+            "severity_prediction": prediction,
+            "severity_level": severity_level,
+            "severity_probability": severity_prob
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error predicting complaint severity: {str(e)}")
+
+@app.post("/predict/batch_complaints")
+def predict_batch_complaints(data: list[ComplaintTextRequest]):
+    """batch predict customer complaint severity"""
+    
+    if bert_model is None or bert_tokenizer is None:
+        raise HTTPException(status_code=500, detail="BERT model or tokenizer not loaded")
+    
+    results = []
+    
+    try:
+        for complaint_request in data:
+            # tokenize text
+            encoding = bert_tokenizer(complaint_request.complaint_text, return_tensors="pt", padding=True, truncation=True)
+            
+            # predict
+            with torch.no_grad():
+                outputs = bert_model(input_ids=encoding['input_ids'],
+                            attention_mask=encoding['attention_mask'])
+                probs = F.softmax(outputs.logits, dim=1)
+                prediction = torch.argmax(probs, dim=1).item()
+                severity_prob = probs[0][1].item()
+            
+            severity_level = "severe" if prediction == 1 else "general"
+            
+            results.append({
+                "complaint_text": complaint_request.complaint_text,
+                "severity_prediction": prediction,
+                "severity_level": severity_level,
+                "severity_probability": severity_prob
+            })
+        
+        # calculate severe complaint ratio
+        severe_count = sum(1 for result in results if result["severity_prediction"] == 1)
+        severe_ratio = severe_count / len(results) if results else 0
+        
+        return {
+            "complaints": results,
+            "severe_complaint_ratio": severe_ratio,
+            "total_complaints": len(results)
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error batch predicting complaint severity: {str(e)}")
 
