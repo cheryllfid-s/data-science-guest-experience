@@ -98,6 +98,25 @@ class SurveyWeatherFeaturesRequest(BaseModel):
     relative_humidity: float
     wind_speed: float
 
+class ResourceAllocationRequest(BaseModel):
+    ATTRACTION: str
+    PARK: str
+    WAIT_TIME_MAX: int
+    NB_UNITS: int
+    GUEST_CARRIED: int
+    CAPACITY: int
+    ADJUST_CAPACITY: int
+    OPEN_TIME: int
+    UP_TIME: int
+    DOWNTIME: int
+    NB_MAX_UNIT: int
+    estimate_attendance: int
+    month: int
+    year: int
+    sale: float
+    adm_sale: float
+    rest_sale: float
+
 @app.get("/")
 def home():
     return {"message": "API is running!"}
@@ -218,3 +237,37 @@ def get_q2_layout_results():
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to format layout results: {e}")
+
+@app.post("/predict/resource_allocation")
+def predict_resource_allocation(data: ResourceAllocationRequest):
+    model_name = "q3_resource_allocation.pkl"
+
+    if model_name not in models:
+        raise HTTPException(status_code=404, detail=f"Model '{model_name}' not loaded")
+
+    model = models[model_name]
+
+    try:
+        df = pd.DataFrame([data.dict()])
+
+        # Load encoder
+        encoder_path = os.path.join(MODELS_DIR, "encoder_q3.pkl")
+        if not os.path.exists(encoder_path):
+            raise HTTPException(status_code=500, detail="Encoder file not found")
+
+        with open(encoder_path, "rb") as f:
+            encoder = pickle.load(f)
+
+        encoded_cats = encoder.transform(df[["ATTRACTION", "PARK"]])
+        encoded_df = pd.DataFrame(encoded_cats, columns=encoder.get_feature_names_out())
+
+        df = df.drop(columns=["ATTRACTION", "PARK"]).join(encoded_df)
+        df = df[model.feature_names_in_]
+
+        predicted_staff = np.ceil(model.predict(df)).astype(int)[0]
+
+        return {"Predicted_Staff_Count": int(predicted_staff)}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Prediction error: {str(e)}")
+
