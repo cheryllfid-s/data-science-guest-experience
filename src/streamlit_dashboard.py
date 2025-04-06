@@ -193,7 +193,7 @@ def render_guest_journey_analysis():
         st.altair_chart(chart, use_container_width=True)
 
     with col7:
-        st.markdown("<h2 style='font-size: 20px;'>Ride Sequence Entropy of Express vs Non-Express Users</h2>", unsafe_allow_html=True) #making the plot title wrap around
+        st.markdown("<h2 style='font-size: 20px;'>Ride Sequence Entropy of Express vs Non-Express Pass Users</h2>", unsafe_allow_html=True) #making the plot title wrap around
         entropy_chart = alt.Chart(filtered_summary).mark_boxplot(size=50).encode(
             x=alt.X('EXPRESS_PASS_LABEL:N', title='Express Pass', axis=alt.Axis(labelAngle=0)),
             y=alt.Y('SEQ_ENTROPY:Q', title='Ride Sequence Entropy'),
