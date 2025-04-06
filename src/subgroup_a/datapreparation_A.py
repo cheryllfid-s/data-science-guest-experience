@@ -243,11 +243,12 @@ def q4_prepare_events_data():
 
 # (5) External factors
 def q5_clean_data():
-
-    csv_path_reviews = Path("../../data/processed data/usstripadvisor.csv").resolve()
-    print(f"Absolute CSV path: {csv_path_reviews}")
-    print(f"File exists? {csv_path_reviews.exists()}")
-    df_reviews = pd.read_csv(csv_path_reviews)
+    script_dir = Path(__file__).resolve().parent.parent
+    data_file = script_dir.parent / 'data' / 'processed data' / 'usstripadvisor.csv'
+    if data_file.exists():
+        df_reviews = pd.read_csv(data_file)
+    else:
+        raise FileNotFoundError(f"Data file not found at {data_file}")
     # Drop any rows with missing review text or title
     df_reviews = df_reviews.dropna(subset=['title', 'review_text'])
 
