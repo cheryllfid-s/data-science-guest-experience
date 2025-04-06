@@ -88,7 +88,9 @@ class guest_segmentation_model:
         results.append(('DBSCAN', db_score, len(set(valid_labels))))
 
         # Print comparison table
-        print(pd.DataFrame(results, columns=["Model", "Silhouette Score", "Clusters Found"]))
+        if verbose:
+            print(pd.DataFrame(results, columns=["Model", "Silhouette Score", "Clusters Found"]))
+            
         return k_labels
 
     def summarize_clusters(self, df_labeled, k_labels):
