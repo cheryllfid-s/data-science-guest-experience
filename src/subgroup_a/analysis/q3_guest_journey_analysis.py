@@ -5,61 +5,66 @@ import matplotlib.pyplot as plt
 import os
 import numpy as np
 import networkx as nx
+import pathlib as Path
 from difflib import SequenceMatcher
 from itertools import combinations
 from scipy.stats import entropy
 
 class GuestJourneyAnalysis:  #Object to make it easier to put into main.py
-    def __init__(self, tivoli_g, attendance_df, covid, negative_att):
+    def __init__(self, tivoli_g):
         self.tivoli_g = tivoli_g
-        self.attendance_df = attendance_df  
-        self.covid = covid
-        self.negative_att = negative_att
 
-    def label_express_pass_by_daytype(self, df, threshold=0.3): 
-        #Dividing by day type, using the wait time max to see if there are people using express tickets for certain rides
-        #Since quiet, busy, covid, and normal days have different wait times 
-        thresholds = df.groupby(['ATTRACTION', 'DAY_TYPE'])['WAIT_TIME_MAX'].quantile(threshold).to_dict()
+    # def __init__(self, tivoli_g, attendance_df, covid, negative_att):
+    #     self.tivoli_g = tivoli_g
+    #     self.attendance_df = attendance_df  
+    #     self.covid = covid
+    #     self.negative_att = negative_att
+
+    # def label_express_pass_by_daytype(self, df, threshold=0.3): 
+    #     #Dividing by day type, using the wait time max to see if there are people using express tickets for certain rides
+    #     #Since quiet, busy, covid, and normal days have different wait times 
+    #     thresholds = df.groupby(['ATTRACTION', 'DAY_TYPE'])['WAIT_TIME_MAX'].quantile(threshold).to_dict()
         
-        def is_express(row):
-            key = (row['ATTRACTION'], row['DAY_TYPE'])
-            return row['WAIT_TIME_MAX'] < thresholds.get(key, np.inf)
+    #     def is_express(row):
+    #         key = (row['ATTRACTION'], row['DAY_TYPE'])
+    #         return row['WAIT_TIME_MAX'] < thresholds.get(key, np.inf)
         
-        df['EXPRESS_PASS'] = df.apply(is_express, axis=1)
-        return df
+    #     df['EXPRESS_PASS'] = df.apply(is_express, axis=1)
+    #     return df
 
-    #Dividing the day types
-    def determine_day_types(self, attendance_df, covid, facility_name='Tivoli Gardens'):
-        tivoli_attendance_df = attendance_df[attendance_df['FACILITY_NAME'] == facility_name]
-        daily_attendance = tivoli_attendance_df.groupby(tivoli_attendance_df['USAGE_DATE'].dt.date)['attendance'].sum()
+    # #Dividing the day types
+    # def determine_day_types(self, attendance_df, covid, facility_name='Tivoli Gardens'):
+    #     tivoli_attendance_df = attendance_df[attendance_df['FACILITY_NAME'] == facility_name]
+    #     daily_attendance = tivoli_attendance_df.groupby(tivoli_attendance_df['USAGE_DATE'].dt.date)['attendance'].sum()
 
-        busy_threshold = daily_attendance.quantile(0.75)
-        quiet_threshold = daily_attendance.quantile(0.25)
+    #     busy_threshold = daily_attendance.quantile(0.75)
+    #     quiet_threshold = daily_attendance.quantile(0.25)
 
-        busy_days = daily_attendance[daily_attendance > busy_threshold].index
-        quiet_days = daily_attendance[daily_attendance < quiet_threshold].index
-        covid_dates = self.covid['USAGE_DATE'].drop_duplicates().dt.date
-        return busy_days, quiet_days, covid_dates
+    #     busy_days = daily_attendance[daily_attendance > busy_threshold].index
+    #     quiet_days = daily_attendance[daily_attendance < quiet_threshold].index
+    #     covid_dates = self.covid['USAGE_DATE'].drop_duplicates().dt.date
+    #     return busy_days, quiet_days, covid_dates
 
-    #Tagging the day types
-    def tag_day_type(self, df, covid_dates, busy_days, quiet_days):
-        df = df.copy()
-        df.loc[:, 'DAY_TYPE'] = 'normal'
-        df.loc[df['WORK_DATE'].isin(covid_dates), 'DAY_TYPE'] = 'covid'
-        df.loc[df['WORK_DATE'].isin(covid_dates), 'DAY_TYPE'] = 'covid'
-        df.loc[df['WORK_DATE'].isin(busy_days), 'DAY_TYPE'] = 'busy'
-        df.loc[df['WORK_DATE'].isin(quiet_days), 'DAY_TYPE'] = 'quiet'
-        return df
+    # #Tagging the day types
+    # def tag_day_type(self, df, covid_dates, busy_days, quiet_days):
+    #     df = df.copy()
+    #     df.loc[:, 'DAY_TYPE'] = 'normal'
+    #     df.loc[df['WORK_DATE'].isin(covid_dates), 'DAY_TYPE'] = 'covid'
+    #     df.loc[df['WORK_DATE'].isin(covid_dates), 'DAY_TYPE'] = 'covid'
+    #     df.loc[df['WORK_DATE'].isin(busy_days), 'DAY_TYPE'] = 'busy'
+    #     df.loc[df['WORK_DATE'].isin(quiet_days), 'DAY_TYPE'] = 'quiet'
+    #     return df
 
 
     def simulate_guest_sequences(self, df, time_gap_seconds=1800):
+        df['TIMESTAMP'] = pd.to_datetime(df['TIMESTAMP'], errors='coerce')  # Ensure it's datetim
         df = df.sort_values(by='TIMESTAMP')
         df['GAP'] = df['TIMESTAMP'].diff().dt.total_seconds().fillna(0) #Time gaps in seconds
         df['GUEST_ID'] = (df['GAP'] > time_gap_seconds).cumsum() #If time gap > 30 mins, assign new guest ID
         guest_sequences = df.groupby('GUEST_ID')['ATTRACTION'].apply(list) #Getting the ride sequence per guest
         express_map = df.groupby('GUEST_ID')['EXPRESS_PASS'].mean().apply(lambda x: x > 0.6) #if >50% rides are fast, guest = express pass
         return guest_sequences, express_map
-
+    
     def label_guest_sequences_as_express(self, df, guest_sequences, threshold=0.25):
         thresholds = df.groupby(['ATTRACTION', 'DAY_TYPE'])['WAIT_TIME_MAX'].quantile(threshold).to_dict()
         
@@ -268,6 +273,9 @@ class GuestJourneyAnalysis:  #Object to make it easier to put into main.py
     def guest_avg_wait_top_rides(self, df, target_rides):
         df = df[df['ATTRACTION'].isin(target_rides)] #Focus on top rides!
         df = df.sort_values(by='TIMESTAMP')
+        df['TIMESTAMP'] = pd.to_datetime(df['TIMESTAMP'], errors='coerce')
+        df = df.sort_values(by='TIMESTAMP')
+        df['GAP'] = df['TIMESTAMP'].diff().dt.total_seconds().fillna(0)
         df['GAP'] = df['TIMESTAMP'].diff().dt.total_seconds().fillna(0)
         df['GUEST_ID'] = (df['GAP'] > 1800).cumsum() #Segmenting guests by time gaps
         avg_wait = df.groupby(['GUEST_ID', 'DAY_TYPE'])['WAIT_TIME_MAX'].mean().reset_index()
@@ -316,7 +324,8 @@ class GuestJourneyAnalysis:  #Object to make it easier to put into main.py
         plt.tight_layout()
         plt.show()
 
-    def plot_avg_wait_boxplot(self, df):
+#changed
+    def plot_avg_wait_boxplot(self, df, use_streamlit=False):
         plt.figure(figsize=(10, 6))
         sns.boxplot(data=df, x='DAY_TYPE', y='AVG_WAIT_TIME_TOP_3', palette='Set2')
         sns.stripplot(data=df, x='DAY_TYPE', y='AVG_WAIT_TIME_TOP_3', color='black', size=3, alpha=0.3, jitter=0.2)
@@ -326,6 +335,14 @@ class GuestJourneyAnalysis:  #Object to make it easier to put into main.py
         plt.ylabel("Avg Wait Time per Guest (Top 3 Rides) [mins]")
         plt.grid(True, axis='y', linestyle='--', alpha=0.6)
         plt.tight_layout()
+        
+        if use_streamlit:
+            import streamlit as st
+            st.pyplot(plt.gcf())
+        else:
+            plt.show()
+
+
         plt.show()
 
     def sequence_similarity(self, seq1, seq2):
@@ -344,9 +361,9 @@ class GuestJourneyAnalysis:  #Object to make it easier to put into main.py
 
     def run_guestjourneyanalysis(self):
         # Differing the covid and non-covid dates
-        busy_days, quiet_days, covid_dates = self.determine_day_types(self.attendance_df, self.covid)
-        self.tivoli_g = self.tag_day_type(self.tivoli_g, covid_dates, busy_days, quiet_days)
-        self.tivoli_g = self.label_express_pass_by_daytype(self.tivoli_g)
+        # busy_days, quiet_days, covid_dates = self.determine_day_types(self.attendance_df, self.covid)
+        # self.tivoli_g = self.tag_day_type(self.tivoli_g, covid_dates, busy_days, quiet_days)
+        # self.tivoli_g = self.label_express_pass_by_daytype(self.tivoli_g)
 
         print("\nLooking at Wait Time Trends and Using Ride Correlation to Segment Guests")
         #Plotting line graphs and correlation heatmaps for each to view 
