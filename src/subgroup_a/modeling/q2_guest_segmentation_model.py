@@ -239,7 +239,7 @@ class guest_segmentation_model:
                 color=alt.Color(field="Segment", type="nominal"),
                 tooltip=["Segment", "count"]
             ).properties(
-                height=400,
+                height=400
             )
             st.altair_chart(pie, use_container_width=True)
 
