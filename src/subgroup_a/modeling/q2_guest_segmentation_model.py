@@ -218,27 +218,42 @@ class guest_segmentation_model:
                 tooltip=['Segment', response_col, 'count']
             ).properties(
                 title = plt_title,
-                width=600,
                 height=400
             ).configure_axisX(
                 labelAngle=0,
-                labelFontSize=9
+                labelFontSize=8.7
             )
             return chart
 
-        st.subheader("Key Marketing Insights by Guest Segments")
-        col1, col2 = st.columns(2)
+        st.subheader("📣Key Marketing Insights by Guest Segments")
+        col1, col2, col3 = st.columns(3)
 
-        # (1) Plot awareness sources by guest segment
+        # (1) Pie chart of guest segment distribution
         with col1:
+            cluster_counts = df_labeled['cluster'].value_counts().reset_index()
+            cluster_counts.columns = ['cluster', 'count']
+            cluster_counts['Segment'] = cluster_counts['cluster'].map(cluster_name_map)
+
+            pie = alt.Chart(cluster_counts).mark_arc(innerRadius=80).encode(
+                theta=alt.Theta(field="count", type="quantitative"),
+                color=alt.Color(field="Segment", type="nominal"),
+                tooltip=["Segment", "count"]
+            ).properties(
+                height=400,
+                title='Distribution of Guest Segments'
+            )
+            st.altair_chart(pie, use_container_width=True)
+
+        # (2) Plot awareness sources by guest segment
+        with col2:
             df_labeled['awareness'] = df_labeled['awareness'].replace({'Local Singapore news': 'News',
                                                                        'Travel agencies/tour packages': 'Tour packages'})  # Shorten/refactor names
             awareness_chart = plot_responses(self.df_labeled, 'cluster', 'awareness',
                                              cluster_name_map, 'Source of Awareness', 'Source')
             st.altair_chart(awareness_chart, use_container_width=True)
 
-        # (2) Plot response to ads by guest segment
-        with col2:
+        # (3) Plot response to ads by guest segment
+        with col3:
             df_labeled['response_to_ads'] = df_labeled['response_to_ads'].replace({
                 'Yes and they influenced my decision': 'Yes, influenced my decision',
                 'Yes and they influenced my decision to visit': 'Yes, influenced my decision',
