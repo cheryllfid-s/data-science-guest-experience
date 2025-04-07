@@ -225,7 +225,7 @@ def render_guest_journey_analysis():
     col5, col6, col7 = st.columns(3)
 
     with col5:
-        st.markdown(f"<h2 style='font-size: 20px;'>Wait-Time Tolerance for Top 3 Rides on {day_type_labels[selected_day_type]} Days</h2>", unsafe_allow_html=True)
+        st.markdown(f"<h2 style='font-size: 20px;'>Wait-Time Tolerance on {day_type_labels[selected_day_type]} Days</h2>", unsafe_allow_html=True)
         top_rides = tivoli_g['ATTRACTION'].value_counts().nlargest(3).index.tolist()
         wait_df = analysis.guest_avg_wait_top_rides(tivoli_g, top_rides)
         filtered_wait_df = wait_df[wait_df['DAY_TYPE'] == selected_day_type].copy()
