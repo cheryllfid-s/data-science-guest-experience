@@ -29,7 +29,7 @@ alt.themes.enable("dark")
 ######################
 
 # To check if the dashboard is running in streamlit
-st.success("✅ Dashboard is running!")
+# st.success("✅ Dashboard is running!")
 st.title("🎡 Welcome to the Theme Park Guest Experience Dashboard!")
 
 #######################
@@ -222,7 +222,7 @@ def render_guest_journey_analysis():
     col5, col6, col7 = st.columns(3)
 
     with col5:
-        st.markdown(f"<h2 style='font-size: 20px;'>Guest Wait Time Tolerance for Top 3 Rides on {day_type_labels[selected_day_type]} Days</h2>", unsafe_allow_html=True)
+        st.markdown(f"<h2 style='font-size: 20px;'>Wait-Time Tolerance for Top 3 Rides on {day_type_labels[selected_day_type]} Days</h2>", unsafe_allow_html=True)
         top_rides = tivoli_g['ATTRACTION'].value_counts().nlargest(3).index.tolist()
         wait_df = analysis.guest_avg_wait_top_rides(tivoli_g, top_rides)
         filtered_wait_df = wait_df[wait_df['DAY_TYPE'] == selected_day_type].copy()
@@ -244,7 +244,7 @@ def render_guest_journey_analysis():
         st.altair_chart(box + points, use_container_width=True)
 
     with col6:
-        st.markdown("<h2 style='font-size: 20px;'>Guest Journey Length of Express and Non-Express Pass Users</h2>", unsafe_allow_html=True) #making the plot title wrap around
+        st.markdown("<h2 style='font-size: 20px;'>Guest Journey Length</h2>", unsafe_allow_html=True) #making the plot title wrap around
         filtered_summary = guest_summary if express_filter == "All" else guest_summary[guest_summary['EXPRESS_PASS_LABEL'] == express_filter]
         chart = alt.Chart(filtered_summary).mark_boxplot(size=50).encode(
             x=alt.X('EXPRESS_PASS_LABEL:N', title='Express Pass', axis=alt.Axis(labelAngle=0)),
@@ -257,7 +257,7 @@ def render_guest_journey_analysis():
         st.altair_chart(chart, use_container_width=True)
 
     with col7:
-        st.markdown("<h2 style='font-size: 20px;'>Ride Sequence Entropy of Express vs Non-Express Pass Users</h2>", unsafe_allow_html=True) #making the plot title wrap around
+        st.markdown("<h2 style='font-size: 20px;'>Ride Sequence Entropy</h2>", unsafe_allow_html=True) #making the plot title wrap around
         entropy_chart = alt.Chart(filtered_summary).mark_boxplot(size=50).encode(
             x=alt.X('EXPRESS_PASS_LABEL:N', title='Express Pass', axis=alt.Axis(labelAngle=0)),
             y=alt.Y('SEQ_ENTROPY:Q', title='Ride Sequence Entropy'),
@@ -409,7 +409,7 @@ from sklearn.preprocessing import LabelEncoder
 from xgboost import XGBRegressor
 
 # QUESTION 2 ##########
-st.success("✅ BQ2 is running!")
+# st.success("✅ BQ2 is running!")
 st.subheader("🕰️ Optimized Layout Simulation Results")
 
 with open("../models/q2_optimization_layout.pkl", "rb") as f:
@@ -501,7 +501,7 @@ with col_kpis:
 
 
 # QUESTION 5 ###########
-st.success("✅ BQ5 is running!")
+# st.success("✅ BQ5 is running!")
 st.subheader("📊 IoT Data Integration for Experience Optimisation")
 
 df_iot_path = "../data/processed data/iot_data.pkl" 
