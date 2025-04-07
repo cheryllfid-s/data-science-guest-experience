@@ -510,7 +510,7 @@ with col_kpis:
 st.subheader("📊 IoT Data Integration for Experience Optimisation")
 
 script_dir = Path(__file__).resolve().parent
-df_iot_path = script_dir.parent / 'data' / 'processed ddata' / 'iot_data.pkl'
+df_iot_path = script_dir.parent / 'data' / 'processed data' / 'iot_data.pkl'
 df_iot = pd.read_pickle(df_iot_path)
 
 def train_demand_model_2(df, target='Average_Queue_Time'):
