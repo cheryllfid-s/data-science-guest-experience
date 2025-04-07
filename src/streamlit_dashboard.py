@@ -4,8 +4,8 @@ import os
 import pandas as pd
 import altair as alt
 import pickle
-# import matplotlib.pyplot as plt
 from pathlib import Path
+
 # importing the other modules:
 from subgroup_a.datapreparation_A import *
 from subgroup_a.analysis.q1_guest_satisfaction_analysis import *
@@ -47,6 +47,7 @@ express_filter = st.sidebar.selectbox("Select Express Pass Usage", ["All", "Yes"
 # SUBGROUP A ##########
 # QUESTION 1 ##########
 #load data
+# st.success("✅ AQ1 is running!")
 script_dir = Path(__file__).parent
 project_root = script_dir.parent.parent
 csv_path = project_root / "data" / "survey.csv"
@@ -101,10 +102,19 @@ def correlation_analysis(self):
         selected_columns = list(corr_columns.values())  
         corr_subset = corr_matrix.loc[selected_columns, selected_columns]
 
-# QUESTION 2 ##########
+# GUEST SEGMENTATION ANALYSIS ##########
+# Load data
+# st.success("✅ AQ4 is running!")
+df_combined, df_labeled, scaled, pca = cleaning_q2()
 
-# QUESTION 3 ##########
+# Run segmentation model and visualize data
+segmentation_analysis = guest_segmentation_model(df_combined, df_labeled, scaled, pca)
+segmentation_analysis.visualize_marketing_analysis()
+
+
+# GUEST JOURNEY PATHS ANALYSIS ##########
 # LOADING THE DATA
+# st.success("✅ AQ3 is running!")
 script_dir = Path(__file__).resolve().parent
 csv_path = script_dir.parent / 'data' / 'processed data' / 'tivoli_g.csv'
 tivoli_g = pd.read_csv(csv_path)
@@ -241,7 +251,6 @@ def render_guest_journey_analysis():
             y=alt.Y('SEQ_LEN:Q', title='Number of Rides'),
             color=alt.Color('EXPRESS_PASS_LABEL:N', legend=None)
         ).properties(
-            # title = "Guest Journey Length of Express and/or Non-Express Pass Users",
             width=350,
             height=300
         )
@@ -254,7 +263,6 @@ def render_guest_journey_analysis():
             y=alt.Y('SEQ_ENTROPY:Q', title='Ride Sequence Entropy'),
             color=alt.Color('EXPRESS_PASS_LABEL:N', legend=None)
         ).properties(
-            # title = "Ride Sequence Diversity (Entropy) of Express vs Non-Express Pass Users",
             width=350,
             height=300
         )
@@ -264,16 +272,9 @@ def render_guest_journey_analysis():
 # RUNNING THE AQ3 MODULE
 render_guest_journey_analysis()
 
-# QUESTION 4 ###########
-# Load data
-df_combined, df_labeled, scaled, pca = cleaning_q2()
 
-# Run segmentation model and visualize data
-segmentation_analysis = guest_segmentation_model(df_combined, df_labeled, scaled, pca)
-segmentation_analysis.visualize_marketing_analysis()
-
-
-# QUESTION 5 ###########
+# External Factors and Guest Segmentation ###########
+# st.success("✅ AQ5 is running!")
 q5_df_reviews = q5_clean_data()
 
 # For rain sentiment analysis
@@ -330,10 +331,10 @@ def guestvolseason(guest_volume):
     return seasonal_guest_volume
 seasonal_guest_volume = guestvolseason(guest_volume)
 
-
-
 #Plot Rain sentiment difference and  Seasonal Volume
 def plot_sentiment_and_seasonal_volume(sentiment_diff, seasonal_guest_volume):
+    st.subheader("🎠 External Factors and Guest Segmentation")
+
     # Segment labels
     segment_labels = {
         0: "Social-Driven Youths",
@@ -407,10 +408,9 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error
 from sklearn.preprocessing import LabelEncoder
 from xgboost import XGBRegressor
 
-# QUESTION 1
-
-# QUESTION 2
-st.subheader("🎢 Optimized Layout Simulation Results")
+# QUESTION 2 ##########
+st.success("✅ BQ2 is running!")
+st.subheader("🕰️ Optimized Layout Simulation Results")
 
 with open("../models/q2_optimization_layout.pkl", "rb") as f:
     comparison_results = pickle.load(f)
@@ -446,27 +446,11 @@ label_map = {
 wait_df['Attraction'] = wait_df['Attraction'].map(label_map)
 
 st.markdown(
-    "> **Note:** We swap the locations of *Transformers* and *CYLON*, placing congested rides last in the guest journey. "
-    "We will also close the right entrance to guide guests through a left-to-right flow, reducing congestion."
+    "> **Note:** In the modified layout, locations of *Transformers* and *CYLON* are swapped. The congested rides are placed last in guests' journeys. "
+    "The right entrance is also closed to guide guests through a left-to-right flow, reducing congestion."
 )
 
-# Horizontal Bar Chart
-st.subheader("Comparison of Average Wait Times by Attraction")
-chart = alt.Chart(wait_df).mark_bar().encode(
-    x=alt.X('Attraction:N', title='Attraction', axis=alt.Axis(labelAngle=0)),
-    y=alt.Y('Avg Wait Time (mins):Q', title='Average Wait Time (mins)'),
-    color=alt.Color('Layout:N', title='Layout'),
-    tooltip=['Attraction', 'Layout', 'Avg Wait Time (mins)'],
-    xOffset='Layout:N'  # Enables grouped side-by-side bars
-).properties(
-    width=700,
-    height=400
-)
-
-st.altair_chart(chart, use_container_width=True)
-
-# === Average wait times from the comparison results ===
-# Values from simulation results
+# Calculate improvement values
 current_avg = comparison_results['avg_wait_per_guest_1']
 modified_avg = comparison_results['avg_wait_per_guest_2']
 diff = current_avg - modified_avg
@@ -474,11 +458,7 @@ pct_drop = (diff / current_avg) * 100
 arrow = "⬇️" if diff > 0 else "⬆️"
 color = "green" if diff > 0 else "red"
 
-# Use Streamlit columns for layout
-st.markdown("### 📉 Overall Wait Time Improvement")
-
-col1, col2, col3 = st.columns(3)
-
+# Create custom KPI card component
 def kpi_card(title, value, delta=None, arrow=None, color="white"):
     return f"""
     <div style="
@@ -488,6 +468,7 @@ def kpi_card(title, value, delta=None, arrow=None, color="white"):
         color: white;
         text-align: center;
         box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        margin-bottom: 15px;
     ">
         <div style='font-size: 14px; color: #cccccc;'>{title}</div>
         <div style='font-size: 32px; font-weight: bold;'>{value}</div>
@@ -495,35 +476,39 @@ def kpi_card(title, value, delta=None, arrow=None, color="white"):
     </div>
     """
 
-with col1:
-    st.markdown(kpi_card("Current Avg Wait Time", f"{current_avg:.2f} mins"), unsafe_allow_html=True)
+# Layout: Chart (left) | KPIs (right stacked)
+col_chart, col_kpis = st.columns([2, 1])
 
-with col2:
-    st.markdown(kpi_card("Modified Avg Wait Time", f"{modified_avg:.2f} mins"), unsafe_allow_html=True)
-
-with col3:
-    st.markdown(
-        kpi_card(
-            "Time Reduction",
-            f"{diff:.2f} mins",
-            delta=f"{abs(pct_drop):.1f}%",
-            arrow=arrow,
-            color="green" if diff > 0 else "red"
-        ),
-        unsafe_allow_html=True
+with col_chart:
+    st.markdown(f"<h2 style='font-size: 20px;'>Comparison of Average Wait Times by Attraction</h2>", unsafe_allow_html=True)
+    chart = alt.Chart(wait_df).mark_bar().encode(
+        x=alt.X('Attraction:N', title='Attraction', axis=alt.Axis(labelAngle=0)),
+        y=alt.Y('Avg Wait Time (mins):Q', title='Average Wait Time (mins)'),
+        color=alt.Color('Layout:N', title='Layout'),
+        tooltip=['Attraction', 'Layout', 'Avg Wait Time (mins)'],
+        xOffset='Layout:N'
+    ).properties(
+        width=650,
+        height=400
     )
+    st.altair_chart(chart, use_container_width=True)
 
-# QUESTION 3
+with col_kpis:
+    st.markdown(f"<h2 style='font-size: 20px;'>Overall Improvement</h2>", unsafe_allow_html=True)
+    st.markdown(kpi_card("Current Average Wait Time", f"{current_avg:.2f} mins"), unsafe_allow_html=True)
+    st.markdown(kpi_card("Modified Average Wait Time", f"{modified_avg:.2f} mins"), unsafe_allow_html=True)
+    st.markdown(kpi_card("Time Reduction", f"{diff:.2f} mins", delta=f"{abs(pct_drop):.1f}%", arrow=arrow, color=color), unsafe_allow_html=True)
 
-# QUESTION 4
 
-# QUESTION 5
 # QUESTION 5 ###########
-st.subheader("IoT Data Integration for Experience Optimisation")
+st.success("✅ BQ5 is running!")
+st.subheader("📊 IoT Data Integration for Experience Optimisation")
+
 df_iot_path = "../data/processed data/iot_data.pkl" 
 df_iot = pd.read_pickle(df_iot_path)
 
 def train_demand_model_2(df, target='Average_Queue_Time'):
+
     features = [
         'Visitor_ID', 'Loyalty_Member', 'Age', 'Gender',
         'Theme_Zone_Visited', 'Attraction', 'Check_In', 'Queue_Time', 'Check_Out',
@@ -546,7 +531,6 @@ def train_demand_model_2(df, target='Average_Queue_Time'):
     )
 
     cross_val_scores = cross_val_score(model, X, y, cv=5, scoring='neg_mean_squared_error')
-
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
 
@@ -555,53 +539,72 @@ def train_demand_model_2(df, target='Average_Queue_Time'):
         'MAE': mean_absolute_error(y_test, y_pred)
     }
 
-    st.success("✅ IoT Demand Model Trained Successfully")
-    st.metric("RMSE", f"{metrics['RMSE']:.2f}", help="Root Mean Squared Error — lower is better. Shows average error in predicted queue time.")
-    st.metric("MAE", f"{metrics['MAE']:.2f}", help="Mean Absolute Error — average absolute difference between actual and predicted queue time.")
+    df_test = X_test.copy()
+    df_test['Predicted_' + target] = y_pred
 
-# Optional: Explain metrics in simple terms
+    # KPI Card Template
+    def kpi_card(title, value):
+        return f"""
+        <div style="
+            background-color: #1e1e1e;
+            padding: 20px;
+            border-radius: 10px;
+            color: white;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+        ">
+            <div style='font-size: 14px; color: #cccccc;'>{title}</div>
+            <div style='font-size: 32px; font-weight: bold;'>{value}</div>
+        </div>
+        """
+
+    # Columns Layout
+    col1, col2, col3 = st.columns([1, 2, 2])
+
+    # Column 1: RMSE and MAE vertically stacked
+    with col1:
+        st.markdown("<h2 style='font-size: 20px;'>RMSE</h2>", help="Root Mean Squared Error — lower is better. Shows average error in predicted queue time.", unsafe_allow_html=True)
+        st.markdown(kpi_card("", f"{metrics['RMSE']:.2f}"), unsafe_allow_html=True)
+        st.markdown("<h2 style='font-size: 20px;'>MAE</h2>", help="Mean Absolute Error — average absolute difference between actual and predicted queue time.", unsafe_allow_html=True)
+        st.markdown(kpi_card("", f"{metrics['MAE']:.2f}"), unsafe_allow_html=True)
+
+    # Column 2: Check-In Time vs Prediction
+    with col2:
+        st.markdown("<h2 style='font-size: 20px;'>Check-In Time vs Predicted Queue Time (in mins)</h2>", unsafe_allow_html=True)
+        checkin_plot = alt.Chart(df_test).mark_circle(size=60, opacity=0.6).encode(
+            x=alt.X('Check_In:Q', axis=alt.Axis(title='Check-In Time')),
+            y=alt.Y(f'Predicted_{target}:Q', axis=alt.Axis(title='Predicted Queue Time (in mins)')),
+            tooltip=['Check_In', f'Predicted_{target}']
+        ).properties(
+            width=600,
+            height=300
+        ).interactive()
+        st.altair_chart(checkin_plot, use_container_width=True)
+
+    # Column 3: Check-Out Time vs Prediction
+    with col3:
+        st.markdown("<h2 style='font-size: 20px;'>Check-Out Time vs Predicted Queue Time (in mins)</h2>", unsafe_allow_html=True)
+        checkout_plot = alt.Chart(df_test).mark_circle(size=60, color='green', opacity=0.6).encode(
+            x=alt.X('Check_Out:Q', axis=alt.Axis(title='Check-Out Time')),
+            y=alt.Y(f'Predicted_{target}:Q', axis=alt.Axis(title='Predicted Queue Time (in mins)')),
+            tooltip=['Check_Out', f'Predicted_{target}']
+        ).properties(
+            width=600,
+            height=300
+        ).interactive()
+        st.altair_chart(checkout_plot, use_container_width=True)
+
+    # Explanation below all columns
     with st.expander("ℹ️ What do these metrics mean?"):
         st.markdown("""
         - **RMSE (Root Mean Squared Error)**: Measures the typical size of prediction errors. Bigger mistakes are penalized more.
         - **MAE (Mean Absolute Error)**: Straight average of how far off predictions are — in queue time minutes.
         """)
 
-    df_test = X_test.copy()
-    df_test['Predicted_' + target] = y_pred
-
-    # Altair Plot 1: Check-In vs Predicted Queue
-    st.subheader("📊 Check-In Time vs Predicted Queue Time (in mins)")
-    checkin_plot = alt.Chart(df_test).mark_circle(size=60, opacity=0.6).encode(
-        x=alt.X('Check_In:Q', axis=alt.Axis(title='Check-In Time')),
-        y=alt.Y(f'Predicted_{target}:Q', axis=alt.Axis(title='Predicted Queue Time (in mins)')),
-        tooltip=['Check_In', f'Predicted_{target}']
-    ).properties(
-        width=600,
-        height=300
-    ).interactive()
-    st.altair_chart(checkin_plot, use_container_width=True)
-
-    # Altair Plot 2: Check-Out vs Predicted Queue
-    st.subheader("📊 Check-Out Time vs Predicted Queue Time (in mins)")
-    checkout_plot = alt.Chart(df_test).mark_circle(size=60, color='green', opacity=0.6).encode(
-        x=alt.X('Check_Out:Q', axis=alt.Axis(title='Check-Out Time')),
-        y=alt.Y(f'Predicted_{target}:Q', axis=alt.Axis(title='Predicted Queue Time (in mins)')),
-        tooltip=['Check_Out', f'Predicted_{target}']
-    ).properties(
-        width=600,
-        height=300
-    ).interactive()
-    st.altair_chart(checkout_plot, use_container_width=True)
-
-
     return model, metrics
 
-# Training model with just IoT data
+# Call function and train
 model_3, metrics_3 = train_demand_model_2(df_iot)
 
-
-#######################
-
-
-#######################
-                       
+######################
