@@ -65,14 +65,13 @@ docker-compose down
 
 ### API Endpoints
 1. /models - Get Available Models
-Method: GET
-Description: Returns a list of available models and their expected features.
+- Method: GET
+- Description: Returns a list of available models and their expected features.
 
 2. /predict_demand/iot - Make Demand Prediction with IoT data
-Method: POST
-Description:
-- Predicts demand using IoT data.
-Request Body:
+- Method: POST
+- Description: Predicts demand using IoT data.
+- Request Body:
 {
   "Visitor_ID": 12345,
   "Loyalty_Member": 1,
@@ -90,16 +89,16 @@ Request Body:
   "Is_Weekend": false,
   "Is_Popular_Attraction": true
 }
-Response:
+- Response:
 {
   "model": "demand_model_iot.pkl",
   "predicted queue time": [predicted_value]
 }
 
 3. /predict_demand/survey_weather - Predict Demand using Survey and Weather data
-Method: POST
-Description: Predicts demand using survey and weather data.
-Request body:
+- Method: POST
+- Description: Predicts demand using survey and weather data.
+- Request body:
 {
   "Favorite_Attraction": 3,
   "Satisfaction_Score": 4.5,
@@ -115,7 +114,7 @@ Request body:
   "wind_speed": 5.0
 }
 
-Response:
+- Response:
 {
   "model": "demand_model_survey_weather.pkl",
   "predicted queue time": [predicted_value]
