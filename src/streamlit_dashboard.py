@@ -52,7 +52,7 @@ project_root = script_dir.parent.parent
 csv_path = project_root / "data" / "survey.csv"
 
 # plot correlation analysis 
- def correlation_analysis(self):
+def correlation_analysis(self):
         """Perform correlation analysis of all factors"""
         print("\n7. Correlation Analysis:")
         corr_df = self.df.copy()
