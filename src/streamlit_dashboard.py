@@ -43,12 +43,13 @@ express_filter = st.sidebar.selectbox("Select Express Pass Usage", ["All", "Yes"
 #######################
 
 #######################
+
 # PLOTS
 
 # SUBGROUP A ##########
 
 # QUESTION 1 ##########
-# load data
+#load data
 # st.success("✅ AQ1 is running!")
 script_dir = Path(__file__).parent
 project_root = script_dir.parent.parent
@@ -413,8 +414,10 @@ from xgboost import XGBRegressor
 # QUESTION 2 ##########
 # st.success("✅ BQ2 is running!")
 st.subheader("🕰️ Optimized Layout Simulation Results")
+script_dir = Path(__file__).resolve().parent
+csv_path = script_dir.parent / 'models' / 'q2_optimization_layout.pkl'
 
-with open("../models/q2_optimization_layout.pkl", "rb") as f:
+with open(csv_path, "rb") as f:
     comparison_results = pickle.load(f)
 
 # Convert the comparison results to a DataFrame
@@ -506,7 +509,8 @@ with col_kpis:
 # st.success("✅ BQ5 is running!")
 st.subheader("📊 IoT Data Integration for Experience Optimisation")
 
-df_iot_path = "../data/processed data/iot_data.pkl" 
+script_dir = Path(__file__).resolve().parent
+df_iot_path = script_dir.parent / 'data' / 'processed ddata' / 'iot_data.pkl'
 df_iot = pd.read_pickle(df_iot_path)
 
 def train_demand_model_2(df, target='Average_Queue_Time'):
