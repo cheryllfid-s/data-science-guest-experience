@@ -361,20 +361,103 @@ st.subheader("🎢 Optimized Layout Simulation Results")
 with open("../models/q2_optimization_layout.pkl", "rb") as f:
     comparison_results = pickle.load(f)
 
-output = ""
+# Convert the comparison results to a DataFrame
+data = []
+for attraction in comparison_results["avg_wait_times_1_multi"]:
+    data.append({
+        "Attraction": attraction,
+        "Layout": "Current (Two Entrances)",
+        "Avg Wait Time (mins)": comparison_results["avg_wait_times_1_multi"][attraction]
+    })
+    data.append({
+        "Attraction": attraction,
+        "Layout": "Modified (Swapped & One Entrance)",
+        "Avg Wait Time (mins)": comparison_results["avg_wait_times_2_multi"][attraction]
+    })
 
-output += "Current USS Layout (Two Entrances):\n"
-for attraction, time in comparison_results["avg_wait_times_1_multi"].items():
-    output += f"{attraction}: {time:.2f} min\n"
-output += f"Average Wait Time per Guest: {comparison_results['avg_wait_per_guest_1']:.2f} min\n\n"
+wait_df = pd.DataFrame(data)
 
-output += "Modified USS Layout (Swapped Transformers and CYLON, we want to use only the left entrance):\n"
-for attraction, time in comparison_results["avg_wait_times_2_multi"].items():
-    output += f"{attraction}: {time:.2f} min\n"
-output += f"Average Wait Time per Guest: {comparison_results['avg_wait_per_guest_2']:.2f} min"
+wait_df['Layout'] = wait_df['Layout'].map({
+    'Current (Two Entrances)': 'Current',
+    'Modified (Swapped & One Entrance)': 'Modified'
+})
 
+label_map = {
+    "Revenge of the Mummy": "Mummy",
+    "Battlestar Galactica: CYLON": "CYLON",
+    "Transformers: The Ride": "Transformers",
+    "Puss In Boots' Giant Journey": "Puss In Boots",
+    "Sesame Street Spaghetti Space Chase": "Sesame Street"
+}
+wait_df['Attraction'] = wait_df['Attraction'].map(label_map)
 
-st.text(output)
+st.markdown(
+    "> **Note:** We swap the locations of *Transformers* and *CYLON*, placing congested rides last in the guest journey. "
+    "We will also close the right entrance to guide guests through a left-to-right flow, reducing congestion."
+)
+
+# Horizontal Bar Chart
+st.subheader("Comparison of Average Wait Times by Attraction")
+chart = alt.Chart(wait_df).mark_bar().encode(
+    x=alt.X('Attraction:N', title='Attraction', axis=alt.Axis(labelAngle=0)),
+    y=alt.Y('Avg Wait Time (mins):Q', title='Average Wait Time (mins)'),
+    color=alt.Color('Layout:N', title='Layout'),
+    tooltip=['Attraction', 'Layout', 'Avg Wait Time (mins)'],
+    xOffset='Layout:N'  # Enables grouped side-by-side bars
+).properties(
+    width=700,
+    height=400
+)
+
+st.altair_chart(chart, use_container_width=True)
+
+# === Average wait times from the comparison results ===
+# Values from simulation results
+current_avg = comparison_results['avg_wait_per_guest_1']
+modified_avg = comparison_results['avg_wait_per_guest_2']
+diff = current_avg - modified_avg
+pct_drop = (diff / current_avg) * 100
+arrow = "⬇️" if diff > 0 else "⬆️"
+color = "green" if diff > 0 else "red"
+
+# Use Streamlit columns for layout
+st.markdown("### 📉 Overall Wait Time Improvement")
+
+col1, col2, col3 = st.columns(3)
+
+def kpi_card(title, value, delta=None, arrow=None, color="white"):
+    return f"""
+    <div style="
+        background-color: #1e1e1e;
+        padding: 20px;
+        border-radius: 10px;
+        color: white;
+        text-align: center;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    ">
+        <div style='font-size: 14px; color: #cccccc;'>{title}</div>
+        <div style='font-size: 32px; font-weight: bold;'>{value}</div>
+        {"<div style='color:" + color + "; font-size: 16px;'>" + arrow + " " + delta + "</div>" if delta else ""}
+    </div>
+    """
+
+with col1:
+    st.markdown(kpi_card("Current Avg Wait Time", f"{current_avg:.2f} mins"), unsafe_allow_html=True)
+
+with col2:
+    st.markdown(kpi_card("Modified Avg Wait Time", f"{modified_avg:.2f} mins"), unsafe_allow_html=True)
+
+with col3:
+    st.markdown(
+        kpi_card(
+            "Time Reduction",
+            f"{diff:.2f} mins",
+            delta=f"{abs(pct_drop):.1f}%",
+            arrow=arrow,
+            color="green" if diff > 0 else "red"
+        ),
+        unsafe_allow_html=True
+    )
 
 # QUESTION 3
 
