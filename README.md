@@ -184,10 +184,10 @@ Response:
 Assuming the GitHub repository has been cloned, here are the steps to run the dashboard.
 
 ### 1. Check Your Directory
-Make sure you are at .../data-science-guest-experience/src
+Make sure you are at ../data-science-guest-experience
 
 ### 2. Launching the Dashboard
 Enter the following command into your terminal to launch the dashboard:
 ```bash
-streamlit run streamlit_dashboard.py
+streamlit run src/streamlit_dashboard.py
 ```
