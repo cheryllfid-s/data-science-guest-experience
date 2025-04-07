@@ -206,7 +206,7 @@ class guest_segmentation_model:
             3: 'Premium Spenders'
         }
 
-        def plot_responses(df_labeled, cluster_col, response_col, cluster_map, plt_title, legend):
+        def plot_responses(df_labeled, cluster_col, response_col, cluster_map, legend):
             grouped = df_labeled.groupby([cluster_col, response_col]).size().reset_index(name='count')
             grouped['Segment'] = grouped[cluster_col].map(cluster_map)
 
@@ -217,7 +217,6 @@ class guest_segmentation_model:
                 xOffset=alt.XOffset(f'{response_col}:N'),
                 tooltip=['Segment', response_col, 'count']
             ).properties(
-                title = plt_title,
                 height=400
             ).configure_axisX(
                 labelAngle=0,
@@ -230,6 +229,7 @@ class guest_segmentation_model:
 
         # (1) Pie chart of guest segment distribution
         with col1:
+            st.markdown("<h2 style='font-size: 20px;'>Distribution of Guest Segments</h2>", unsafe_allow_html=True)
             cluster_counts = df_labeled['cluster'].value_counts().reset_index()
             cluster_counts.columns = ['cluster', 'count']
             cluster_counts['Segment'] = cluster_counts['cluster'].map(cluster_name_map)
@@ -240,26 +240,27 @@ class guest_segmentation_model:
                 tooltip=["Segment", "count"]
             ).properties(
                 height=400,
-                title='Distribution of Guest Segments'
             )
             st.altair_chart(pie, use_container_width=True)
 
         # (2) Plot awareness sources by guest segment
         with col2:
+            st.markdown("<h2 style='font-size: 20px;'>Source of Awareness</h2>", unsafe_allow_html=True)
             df_labeled['awareness'] = df_labeled['awareness'].replace({'Local Singapore news': 'News',
                                                                        'Travel agencies/tour packages': 'Tour packages'})  # Shorten/refactor names
             awareness_chart = plot_responses(self.df_labeled, 'cluster', 'awareness',
-                                             cluster_name_map, 'Source of Awareness', 'Source')
+                                             cluster_name_map, 'Source')
             st.altair_chart(awareness_chart, use_container_width=True)
 
         # (3) Plot response to ads by guest segment
         with col3:
+            st.markdown("<h2 style='font-size: 20px;'>Response to Ads</h2>", unsafe_allow_html=True)
             df_labeled['response_to_ads'] = df_labeled['response_to_ads'].replace({
                 'Yes and they influenced my decision': 'Yes, influenced my decision',
                 'Yes and they influenced my decision to visit': 'Yes, influenced my decision',
                 'Yes, but they did not influence my decision': 'Yes, but no influence'})  # Shorten/refactor names
             ads_chart = plot_responses(self.df_labeled, 'cluster', 'response_to_ads',
-                                       cluster_name_map, 'Response to Ads', 'Response to Ads')
+                                       cluster_name_map, 'Response to Ads')
             st.altair_chart(ads_chart, use_container_width=True)
         
     def analyze_marketing_strategies(self, df_labeled):
