@@ -8,6 +8,10 @@ from subgroup_a.modeling.q2_guest_segmentation_model import guest_segmentation_m
 import torch
 from transformers import BertForSequenceClassification
 import torch.nn.functional as F
+import pandas as pd
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.decomposition import PCA
+from subgroup_a.datapreparation_A import cleaning_q2
 
 app = FastAPI()
 
@@ -63,10 +67,19 @@ for filename in [
 
 print(f"Loaded models: {models.keys()}")
 
-# Guest segmentation model (initialized with placeholder data)
-segmentation_model = guest_segmentation_model(
-    df_combined=None, df_labeled=None, scaled=None, pca=None
-)
+# Guest segmentation model (Q2)
+try:
+    cleaned_combined, cleaned_labeled, scaled, pca = cleaning_q2()
+    segmentation_model = guest_segmentation_model(
+        df_combined=cleaned_combined,
+        df_labeled=cleaned_labeled,
+        scaled=scaled,
+        pca=pca
+    )
+    print("✅ Guest segmentation model initialized")
+except Exception as e:
+    segmentation_model = guest_segmentation_model(None, None, None, None)
+    print(f"❌ Failed to initialize guest segmentation model: {e}")
 
 # load BERT model
 try:
@@ -273,6 +286,8 @@ def segment_guest(data: GuestSegmentationRequest):
     try:
         user_df = pd.DataFrame([data.dict()])
         combined_df = pd.concat([segmentation_model.df_labeled.copy(), user_df], ignore_index=True)
+
+        
         encoded_df = combined_df.copy()
         for col in encoded_df.select_dtypes(include='object').columns:
             encoded_df[col] = LabelEncoder().fit_transform(encoded_df[col])
@@ -281,15 +296,26 @@ def segment_guest(data: GuestSegmentationRequest):
         scaled = StandardScaler().fit_transform(encoded_df)
         pca = PCA(n_components=2).fit_transform(scaled)
 
-        # Rerun the model pipeline with updated data
+        
         updated_model = guest_segmentation_model(
             df_combined=encoded_df,
             df_labeled=combined_df,
             scaled=scaled,
             pca=pca
         )
-
         summary, df_labeled = updated_model.run_pipeline()
+
+        # Segment naming 
+        def assign_segment(row):
+            if row["Age Group"] == "18 - 24 years old" and row["Visit Purpose"] == "Social gathering":
+                return "Social-Driven Youths" if row["Express Pass Usage %"] > 50 else "Budget-Conscious Youths"
+            elif row["Age Group"] == "25 - 34 years old" and row["Visit Purpose"] == "Family outing":
+                return "Premium Spenders" if row["Express Pass Usage %"] > 50 else "Value-Conscious Families"
+            else:
+                return "Other"
+
+        summary["Segment"] = summary.apply(assign_segment, axis=1)
+        summary = summary[['Segment'] + [col for col in summary.columns if col != 'Segment']]
 
         
         predicted_cluster = int(df_labeled.iloc[-1]["cluster"])
