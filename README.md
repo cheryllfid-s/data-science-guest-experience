@@ -63,7 +63,7 @@ Install dependencies: pip install -r requirements.txt
 Set working directory to src folder, and run uvicorn api:app --reload 
 Swagger UI: http://127.0.0.1:8000/docs
 
-API Endpoints
+### API Endpoints
 1. /models - Get Available Models
 Method: GET
 Description: Returns a list of available models and their expected features.
@@ -77,13 +77,44 @@ Request Body:
 Response:
 - A JSON response with the prediction result.
 
-Error Handling
+3. /complaint_severity - Analyze Single Complaint Severity
+Method: POST
+Description: Analyzes a single customer complaint and determines its severity.
+Request Body:
+- A JSON object with a "complaint_text" field containing the complaint text.
+Example:
+```json
+{
+  "complaint_text": "I waited two hours, but the ride suddenly closed"
+}
+```
+Response:
+- A JSON response with the complaint text, severity prediction (0 or 1), severity level ("general" or "severe"), and severity probability.
+
+4. /batch_complaints - Analyze Multiple Complaints
+Method: POST
+Description: Analyzes multiple customer complaints in a single request and provides severity analysis for each.
+Request Body:
+- A JSON array of objects, each with a "complaint_text" field.
+Example:
+```json
+[
+  {"complaint_text": "I waited two hours, but the ride suddenly closed"},
+  {"complaint_text": "The staff was very friendly and helped me solve the problem"},
+  {"complaint_text": "The food was too expensive and not tasty"}
+]
+```
+Response:
+- A JSON response with an array of complaint analyses, the ratio of severe complaints, and the total number of complaints.
+
+### Error Handling
 400 - Bad Request: The provided features do not match the expected format or are of incorrect types.
 404 - Not Found: The specified model was not found in the system.
 500 - Internal Server Error: An error occurred while processing the prediction.
 
-Sample inputs for various models:
+### Sample inputs for various models:
 1. demand_model_iot.pkl: 
+```json
 {
   "Visitor_ID": 12345,
   "Loyalty_Member": 1,
@@ -101,7 +132,9 @@ Sample inputs for various models:
   "Is_Weekend": false,
   "Is_Popular_Attraction": true
 }
+```
 2. demand_model_survey_weather.pkl:
+```json
 {
   "Favorite_Attraction": 3,
   "Satisfaction_Score": 4.5,
@@ -116,6 +149,7 @@ Sample inputs for various models:
   "relative_humidity": 60.0,
   "wind_speed": 5.0
 }
+```
 
 ## Running the Dashboard
 Assuming the GitHub repository has been cloned, here are the steps to run the dashboard.

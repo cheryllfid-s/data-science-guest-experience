@@ -83,9 +83,9 @@ try:
     # set to evaluation mode
     bert_model.eval()
     
-    print("Successfully loaded BERT model and tokenizer")
+    print("✅ Successfully loaded BERT model and tokenizer")
 except Exception as e:
-    print(f"Error loading BERT model: {e}")
+    print(f"❌ Error loading BERT model: {e}")
     bert_model = None
     bert_tokenizer = None
 
@@ -332,7 +332,7 @@ def predict_resource_allocation(data: ResourceAllocationRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Prediction error: {str(e)}")
 
-@app.post("/predict/complaint_severity")
+@app.post("/complaint_severity")
 def predict_complaint_severity(data: ComplaintTextRequest):
     """predict customer complaint severity"""
     
@@ -363,7 +363,7 @@ def predict_complaint_severity(data: ComplaintTextRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error predicting complaint severity: {str(e)}")
 
-@app.post("/predict/batch_complaints")
+@app.post("/batch_complaints")
 def predict_batch_complaints(data: list[ComplaintTextRequest]):
     """batch predict customer complaint severity"""
     
