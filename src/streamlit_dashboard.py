@@ -219,12 +219,128 @@ segmentation_analysis.visualize_marketing_analysis()
 
 
 # QUESTION 5 ###########
+q5_df_reviews = q5_clean_data()
 
-# Sentiment Diff Train
+# For rain sentiment analysis
+def get_sentiment(text):
+    return TextBlob(text).sentiment.polarity
+
+q5_df_reviews["sentiment"] = q5_df_reviews["review_text"].apply(get_sentiment)
 
 
-#Plot Seasonal Volume
+rain_reviews = q5_df_reviews[q5_df_reviews['mentions_rain'] == True]
+no_rain_reviews = q5_df_reviews[q5_df_reviews['mentions_rain'] == False]
 
+# Group by the 'segment' and calculate the average sentiment for reviews mentioning rain
+rain_segment_sentiment = rain_reviews.groupby('segment')['sentiment'].mean().reset_index()
+
+# Group by the 'segment' and calculate the average rating for reviews not mentioning rain
+no_rain_segment_sentiment = no_rain_reviews.groupby('segment')['sentiment'].mean().reset_index()
+
+# Merging the sentiment results for comparison
+sentiment_comparison = pd.merge(rain_segment_sentiment, no_rain_segment_sentiment, on='segment', suffixes=('_rain', '_no_rain'))
+
+sentiment_diff = sentiment_comparison.groupby('segment').apply(
+    lambda x: x['sentiment_rain'].mean() - x['sentiment_no_rain'].mean()).reset_index(name='sentiment_diff')
+
+# Rename columns for clarity
+sentiment_diff.columns = ['segment', 'sentiment_diff']
+
+# For seasonal guest volume analysis
+guest_volume = q5_df_reviews.groupby(['segment', 'month']).size().reset_index(name='guest_count')
+def guestvolseason(guest_volume):
+    season_mapping = {
+    'February': 'Feb-Apr', 'March': 'Feb-Apr', 'April': 'Feb-Apr',
+    'May': 'Summer Holidays', 'June': 'Summer Holidays', 'July': 'Summer Holidays',
+    'August': 'Aug-Oct', 'September': 'Aug-Oct', 'October': 'Aug-Oct',
+    'November': 'Winter Holidays', 'December': 'Winter Holidays', 'January': 'Winter Holidays'
+    }
+
+    # Map months to seasons
+    guest_volume['season'] = guest_volume['month'].map(season_mapping)
+
+    # Create a duplicated dataframe where Feb-Apr appears again on the right
+    guest_volume_dup = guest_volume[guest_volume['season'] == 'Feb-Apr'].copy()
+    guest_volume_dup['season'] = 'Feb-Apr (2)'
+
+    # Combine original with duplicated Feb-Apr
+    guest_volume_extended = pd.concat([guest_volume, guest_volume_dup])
+
+    # Maintain correct order
+    season_order = ['Feb-Apr', 'Summer Holidays', 'Aug-Oct', 'Winter Holidays', 'Feb-Apr (2)']
+    guest_volume_extended['season'] = pd.Categorical(guest_volume_extended['season'], categories=season_order, ordered=True)
+
+    # Aggregate guest count by segment and season
+    seasonal_guest_volume = guest_volume_extended.groupby(['segment', 'season'], observed=True)['guest_count'].sum().reset_index()
+    return seasonal_guest_volume
+seasonal_guest_volume = guestvolseason(guest_volume)
+
+
+
+#Plot Rain sentiment difference and  Seasonal Volume
+def plot_sentiment_and_seasonal_volume(sentiment_diff, seasonal_guest_volume):
+    # Segment labels
+    segment_labels = {
+        0: "Social-Driven Youths",
+        1: "Value-Conscious Families",
+        2: "Budget-Conscious Youths",
+        3: "Premium Spenders"
+        }
+        # --- Prepare sentiment_diff data
+    sentiment_df = sentiment_diff.copy()
+    sentiment_df["segment_label"] = sentiment_df["segment"].map(segment_labels)
+    sentiment_df["segment_order"] = sentiment_df["segment"]
+
+    # --- Prepare seasonal_guest_volume data
+    seasonal_df = seasonal_guest_volume.copy()
+    seasonal_df["segment_label"] = seasonal_df["segment"].map(segment_labels)
+
+    # Define a custom order for seasons if needed
+    season_order = ["Dec-Feb", "Mar-May", "Jun-Aug", "Sep-Nov"]
+
+    # Create Streamlit columns
+    col1, col2 = st.columns(2)
+
+    with col1:
+        sentiment_chart = alt.Chart(sentiment_df).mark_bar().encode(
+            x=alt.X('segment_label:N', title='Segment',
+                    sort=alt.SortField('segment_order', order='ascending')),
+            y=alt.Y('sentiment_diff:Q', title='Sentiment Difference (Rain - No Rain)'),
+            color=alt.condition(
+                alt.datum.sentiment_diff > 0,
+                alt.value("steelblue"),
+                alt.value("indianred")
+            ),
+            tooltip=['segment_label:N', 'sentiment_diff:Q']
+        ).properties(
+            title='Sentiment Difference (Rain vs No Rain)',
+            width=500,
+            height=400
+        ).configure_axisX(
+            labelAngle=0,
+            labelFontSize=9
+        )
+
+        st.altair_chart(sentiment_chart, use_container_width=False)
+
+    with col2:
+        line_chart = alt.Chart(seasonal_df).mark_line(point=True).encode(
+            x=alt.X('season:N', title='Season', sort=season_order),
+            y=alt.Y('guest_count:Q', title='Guest Volume'),
+            color=alt.Color('segment_label:N', title='Segment',
+                            scale=alt.Scale(scheme='category10')),
+                tooltip=['season', 'segment_label', 'guest_count']
+        ).properties(
+            title='Guest Volume by Segment and Season',
+            width=500,
+            height=400
+        ).configure_axisX(
+            labelAngle=0,
+            labelFontSize=9
+        )
+
+        st.altair_chart(line_chart, use_container_width=False)
+plot_sentiment_and_seasonal_volume(sentiment_diff, seasonal_guest_volume)
 
 
 # SUBGROUP B ##########
