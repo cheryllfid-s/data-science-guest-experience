@@ -245,7 +245,84 @@ from xgboost import XGBRegressor
 # QUESTION 4
 
 # QUESTION 5
+# QUESTION 5 ###########
+df_iot_path = "../data/processed data/iot_data.pkl" 
+df_iot = pd.read_pickle(df_iot_path)
 
+def train_demand_model_2(df, target='Average_Queue_Time'):
+    features = [
+        'Visitor_ID', 'Loyalty_Member', 'Age', 'Gender',
+        'Theme_Zone_Visited', 'Attraction', 'Check_In', 'Queue_Time', 'Check_Out',
+        'Restaurant_Spending', 'Merchandise_Spending', 'Total_Spending',
+        'Day_of_Week', 'Is_Weekend', 'Is_Popular_Attraction'
+    ]
+    df = df[features + [target]]
+
+    X = df[features]
+    y = df[target]
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    model = XGBRegressor(
+        random_state=42,
+        n_estimators=500,
+        max_depth=4,
+        learning_rate=0.1,
+        verbosity=0
+    )
+
+    cross_val_scores = cross_val_score(model, X, y, cv=5, scoring='neg_mean_squared_error')
+    st.write(f"Cross-validation Negative MSE Scores: {cross_val_scores}")
+    st.write(f"Mean CV Score: {np.mean(cross_val_scores):.4f}")
+
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+
+    metrics = {
+        'RMSE': np.sqrt(mean_squared_error(y_test, y_pred)),
+        'MAE': mean_absolute_error(y_test, y_pred)
+    }
+
+    st.success("✅ IoT Demand Model Trained Successfully")
+    st.metric("RMSE", f"{metrics['RMSE']:.2f}")
+    st.metric("MAE", f"{metrics['MAE']:.2f}")
+
+    df_test = X_test.copy()
+    df_test['Predicted_' + target] = y_pred
+
+    # Altair Plot 1: Check-In vs Predicted Queue
+    st.subheader("📊 Check-In Time vs Predicted Queue Size")
+    checkin_plot = alt.Chart(df_test).mark_circle(size=60, opacity=0.6).encode(
+        x='Check_In:Q',
+        y=f'Predicted_{target}:Q',
+        tooltip=['Check_In', f'Predicted_{target}']
+    ).properties(
+        width=600,
+        height=300
+    ).interactive()
+    st.altair_chart(checkin_plot, use_container_width=True)
+
+    # Altair Plot 2: Check-Out vs Predicted Queue
+    st.subheader("📊 Check-Out Time vs Predicted Queue Size")
+    checkout_plot = alt.Chart(df_test).mark_circle(size=60, color='green', opacity=0.6).encode(
+        x='Check_Out:Q',
+        y=f'Predicted_{target}:Q',
+        tooltip=['Check_Out', f'Predicted_{target}']
+    ).properties(
+        width=600,
+        height=300
+    ).interactive()
+    st.altair_chart(checkout_plot, use_container_width=True)
+
+    # Correlation print
+    correlation = df_test.corr(numeric_only=True)['Predicted_' + target].sort_values(ascending=False)
+    st.write("📈 **Correlation with Predicted Queue Time:**")
+    st.dataframe(correlation)
+
+    return model, metrics
+
+# Training model with just IoT data
+model_3, metrics_3 = train_demand_model_2(df_iot)
 
 
 #######################
