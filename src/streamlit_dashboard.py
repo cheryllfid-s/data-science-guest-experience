@@ -3,6 +3,7 @@ import streamlit as st
 import os 
 import pandas as pd
 import altair as alt
+import pickle
 # import matplotlib.pyplot as plt
 from pathlib import Path
 # importing the other modules:
@@ -355,6 +356,25 @@ from xgboost import XGBRegressor
 # QUESTION 1
 
 # QUESTION 2
+st.subheader("🎢 Optimized Layout Simulation Results")
+
+with open("../models/q2_optimization_layout.pkl", "rb") as f:
+    comparison_results = pickle.load(f)
+
+output = ""
+
+output += "Current USS Layout (Two Entrances):\n"
+for attraction, time in comparison_results["avg_wait_times_1_multi"].items():
+    output += f"{attraction}: {time:.2f} min\n"
+output += f"Average Wait Time per Guest: {comparison_results['avg_wait_per_guest_1']:.2f} min\n\n"
+
+output += "Modified USS Layout (Swapped Transformers and CYLON, we want to use only the left entrance):\n"
+for attraction, time in comparison_results["avg_wait_times_2_multi"].items():
+    output += f"{attraction}: {time:.2f} min\n"
+output += f"Average Wait Time per Guest: {comparison_results['avg_wait_per_guest_2']:.2f} min"
+
+
+st.text(output)
 
 # QUESTION 3
 
@@ -362,6 +382,7 @@ from xgboost import XGBRegressor
 
 # QUESTION 5
 # QUESTION 5 ###########
+st.subheader("IoT Data Integration for Experience Optimisation")
 df_iot_path = "../data/processed data/iot_data.pkl" 
 df_iot = pd.read_pickle(df_iot_path)
 
