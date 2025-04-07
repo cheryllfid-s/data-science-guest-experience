@@ -176,24 +176,7 @@ Response:
 {
   "your_cluster": 1,
   "your_segment": "Premium Spenders",
-  "segment_summary": [
-    {
-      "Segment": "Social-Driven Youths",
-      ...
-    },
-    {
-      "Segment": "Premium Spenders",
-      ...
-    },
-    {
-      "Segment": "Budget-Conscious Youths",
-      ...
-    },
-    {
-      "Segment": "Value-Conscious Families",
-      ...
-    }
-  ]
+  "segment_summary": [...]
 }
 ```
 
