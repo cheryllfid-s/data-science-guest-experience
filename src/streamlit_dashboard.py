@@ -47,9 +47,9 @@ express_filter = st.sidebar.selectbox("Select Express Pass Usage", ["All", "Yes"
 # SUBGROUP A ##########
 # QUESTION 1 ##########
 #load data
- script_dir = Path(__file__).parent
-        project_root = script_dir.parent.parent
-        csv_path = project_root / "data" / "survey.csv"
+script_dir = Path(__file__).parent
+project_root = script_dir.parent.parent
+csv_path = project_root / "data" / "survey.csv"
 
 # plot correlation analysis 
  def correlation_analysis(self):
