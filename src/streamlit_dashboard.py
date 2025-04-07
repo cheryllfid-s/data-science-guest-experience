@@ -44,9 +44,11 @@ express_filter = st.sidebar.selectbox("Select Express Pass Usage", ["All", "Yes"
 
 #######################
 # PLOTS
+
 # SUBGROUP A ##########
+
 # QUESTION 1 ##########
-#load data
+# load data
 # st.success("✅ AQ1 is running!")
 script_dir = Path(__file__).parent
 project_root = script_dir.parent.parent
