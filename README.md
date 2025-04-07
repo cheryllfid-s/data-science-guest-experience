@@ -155,6 +155,48 @@ Response:
 404 - Not Found: The specified model was not found in the system.
 500 - Internal Server Error: An error occurred while processing the prediction.
 
+6. /segment (method: POST)  
+Segments guests into clusters and provides trait-based segment labels.
+
+- Example:
+```json
+{
+  "age_group": "25 - 34 years old",
+  "group_type": "Family (including children)",
+  "visit_purpose": "Family outing",
+  "express_pass": "Yes",
+  "experience_rating": 4.5,
+  "awareness": "Social media",
+  "response_to_ads": "Yes, but they did not influence my decision",
+  "preferred_promotion": "Family/group discounts"
+}
+```
+Response:
+```json
+{
+  "your_cluster": 1,
+  "your_segment": "Premium Spenders",
+  "segment_summary": [
+    {
+      "Segment": "Social-Driven Youths",
+      ...
+    },
+    {
+      "Segment": "Premium Spenders",
+      ...
+    },
+    {
+      "Segment": "Budget-Conscious Youths",
+      ...
+    },
+    {
+      "Segment": "Value-Conscious Families",
+      ...
+    }
+  ]
+}
+```
+
 ## Running the Dashboard
 Assuming the GitHub repository has been cloned, here are the steps to run the dashboard.
 
