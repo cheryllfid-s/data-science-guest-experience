@@ -58,26 +58,70 @@ docker-compose down
 ```
 
 ## Running the API
-Set up virtual environment by typing python3 -m venv venv into cmd.
-Install dependencies: pip install -r requirements.txt
-Set working directory to src folder, and run uvicorn api:app --reload 
-Swagger UI: http://127.0.0.1:8000/docs
+- Ensure working directory is at data-science-guest-experience, set up virtual environment by running python3 -m venv venv.
+- Install dependencies: pip install -r requirements.txt
+- Set working directory to src folder, and run uvicorn api:app --reload 
+- Swagger UI: http://127.0.0.1:8000/docs
 
 ### API Endpoints
 1. /models - Get Available Models
 Method: GET
 Description: Returns a list of available models and their expected features.
 
-2. /predict/{model_name} - Make Prediction with a Model
+2. /predict_demand/iot - Make Demand Prediction with IoT data
 Method: POST
-Path Parameter:
-- model_name: The name of the model to use for prediction (e.g., demand_model_iot.pkl or demand_model_survey_weather.pkl).
+Description:
+- Predicts demand using IoT data.
 Request Body:
-- The input should be a JSON object with feature names and values based on the selected model.
+{
+  "Visitor_ID": 12345,
+  "Loyalty_Member": 1,
+  "Age": 25,
+  "Gender": 1,
+  "Theme_Zone_Visited": 2,
+  "Attraction": 4,
+  "Check_In": 10.5,
+  "Queue_Time": 5.0,
+  "Check_Out": 15.0,
+  "Restaurant_Spending": 20.5,
+  "Merchandise_Spending": 30.0,
+  "Total_Spending": 50.5,
+  "Day_of_Week": 2,
+  "Is_Weekend": false,
+  "Is_Popular_Attraction": true
+}
 Response:
-- A JSON response with the prediction result.
+{
+  "model": "demand_model_iot.pkl",
+  "predicted queue time": [predicted_value]
+}
 
-3. /complaint_severity - Analyze Single Complaint Severity
+3. /predict_demand/survey_weather - Predict Demand using Survey and Weather data
+Method: POST
+Description: Predicts demand using survey and weather data.
+Request body:
+{
+  "Favorite_Attraction": 3,
+  "Satisfaction_Score": 4.5,
+  "Age_Group": 2,
+  "Employment_Status": 1,
+  "Visit_Quarter": 1,
+  "Event": 0,
+  "Attraction_Reason": 1,
+  "Season": 3,
+  "rainfall": 0.0,
+  "air_temperature": 25.0,
+  "relative_humidity": 60.0,
+  "wind_speed": 5.0
+}
+
+Response:
+{
+  "model": "demand_model_survey_weather.pkl",
+  "predicted queue time": [predicted_value]
+}
+
+4. /complaint_severity - Analyze Single Complaint Severity
 Method: POST
 Description: Analyzes a single customer complaint and determines its severity.
 Request Body:
@@ -91,7 +135,7 @@ Example:
 Response:
 - A JSON response with the complaint text, severity prediction (0 or 1), severity level ("general" or "severe"), and severity probability.
 
-4. /batch_complaints - Analyze Multiple Complaints
+5. /batch_complaints - Analyze Multiple Complaints
 Method: POST
 Description: Analyzes multiple customer complaints in a single request and provides severity analysis for each.
 Request Body:
@@ -111,45 +155,6 @@ Response:
 400 - Bad Request: The provided features do not match the expected format or are of incorrect types.
 404 - Not Found: The specified model was not found in the system.
 500 - Internal Server Error: An error occurred while processing the prediction.
-
-### Sample inputs for various models:
-1. demand_model_iot.pkl: 
-```json
-{
-  "Visitor_ID": 12345,
-  "Loyalty_Member": 1,
-  "Age": 25,
-  "Gender": 1,
-  "Theme_Zone_Visited": 2,
-  "Attraction": 4,
-  "Check_In": 10.5,
-  "Queue_Time": 5.0,
-  "Check_Out": 15.0,
-  "Restaurant_Spending": 20.5,
-  "Merchandise_Spending": 30.0,
-  "Total_Spending": 50.5,
-  "Day_of_Week": 2,
-  "Is_Weekend": false,
-  "Is_Popular_Attraction": true
-}
-```
-2. demand_model_survey_weather.pkl:
-```json
-{
-  "Favorite_Attraction": 3,
-  "Satisfaction_Score": 4.5,
-  "Age_Group": 2,
-  "Employment_Status": 1,
-  "Visit_Quarter": 1,
-  "Event": 0,
-  "Attraction_Reason": 1,
-  "Season": 3,
-  "rainfall": 0.0,
-  "air_temperature": 25.0,
-  "relative_humidity": 60.0,
-  "wind_speed": 5.0
-}
-```
 
 ## Running the Dashboard
 Assuming the GitHub repository has been cloned, here are the steps to run the dashboard.
