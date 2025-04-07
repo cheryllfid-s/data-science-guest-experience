@@ -492,8 +492,6 @@ def train_demand_model_2(df, target='Average_Queue_Time'):
     )
 
     cross_val_scores = cross_val_score(model, X, y, cv=5, scoring='neg_mean_squared_error')
-    st.write(f"Cross-validation Negative MSE Scores: {cross_val_scores}")
-    st.write(f"Mean CV Score: {np.mean(cross_val_scores):.4f}")
 
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
@@ -504,17 +502,24 @@ def train_demand_model_2(df, target='Average_Queue_Time'):
     }
 
     st.success("✅ IoT Demand Model Trained Successfully")
-    st.metric("RMSE", f"{metrics['RMSE']:.2f}")
-    st.metric("MAE", f"{metrics['MAE']:.2f}")
+    st.metric("RMSE", f"{metrics['RMSE']:.2f}", help="Root Mean Squared Error — lower is better. Shows average error in predicted queue time.")
+    st.metric("MAE", f"{metrics['MAE']:.2f}", help="Mean Absolute Error — average absolute difference between actual and predicted queue time.")
+
+# Optional: Explain metrics in simple terms
+    with st.expander("ℹ️ What do these metrics mean?"):
+        st.markdown("""
+        - **RMSE (Root Mean Squared Error)**: Measures the typical size of prediction errors. Bigger mistakes are penalized more.
+        - **MAE (Mean Absolute Error)**: Straight average of how far off predictions are — in queue time minutes.
+        """)
 
     df_test = X_test.copy()
     df_test['Predicted_' + target] = y_pred
 
     # Altair Plot 1: Check-In vs Predicted Queue
-    st.subheader("📊 Check-In Time vs Predicted Queue Size")
+    st.subheader("📊 Check-In Time vs Predicted Queue Time (in mins)")
     checkin_plot = alt.Chart(df_test).mark_circle(size=60, opacity=0.6).encode(
-        x='Check_In:Q',
-        y=f'Predicted_{target}:Q',
+        x=alt.X('Check_In:Q', axis=alt.Axis(title='Check-In Time')),
+        y=alt.Y(f'Predicted_{target}:Q', axis=alt.Axis(title='Predicted Queue Time (in mins)')),
         tooltip=['Check_In', f'Predicted_{target}']
     ).properties(
         width=600,
@@ -523,10 +528,10 @@ def train_demand_model_2(df, target='Average_Queue_Time'):
     st.altair_chart(checkin_plot, use_container_width=True)
 
     # Altair Plot 2: Check-Out vs Predicted Queue
-    st.subheader("📊 Check-Out Time vs Predicted Queue Size")
+    st.subheader("📊 Check-Out Time vs Predicted Queue Time (in mins)")
     checkout_plot = alt.Chart(df_test).mark_circle(size=60, color='green', opacity=0.6).encode(
-        x='Check_Out:Q',
-        y=f'Predicted_{target}:Q',
+        x=alt.X('Check_Out:Q', axis=alt.Axis(title='Check-Out Time')),
+        y=alt.Y(f'Predicted_{target}:Q', axis=alt.Axis(title='Predicted Queue Time (in mins)')),
         tooltip=['Check_Out', f'Predicted_{target}']
     ).properties(
         width=600,
@@ -534,10 +539,6 @@ def train_demand_model_2(df, target='Average_Queue_Time'):
     ).interactive()
     st.altair_chart(checkout_plot, use_container_width=True)
 
-    # Correlation print
-    correlation = df_test.corr(numeric_only=True)['Predicted_' + target].sort_values(ascending=False)
-    st.write("📈 **Correlation with Predicted Queue Time:**")
-    st.dataframe(correlation)
 
     return model, metrics
 
