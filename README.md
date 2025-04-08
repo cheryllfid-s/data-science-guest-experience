@@ -116,7 +116,7 @@ docker-compose down
   "predicted queue time": [predicted_value]
 }
 
-### 3. /q2_layout_results – Retrieve USS Layout Optimization Results
+### 3. /q2_layout_results - Retrieve USS Layout Optimization Results
 - Method: GET
 - Description: Returns simulation results from the q2_optimization_layout.py model. This endpoint compares the current USS layout against the proposed layout (swapping CYLON and Transformers rides), with average wait times per attraction and per guest.
 - Request body: None
