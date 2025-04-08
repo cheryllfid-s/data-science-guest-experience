@@ -51,8 +51,7 @@ express_filter = st.sidebar.selectbox("Select Express Pass Usage", ["All", "Yes"
 # QUESTION 1 ##########
 #load data
 # st.success("✅ AQ1 is running!")
-# QUESTION 1 - Correlation Analysis ##########
-st.subheader("🗺️Correlation Analysis of Guest Experience Factors")
+st.subheader("📈 Correlation Analysis of Guest Experience Factors")
 
 #load data
 script_dir = Path(__file__).resolve().parent
@@ -108,19 +107,26 @@ def plot_correlation_analysis(df):
     selected_columns = list(corr_columns.values())  
     corr_subset = corr_matrix.loc[selected_columns, selected_columns]
     
+    col1, col2 = st.columns(2)
+    with col1:
     # Plot the correlation matrix
-    st.write("### Correlation Matrix of Key Factors")
-    fig, ax = plt.subplots(figsize=(10, 8))
-    sns.heatmap(corr_subset, annot=True, cmap='coolwarm', center=0, ax=ax)
-    st.pyplot(fig)
-    
+        st.markdown(f"<h2 style='font-size: 20px;'>Correlation Matrix of Key Factors</h2>", unsafe_allow_html=True)
+        fig, ax = plt.subplots(figsize=(10, 8))
+        sns.heatmap(corr_subset, annot=True, cmap='coolwarm', center=0, ax=ax)
+        st.pyplot(fig)
+    with col2:
     # Add interpretation
-    st.markdown("""
-    **Interpretation Guide:**
-    - Values close to +1 indicate strong positive correlation
-    - Values close to -1 indicate strong negative correlation
-    - Values near 0 indicate little to no correlation
-    """)
+        st.markdown(f"<h2 style='font-size: 20px;'>ℹ️ Interpretation Guide</h2>", unsafe_allow_html=True)
+        with st.container():
+            st.markdown("""
+            <div style="background-color: #1e1e1e; padding: 20px; border-radius: 10px; color: white; font-size:16px;">
+                <ul style="padding-left: 20px;">
+                    <li><b>Values close to +1 indicate strong positive correlation</b></li>
+                    <li><b>Values close to -1 indicate strong negative correlation</b></li>
+                    <li><b>Values near 0 indicate little to no correlation</b></li>
+                </ul>
+            </div>
+            """, unsafe_allow_html=True)
 
 # Run the analysis
 plot_correlation_analysis(df)
@@ -228,7 +234,7 @@ def render_guest_journey_analysis():
 
     with col4:
         # Plot 2: Transition Heatmap
-        st.markdown(f"<h2 style='font-size: 20px;'>Transition Matrix ({segment_filter}) on {day_type_labels[selected_day_type]} Days</h2>", unsafe_allow_html=True) #making the plot title wrap around
+        st.markdown(f"<h2 style='font-size: 20px;'>Transition Matrix ({segment_filter}) on {day_type_labels[selected_day_type]} Days</h2>", help="This matrix shows how guests transition from one ride to another",unsafe_allow_html=True) #making the plot title wrap around
         heatmap = alt.Chart(transition_df).mark_rect().encode(
             x=alt.X('from:N', sort=None, title='From Ride'),
             y=alt.Y('to:N', sort=None, title='To Ride'),
@@ -239,7 +245,6 @@ def render_guest_journey_analysis():
             height=400
         )
         st.altair_chart(heatmap, use_container_width=True)
-        st.markdown("<span style='font-size:14px;'>ℹ️ <b>Note</b>: This matrix shows how guests transition from one ride to another.</span>", unsafe_allow_html=True)
 
     # Bottom layout
     col5, col6, col7 = st.columns(3)
@@ -280,7 +285,7 @@ def render_guest_journey_analysis():
         st.altair_chart(chart, use_container_width=True)
 
     with col7:
-        st.markdown("<h2 style='font-size: 20px;'>Ride Sequence Entropy</h2>", unsafe_allow_html=True) #making the plot title wrap around
+        st.markdown("<h2 style='font-size: 20px;'>Ride Sequence Entropy</h2>", help="Higher entropy indicates <b>lower diversity</b> in ride sequences",unsafe_allow_html=True) #making the plot title wrap around
         entropy_chart = alt.Chart(filtered_summary).mark_boxplot(size=50).encode(
             x=alt.X('EXPRESS_PASS_LABEL:N', title='Express Pass', axis=alt.Axis(labelAngle=0)),
             y=alt.Y('SEQ_ENTROPY:Q', title='Ride Sequence Entropy'),
@@ -290,7 +295,6 @@ def render_guest_journey_analysis():
             height=300
         )
         st.altair_chart(entropy_chart, use_container_width=True)
-        st.markdown("<span style='font-size:14px;'>ℹ️ <b>Note</b>: Higher entropy indicates <b>lower diversity</b> in ride sequences.</span>", unsafe_allow_html=True)
 
 # RUNNING THE AQ3 MODULE
 render_guest_journey_analysis()
@@ -471,7 +475,7 @@ label_map = {
 wait_df['Attraction'] = wait_df['Attraction'].map(label_map)
 
 st.markdown(
-    "> **Note:** In the modified layout, locations of *Transformers* and *CYLON* are swapped. The congested rides are placed last in guests' journeys. "
+    ">ℹ️ **Note:** In the modified layout, the locations of *Transformers* and *CYLON* are swapped. The congested rides are placed last in guests' journeys. "
     "The right entrance is also closed to guide guests through a left-to-right flow, reducing congestion."
 )
 
