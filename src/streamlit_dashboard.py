@@ -637,4 +637,131 @@ def train_demand_model_2(df, target='Average_Queue_Time'):
 # Call function and train
 model_3, metrics_3 = train_demand_model_2(df_iot)
 
+# QUESTION 3 ##########
+# Load Data
+path = kagglehub.dataset_download("ayushtankha/hackathon")
+attendance = pd.read_csv(f"{path}/attendance.csv")
+waiting_time = pd.read_csv(f"{path}/waiting_times.csv")
+link_attraction = pd.read_csv(f"{path}/link_attraction_park.csv")
+
+# Clean link_attraction
+df_split = link_attraction['ATTRACTION;PARK'].str.split(';', expand=True)
+link_attraction[['ATTRACTION', 'PARK']] = df_split
+link_attraction.drop(columns=['ATTRACTION;PARK'], inplace=True)
+
+# Load Staff Excel
+data_path = Path(__file__).resolve().parent.parent / 'data' / 'raw data' / 'Staff.xls'
+staff = pd.read_excel(data_path, header=6, sheet_name='月・実数')
+staff = staff.drop(index=0)
+staff = staff.drop(staff.columns[-1], axis=1)
+staff.columns = [
+    "time_code", "date", "total_sales", "admission_sales", "restaurant_sales", "total_visitors",
+    "individual_visitors", "group_visitors", "total_employees", "regular_workers", "part_time_workers"
+]
+
+# Preprocess staff date
+staff = staff[staff['date'].str.match(r'^\d{4}年\s?\d{1,2}月$')].copy()
+staff['date'] = staff['date'].str.replace("年 ", "年", regex=False)
+staff['date'] = pd.to_datetime(staff['date'], format="%Y年%m月")
+staff['date'] = staff['date'].dt.to_period('M')
+staff['month'] = staff['date'].dt.month
+staff['year'] = staff['date'].dt.year
+
+# Preprocess attendance
+year_attendance = 2019
+attendance['USAGE_DATE'] = pd.to_datetime(attendance['USAGE_DATE'])
+attendance['year'] = attendance['USAGE_DATE'].dt.year
+attendance['month'] = attendance['USAGE_DATE'].dt.month
+attendance_2019 = attendance[attendance['year'] == year_attendance]
+
+attendance_grouped = attendance_2019.groupby(['month', 'FACILITY_NAME'])['attendance'].sum().reset_index()
+attendance_pivot = attendance_grouped.pivot(index='month', columns='FACILITY_NAME', values='attendance')
+attendance_scaled = attendance_pivot * 4.5
+if 'Tivoli Gardens' in attendance_scaled.columns:
+    attendance_scaled['Tivoli Gardens'] *= 1.75
+
+# Filter staff for the same year
+staff_year = staff[staff['year'] == year_attendance]
+
+# --- Streamlit UI ---
+st.subheader("🗺️ International Park Attendance & Japan Staffing")
+
+# --- Side-by-Side Charts ---
+col1, col2 = st.columns(2)
+
+# ======================================
+# 📊 Plot 1: International Attendance vs Japan
+# ======================================
+col1.markdown("<h4 style='font-size: 20px;'> International Theme Park Attendance</h4>", 
+              help="This chart compares Japan's theme park visitor trends with scaled international parks in Spain 🇪🇸 and Denmark 🇩🇰",unsafe_allow_html=True)
+
+fig1, ax1 = plt.subplots(figsize=(12, 6))
+sns.lineplot(data=staff_year, x='month', y='total_visitors', marker='o', label='🇯🇵 Japan', color='green', ax=ax1)
+
+for facility in attendance_scaled.columns:
+    label = 'Spain' if facility == 'PortAventura World' else 'Denmark' if facility == 'Tivoli Gardens' else facility
+    ax1.plot(attendance_scaled.index, attendance_scaled[facility], marker='o', linestyle='--', label=label)
+
+ax1.set_xticks(range(1, 13))
+ax1.set_xticklabels(['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], rotation=45)
+ax1.set_xlabel('Month')
+ax1.set_ylabel('Count')
+ax1.legend(title='Legend')
+ax1.grid()
+
+col1.pyplot(fig1)
+
+
+# ======================================
+# 📊 Plot 2: Staff Trends Over Time
+# ======================================
+col2.markdown("<h4 style='font-size: 20px;'>Total Staff Over Time by Year</h4>", unsafe_allow_html=True)
+
+year_start = 2021
+year_end = 2024
+staff_year_recent = staff[(staff['year'] >= year_start) & (staff['year'] <= year_end)]
+
+fig2, ax2 = plt.subplots(figsize=(10, 6))
+sns.lineplot(
+    data=staff_year_recent,
+    x='month',
+    y='total_employees',
+    hue='year',
+    marker='o',
+    palette='tab10',
+    ax=ax2
+)
+
+ax2.set_xticks(range(1, 13))
+ax2.set_xticklabels(
+    ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    rotation=45
+)
+ax2.set_xlabel('Month')
+ax2.set_ylabel('Total Staff')
+ax2.legend(title='Year')
+ax2.grid()
+
+col2.pyplot(fig2)
+
+# ======================================
+# 💡 General Insights (under both plots)
+# ======================================
+with st.expander("💡 Insight"):
+    st.markdown("""
+    **Data and Analysis**  
+    - Clear monthly demand fluctuations: higher during holidays and school breaks.  
+    - Strong correlation between attendance, total sales, and staffing needs.
+
+    **Operational Insight**  
+    Optimizing the **visitor-to-staff ratio** is more efficient than simply hiring more staff.  
+    Dynamic staffing during peak vs. off-peak periods improves both **cost-efficiency** and **guest experience**.
+
+    **Actionable Strategy**  
+    - Deploy more **part-time workers** during peak months.  
+    - Maintain a **core of regular staff** year-round to ensure consistency.
+    """)
+
 ######################
