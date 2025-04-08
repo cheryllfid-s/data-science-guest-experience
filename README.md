@@ -114,27 +114,34 @@ docker-compose down
 {
   "model": "demand_model_survey_weather.pkl",
   "predicted queue time": [predicted_value]
+
 }
 
-#### 3. /complaint_severity - Analyze Single Complaint Severity
-Method: POST
-Description: Analyzes a single customer complaint and determines its severity.
-Request Body:
-- A JSON object with a `"complaint_text"` field containing the complaint text.
+### 3. /q2_layout_results – Retrieve USS Layout Optimization Results
+- Method: GET
+- Description: Returns simulation results from the q2_optimization_layout.py model. This endpoint compares the current USS layout against the proposed layout (swapping CYLON and Transformers rides), with average wait times per attraction and per guest.
+- Request body: None
+- Response: A plain text summary comparing the average wait times of the current USS layout and our proposed USS layout, including average wait time per attraction and total average wait time per guest.
+
+#### 4. /complaint_severity - Analyze Single Complaint Severity
+- Method: POST
+- Description: Analyzes a single customer complaint and determines its severity.
+- Request Body:
+A JSON object with a `"complaint_text"` field containing the complaint text.
 Example:
 ```json
 {
   "complaint_text": "I waited two hours, but the ride suddenly closed"
 }
 ```
-Response:
-- A JSON response with the complaint text, severity prediction (0 or 1), severity level ("general" or "severe"), and severity probability.
+- Response:
+A JSON response with the complaint text, severity prediction (0 or 1), severity level ("general" or "severe"), and severity probability.
 
-#### 4. /batch_complaints - Analyze Multiple Complaints
-Method: POST
-Description: Analyzes multiple customer complaints in a single request and provides severity analysis for each.
-Request Body:
-- A JSON array of objects, each with a "complaint_text" field.
+#### 5. /batch_complaints - Analyze Multiple Complaints
+- Method: POST
+- Description: Analyzes multiple customer complaints in a single request and provides severity analysis for each.
+- Request Body:
+A JSON array of objects, each with a "complaint_text" field.
 Example:
 ```json
 [
@@ -143,13 +150,12 @@ Example:
   {"complaint_text": "The food was too expensive and not tasty"}
 ]
 ```
-Response:
-- A JSON response with an array of complaint analyses, the ratio of severe complaints, and the total number of complaints.
+- Response:
+A JSON response with an array of complaint analyses, the ratio of severe complaints, and the total number of complaints.
 
-5. /segment (method: POST)  
-Segments guests into clusters and provides trait-based segment labels.
-
-- Example:
+### 6. /segment - Segments guests into clusters and provides trait-based segment labels.
+- Method: POST
+Example:
 ```json
 {
   "age_group": "25 - 34 years old",
@@ -162,7 +168,7 @@ Segments guests into clusters and provides trait-based segment labels.
   "preferred_promotion": "Family/group discounts"
 }
 ```
-Response:
+- Response:
 ```json
 {
   "your_cluster": 1,
