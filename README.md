@@ -114,7 +114,6 @@ docker-compose down
 {
   "model": "demand_model_survey_weather.pkl",
   "predicted queue time": [predicted_value]
-
 }
 
 ### 3. /q2_layout_results – Retrieve USS Layout Optimization Results
@@ -155,7 +154,7 @@ A JSON response with an array of complaint analyses, the ratio of severe complai
 
 ### 6. /segment - Segments guests into clusters and provides trait-based segment labels.
 - Method: POST
-Example:
+- Example:
 ```json
 {
   "age_group": "25 - 34 years old",
