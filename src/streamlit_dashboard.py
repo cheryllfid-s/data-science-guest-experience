@@ -684,7 +684,7 @@ if 'Tivoli Gardens' in attendance_scaled.columns:
 staff_year = staff[staff['year'] == year_attendance]
 
 # --- Streamlit UI ---
-st.subheader("🗺️ International Park Attendance & Japan Staffing")
+st.subheader("🎟️ Resource Allocation for Demand Variability")
 
 # --- Side-by-Side Charts ---
 col1, col2 = st.columns(2)
@@ -716,7 +716,7 @@ col1.pyplot(fig1)
 # ======================================
 # 📊 Plot 2: Staff Trends Over Time
 # ======================================
-col2.markdown("<h4 style='font-size: 20px;'>Total Staff Over Time by Year Japan</h4>", unsafe_allow_html=True)
+col2.markdown("<h4 style='font-size: 20px;'>Total Staff Over Time by Year (Japan)</h4>", unsafe_allow_html=True)
 
 year_start = 2021
 year_end = 2024
