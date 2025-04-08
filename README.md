@@ -176,8 +176,8 @@ Response:
 404 - Not Found: The specified model was not found in the system.
 500 - Internal Server Error: An error occurred while processing the prediction.
 
-## Running the Dashboard
-Assuming the GitHub repository has been cloned, here are the steps to run the dashboard.
+## Running the Dashboard Locally
+Assuming the GitHub repository has been cloned, here are the steps to run the dashboard locally.
 
 ### 1. Check Your Directory
 Make sure you are at ../data-science-guest-experience
