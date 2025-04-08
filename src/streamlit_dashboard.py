@@ -692,7 +692,7 @@ col1, col2 = st.columns(2)
 # ======================================
 # 📊 Plot 1: International Attendance vs Japan
 # ======================================
-col1.markdown("<h4 style='font-size: 20px;'> International Theme Park Attendance</h4>", 
+col1.markdown("<h4 style='font-size: 20px;'>Theme Park Attendance Across Countries</h4>", 
               help="This chart compares Japan's theme park visitor trends with scaled international parks in Spain 🇪🇸 and Denmark 🇩🇰",unsafe_allow_html=True)
 
 fig1, ax1 = plt.subplots(figsize=(12, 6))
