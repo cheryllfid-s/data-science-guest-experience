@@ -122,6 +122,59 @@ docker-compose down
 - Request body: None
 - Response: A plain text summary comparing the average wait times of the current USS layout and our proposed USS layout, including average wait time per attraction and total average wait time per guest.
 
+#### 4. /predict_resource_allocation - Resource Allocation Prediction
+- Method: POST
+- Description: Predicts the number of staff required for a given attraction and park based on input features.
+- Request body:
+  The request body should be in JSON format, with the following fields:
+  {
+    "ATTRACTION": "Ferris Wheel",
+    "PARK": "Tivoli Garden",
+    "WAIT_TIME_MAX": 20,
+    "NB_UNITS": 2,
+    "GUEST_CARRIED": 10,
+    "CAPACITY": 40,
+    "ADJUST_CAPACITY": 5,
+    "OPEN_TIME": 9,
+    "UP_TIME": 10,
+    "DOWNTIME": 2,
+    "NB_MAX_UNIT": 4,
+    "estimate_attendance": 100,
+    "month": 4,
+    "year": 2025,
+    "sale": 500,
+    "adm_sale": 300,
+    "rest_sale": 200
+  }
+ATTRACTION: Name of the attraction (e.g., "Ferris Wheel").
+PARK: Name of the park (e.g., "Tivoli Garden").
+WAIT_TIME_MAX: Maximum wait time for the attraction.
+NB_UNITS: Number of units in operation.
+GUEST_CARRIED: Number of guests carried by the attraction.
+CAPACITY: Total capacity of the attraction.
+ADJUST_CAPACITY: Adjustments made to capacity.
+OPEN_TIME: Time the attraction opens.
+UP_TIME: Time the attraction is operational.
+DOWNTIME: Time the attraction is down.
+NB_MAX_UNIT: Maximum number of units available.
+estimate_attendance: Estimated attendance at the attraction.
+month: Month of the year (e.g., 4 for April).
+year: Year (e.g., 2025).
+
+
+
+- Response:
+The response will be a JSON object containing the predicted staff count for the specified attraction.
+  {
+    "year": 2025,
+    "month": 4,
+    "Predicted_Staff_Count": 10
+  }
+year: The year for the prediction (from the input data).
+month: The month for the prediction (from the input data).
+Predicted_Staff_Count: The predicted number of staff required.
+
+
 #### 4. /complaint_severity - Analyze Single Complaint Severity
 - Method: POST
 - Description: Analyzes a single customer complaint and determines its severity.
