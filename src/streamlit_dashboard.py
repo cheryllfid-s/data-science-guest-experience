@@ -716,7 +716,7 @@ col1.pyplot(fig1)
 # ======================================
 # 📊 Plot 2: Staff Trends Over Time
 # ======================================
-col2.markdown("<h4 style='font-size: 20px;'>Total Staff Over Time by Year</h4>", unsafe_allow_html=True)
+col2.markdown("<h4 style='font-size: 20px;'>Total Staff Over Time by Year Japan</h4>", unsafe_allow_html=True)
 
 year_start = 2021
 year_end = 2024
