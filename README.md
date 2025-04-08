@@ -116,7 +116,7 @@ docker-compose down
   "predicted queue time": [predicted_value]
 }
 
-### 3. /q2_layout_results - Retrieve USS Layout Optimization Results
+#### 3. /q2_layout_results - Retrieve USS Layout Optimization Results
 - Method: GET
 - Description: Returns simulation results from the q2_optimization_layout.py model. This endpoint compares the current USS layout against the proposed layout (swapping CYLON and Transformers rides), with average wait times per attraction and per guest.
 - Request body: None
@@ -173,7 +173,7 @@ The response will be a JSON object containing the predicted staff count for the 
   - Predicted_Staff_Count: The predicted number of staff required.
 
 
-#### 4. /complaint_severity - Analyze Single Complaint Severity
+#### 5. /complaint_severity - Analyze Single Complaint Severity
 - Method: POST
 - Description: Analyzes a single customer complaint and determines its severity.
 - Request Body:
@@ -187,7 +187,7 @@ Example:
 - Response:
 A JSON response with the complaint text, severity prediction (0 or 1), severity level ("general" or "severe"), and severity probability.
 
-#### 5. /batch_complaints - Analyze Multiple Complaints
+#### 6. /batch_complaints - Analyze Multiple Complaints
 - Method: POST
 - Description: Analyzes multiple customer complaints in a single request and provides severity analysis for each.
 - Request Body:
@@ -203,7 +203,7 @@ Example:
 - Response:
 A JSON response with an array of complaint analyses, the ratio of severe complaints, and the total number of complaints.
 
-### 6. /segment - Segments guests into clusters and provides trait-based segment labels.
+#### 7. /segment - Segments guests into clusters and provides trait-based segment labels.
 - Method: POST
 - Example:
 ```json
