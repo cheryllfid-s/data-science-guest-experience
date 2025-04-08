@@ -58,17 +58,13 @@ docker-compose down
 ```
 
 ## Running the API
-- Ensure working directory is at data-science-guest-experience, set up virtual environment by running python3 -m venv venv.
+- Ensure working directory is at data-science-guest-experience, set up virtual environment by running python3 -m venv venv. If virtual environment already exists, run .\venv\Scripts\activate
 - Install dependencies: pip install -r requirements.txt
 - Set working directory to src folder, and run uvicorn api:app --reload 
 - Swagger UI: http://127.0.0.1:8000/docs
 
 ### API Endpoints
-1. /models - Get Available Models
-- Method: GET
-- Description: Returns a list of available models and their expected features.
-
-2. /predict_demand/iot - Make Demand Prediction with IoT data
+1. /predict_demand/iot - Make Demand Prediction with IoT data
 - Method: POST
 - Description: Predicts demand using IoT data.
 - Request Body:
@@ -95,7 +91,7 @@ docker-compose down
   "predicted queue time": [predicted_value]
 }
 
-3. /predict_demand/survey_weather - Predict Demand using Survey and Weather data
+2. /predict_demand/survey_weather - Predict Demand using Survey and Weather data
 - Method: POST
 - Description: Predicts demand using survey and weather data.
 - Request body:
@@ -120,7 +116,7 @@ docker-compose down
   "predicted queue time": [predicted_value]
 }
 
-4. /complaint_severity - Analyze Single Complaint Severity
+3. /complaint_severity - Analyze Single Complaint Severity
 Method: POST
 Description: Analyzes a single customer complaint and determines its severity.
 Request Body:
@@ -134,7 +130,7 @@ Example:
 Response:
 - A JSON response with the complaint text, severity prediction (0 or 1), severity level ("general" or "severe"), and severity probability.
 
-5. /batch_complaints - Analyze Multiple Complaints
+4. /batch_complaints - Analyze Multiple Complaints
 Method: POST
 Description: Analyzes multiple customer complaints in a single request and provides severity analysis for each.
 Request Body:
@@ -150,12 +146,7 @@ Example:
 Response:
 - A JSON response with an array of complaint analyses, the ratio of severe complaints, and the total number of complaints.
 
-### Error Handling
-400 - Bad Request: The provided features do not match the expected format or are of incorrect types.
-404 - Not Found: The specified model was not found in the system.
-500 - Internal Server Error: An error occurred while processing the prediction.
-
-6. /segment (method: POST)  
+5. /segment (method: POST)  
 Segments guests into clusters and provides trait-based segment labels.
 
 - Example:
@@ -179,6 +170,11 @@ Response:
   "segment_summary": [...]
 }
 ```
+
+### Error Handling
+400 - Bad Request: The provided features do not match the expected format or are of incorrect types.
+404 - Not Found: The specified model was not found in the system.
+500 - Internal Server Error: An error occurred while processing the prediction.
 
 ## Running the Dashboard
 Assuming the GitHub repository has been cloned, here are the steps to run the dashboard.

@@ -15,38 +15,7 @@ from subgroup_a.datapreparation_A import cleaning_q2
 
 app = FastAPI()
 
-# Path to models directory
 MODELS_DIR = "../models"
-
-# Define expected features and types for each model
-model_features = {
-    "bert_tokenizer.pkl": {
-        "features": ["input_text"],  # Example: Text input for BERT tokenizer
-        "feature_types": ["str"]
-    },
-    "demand_model_iot.pkl": {
-        "features": ['Visitor_ID', 'Loyalty_Member', 'Age', 'Gender', 'Theme_Zone_Visited',
-                     'Attraction', 'Check_In', 'Queue_Time', 'Check_Out', 'Restaurant_Spending',
-                     'Merchandise_Spending', 'Total_Spending', 'Day_of_Week', 'Is_Weekend', 'Is_Popular_Attraction'],
-        "feature_types": ['int', 'int', 'int', 'int', 'int', 'int', 'float', 'float', 'float', 'float', 
-                          'float', 'float', 'int', 'bool', 'bool']
-    },
-    "demand_model_survey_weather.pkl": {
-        "features": ['Favorite_Attraction', 'Satisfaction_Score', 'Age_Group', 'Employment_Status', 'Visit_Quarter', 
-                     'Event', 'Attraction_Reason', 'Season', 'rainfall', 'air_temperature', 
-                     'relative_humidity', 'wind_speed'],
-        "feature_types": ['int', 'float', 'int', 'int', 'int', 'int', 'int', 'int', 'float', 'float', 
-                          'float', 'float']
-    },
-    "q2_optimization_layout.pkl": {
-        "features": [],  # No explicit features available
-        "feature_types": []
-    },
-    "q3_resource_allocation.pkl": {
-        "features": [],  # Assuming no features available or needs to be handled separately
-        "feature_types": []
-    }
-}
 
 # Load all pickle models
 models = {}
@@ -98,13 +67,11 @@ try:
     
     print("✅ Successfully loaded BERT model and tokenizer")
 except Exception as e:
-    print(f"❌ Error loading BERT model: {e}")
+    print(f"Error loading BERT model: {e}")
     bert_model = None
     bert_tokenizer = None
 
-# Pydantic models to accept the features for each model
 
-# IoT features request class
 class IOTFeaturesRequest(BaseModel):
     Visitor_ID: int
     Loyalty_Member: int
@@ -143,7 +110,6 @@ class IOTFeaturesRequest(BaseModel):
             }
         }
 
-# Survey and Weather features request class
 class SurveyWeatherFeaturesRequest(BaseModel):
     Favorite_Attraction: int
     Satisfaction_Score: float
@@ -212,38 +178,19 @@ class ComplaintTextRequest(BaseModel):
 def home():
     return {"message": "API is running!"}
 
-@app.get("/models")
-def get_models():
-    """Returns a list of available models with their feature expectations."""
-    model_info = {}
-    
-    # Loop through model names and details in the model_features dictionary
-    for model_name, details in model_features.items():
-        model_info[model_name] = {
-            "features": details["features"],
-            "feature_types": details["feature_types"]
-        }
-    
-    # Debugging: print the model_info dictionary to check its contents
-    print(model_info)
-
-    return {"models": model_info}
-
-# Endpoint to predict demand using IoT model
 @app.post("/predict_demand/iot")
 def predict_demand_iot(features_request: IOTFeaturesRequest):
     """Predict demand using IoT data model."""
     
-    # Convert features to the appropriate types (already handled by Pydantic)
+    # convert features to appropriate types
     converted_features = list(features_request.dict().values())
     
-    # Reshape and validate feature dimensions
+    # reshape and validate feature dimensions
     try:
         input_data = np.array(converted_features).reshape(1, -1)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error reshaping features: {e}")
 
-    # Predict using the IoT model
     model = models["demand_model_iot.pkl"]
     try:
         prediction = model.predict(input_data)
@@ -251,23 +198,19 @@ def predict_demand_iot(features_request: IOTFeaturesRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error during prediction: {e}")
     
-    return {"model": "demand_model_iot.pkl", "predicted queue time": prediction.tolist()}
+    return {"model": "demand_model_iot.pkl", "predicted queue time (in mins)": prediction.tolist()}
 
-# Endpoint to predict demand using Survey and Weather model
 @app.post("/predict_demand/survey_weather")
 def predict_demand_survey_weather(features_request: SurveyWeatherFeaturesRequest):
     """Predict demand using survey and weather data model."""
     
-    # Convert features to the appropriate types (already handled by Pydantic)
     converted_features = list(features_request.dict().values())
     
-    # Reshape and validate feature dimensions
     try:
         input_data = np.array(converted_features).reshape(1, -1)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error reshaping features: {e}")
 
-    # Predict using the survey and weather model
     model = models["demand_model_survey_weather.pkl"]
     try:
         prediction = model.predict(input_data)
@@ -275,7 +218,7 @@ def predict_demand_survey_weather(features_request: SurveyWeatherFeaturesRequest
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error during prediction: {e}")
     
-    return {"model": "demand_model_survey_weather.pkl", "predicted queue time": prediction.tolist()}
+    return {"model": "demand_model_survey_weather.pkl", "predicted queue time (in mins)": prediction.tolist()}
 
 @app.post("/segment")
 def segment_guest(data: GuestSegmentationRequest):
