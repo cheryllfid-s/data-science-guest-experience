@@ -146,22 +146,20 @@ docker-compose down
     "adm_sale": 300,
     "rest_sale": 200
   }
-ATTRACTION: Name of the attraction (e.g., "Ferris Wheel").
-PARK: Name of the park (e.g., "Tivoli Garden").
-WAIT_TIME_MAX: Maximum wait time for the attraction.
-NB_UNITS: Number of units in operation.
-GUEST_CARRIED: Number of guests carried by the attraction.
-CAPACITY: Total capacity of the attraction.
-ADJUST_CAPACITY: Adjustments made to capacity.
-OPEN_TIME: Time the attraction opens.
-UP_TIME: Time the attraction is operational.
-DOWNTIME: Time the attraction is down.
-NB_MAX_UNIT: Maximum number of units available.
-estimate_attendance: Estimated attendance at the attraction.
-month: Month of the year (e.g., 4 for April).
-year: Year (e.g., 2025).
-
-
+  - ATTRACTION: Name of the attraction (e.g., "Ferris Wheel").
+  - PARK: Name of the park (e.g., "Tivoli Garden").
+  - WAIT_TIME_MAX: Maximum wait time for the attraction.
+  - NB_UNITS: Number of units in operation.
+  - GUEST_CARRIED: Number of guests carried by the attraction.
+  - CAPACITY: Total capacity of the attraction.
+  - ADJUST_CAPACITY: Adjustments made to capacity.
+  - OPEN_TIME: Time the attraction opens.
+  - UP_TIME: Time the attraction is operational.
+  - DOWNTIME: Time the attraction is down.
+  - NB_MAX_UNIT: Maximum number of units available.
+  - estimate_attendance: Estimated attendance at the attraction.
+  - month: Month of the year (e.g., 4 for April).
+  - year: Year (e.g., 2025).
 
 - Response:
 The response will be a JSON object containing the predicted staff count for the specified attraction.
@@ -170,9 +168,9 @@ The response will be a JSON object containing the predicted staff count for the 
     "month": 4,
     "Predicted_Staff_Count": 10
   }
-year: The year for the prediction (from the input data).
-month: The month for the prediction (from the input data).
-Predicted_Staff_Count: The predicted number of staff required.
+  - year: The year for the prediction (from the input data).
+  - month: The month for the prediction (from the input data).
+  - Predicted_Staff_Count: The predicted number of staff required.
 
 
 #### 4. /complaint_severity - Analyze Single Complaint Severity
