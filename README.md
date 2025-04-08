@@ -120,7 +120,7 @@ docker-compose down
 Method: POST
 Description: Analyzes a single customer complaint and determines its severity.
 Request Body:
-- A JSON object with a "complaint_text" field containing the complaint text.
+- A JSON object with a `"complaint_text"` field containing the complaint text.
 Example:
 ```json
 {
