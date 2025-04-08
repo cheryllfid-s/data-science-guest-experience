@@ -64,7 +64,7 @@ docker-compose down
 - Swagger UI: http://127.0.0.1:8000/docs
 
 ### API Endpoints
-1. /predict_demand/iot - Make Demand Prediction with IoT data
+#### 1. /predict_demand/iot - Make Demand Prediction with IoT data
 - Method: POST
 - Description: Predicts demand using IoT data.
 - Request Body:
@@ -91,7 +91,7 @@ docker-compose down
   "predicted queue time": [predicted_value]
 }
 
-2. /predict_demand/survey_weather - Predict Demand using Survey and Weather data
+#### 2. /predict_demand/survey_weather - Predict Demand using Survey and Weather data
 - Method: POST
 - Description: Predicts demand using survey and weather data.
 - Request body:
@@ -116,7 +116,7 @@ docker-compose down
   "predicted queue time": [predicted_value]
 }
 
-3. /complaint_severity - Analyze Single Complaint Severity
+#### 3. /complaint_severity - Analyze Single Complaint Severity
 Method: POST
 Description: Analyzes a single customer complaint and determines its severity.
 Request Body:
@@ -130,7 +130,7 @@ Example:
 Response:
 - A JSON response with the complaint text, severity prediction (0 or 1), severity level ("general" or "severe"), and severity probability.
 
-4. /batch_complaints - Analyze Multiple Complaints
+#### 4. /batch_complaints - Analyze Multiple Complaints
 Method: POST
 Description: Analyzes multiple customer complaints in a single request and provides severity analysis for each.
 Request Body:
