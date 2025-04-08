@@ -9,9 +9,10 @@ import torch
 from transformers import BertForSequenceClassification
 import torch.nn.functional as F
 import pandas as pd
-from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.preprocessing import LabelEncoder, StandardScaler, OneHotEncoder
 from sklearn.decomposition import PCA
 from subgroup_a.datapreparation_A import cleaning_q2
+from typing import List
 
 app = FastAPI()
 
@@ -145,16 +146,16 @@ class SurveyWeatherFeaturesRequest(BaseModel):
 class ResourceAllocationRequest(BaseModel):
     ATTRACTION: str
     PARK: str
-    WAIT_TIME_MAX: int
-    NB_UNITS: int
-    GUEST_CARRIED: int
-    CAPACITY: int
-    ADJUST_CAPACITY: int
-    OPEN_TIME: int
-    UP_TIME: int
-    DOWNTIME: int
-    NB_MAX_UNIT: int
-    estimate_attendance: int
+    WAIT_TIME_MAX: float
+    NB_UNITS: float
+    GUEST_CARRIED: float
+    CAPACITY: float
+    ADJUST_CAPACITY: float
+    OPEN_TIME: float
+    UP_TIME: float
+    DOWNTIME: float
+    NB_MAX_UNIT: float
+    estimate_attendance: float
     month: int
     year: int
     sale: float
@@ -308,38 +309,49 @@ def get_q2_layout_results():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to format layout results: {e}")
 
-@app.post("/predict/resource_allocation")
-def predict_resource_allocation(data: ResourceAllocationRequest):
-    model_name = "q3_resource_allocation.pkl"
+def predict_staff_count(model, new_data: pd.DataFrame):
+    return np.ceil(model.predict(new_data)).astype(int)
 
-    if model_name not in models:
-        raise HTTPException(status_code=404, detail=f"Model '{model_name}' not loaded")
+def preprocess_new_data(new_data):
+    """Preprocess new input data by removing categorical variables."""
+    target_vars = ["staff_count", "reg_worker", "part_worker"]
+    new_data = new_data.drop(columns=[col for col in target_vars if col in new_data.columns], errors='ignore')
 
-    model = models[model_name]
+    # Define the relative path to the training data
+    training_data_path = "../data/processed data/q3_resource_allocation.csv"
+    
+    # Load the original training dataset
+    training_data = pd.read_csv(training_data_path)
+    
+    # Initialize the encoder and fit it using the training dataset
+    encoder = OneHotEncoder(drop="first", sparse_output=False, handle_unknown='ignore')
+    encoder.fit(training_data[["ATTRACTION", "PARK"]])
+    
+    # Transform the new data
+    encoded_cats = encoder.transform(new_data[["ATTRACTION", "PARK"]])
 
+    # Now, drop the original "ATTRACTION" and "PARK" columns and append the encoded columns
+    new_data = new_data.drop(columns=["ATTRACTION", "PARK"]).join(pd.DataFrame(encoded_cats, columns=encoder.get_feature_names_out()))
+
+    return new_data
+    
+@app.post("/predict_resource_allocation")
+def predict_resource_allocation(requests: List[ResourceAllocationRequest]):
+    model = models.get("q3_resource_allocation.pkl")
+    if model is None:
+        raise HTTPException(status_code=500, detail="Model not loaded")
+
+    # Convert request list to DataFrame
+    input_df = pd.DataFrame([r.dict() for r in requests])
+    
     try:
-        df = pd.DataFrame([data.dict()])
-
-        # Load encoder
-        encoder_path = os.path.join(MODELS_DIR, "encoder_q3.pkl")
-        if not os.path.exists(encoder_path):
-            raise HTTPException(status_code=500, detail="Encoder file not found")
-
-        with open(encoder_path, "rb") as f:
-            encoder = pickle.load(f)
-
-        encoded_cats = encoder.transform(df[["ATTRACTION", "PARK"]])
-        encoded_df = pd.DataFrame(encoded_cats, columns=encoder.get_feature_names_out())
-
-        df = df.drop(columns=["ATTRACTION", "PARK"]).join(encoded_df)
-        df = df[model.feature_names_in_]
-
-        predicted_staff = np.ceil(model.predict(df)).astype(int)[0]
-
-        return {"Predicted_Staff_Count": int(predicted_staff)}
-
+        processed_df = preprocess_new_data(input_df)
+        predictions = predict_staff_count(model, processed_df)
+        input_df["Predicted_Staff_Count"] = predictions
+        result = input_df[["year", "month", "Predicted_Staff_Count"]]
+        return result.to_dict(orient="records")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Prediction error: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
 
 @app.post("/complaint_severity")
 def predict_complaint_severity(data: ComplaintTextRequest):
