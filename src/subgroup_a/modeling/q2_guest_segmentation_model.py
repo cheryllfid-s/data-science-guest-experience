@@ -247,13 +247,13 @@ class guest_segmentation_model:
 
         # Pie chart + text labelling
         pie = base.mark_arc(outerRadius=120)
-        text = base.mark_text(radius=140, size=15).encode(
+        text = base.mark_text(radius=145, size=16.5).encode(
             text="percent_label:N")
         pie_with_labels = pie + text
 
         # Create the column layout for the pie chart and bar plots
         # Pie chart on the left | 2 stacked barplots on the right
-        col1, col2 = st.columns([1, 2])
+        col1, col2 = st.columns([1.2, 1.8])
 
         with col1:
             # Pie chart
